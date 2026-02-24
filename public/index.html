@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART PCH - O'zbekiston Temir Yo'llari</title>
+
+    <!-- PWA and Web Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Config (Must load before other scripts) -->
+    <script src="js/config.js"></script>
+
+    <!-- Google Fonts for Premium Look -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Core External Libraries (Only Once) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Editors & PDF/Docx -->
+    <!-- TinyMCE Editor (API key yo'q holda cheklangan rejimda ishlaydi) -->
+    <!-- <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+
+    <!-- Excel (Luckysheet) -->
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet/dist/plugins/css/pluginsCss.css' />
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet/dist/plugins/plugins.css' />
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet/dist/css/luckysheet.css' />
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/luckysheet/dist/assets/iconfont/iconfont.css' />
+    <script src='https://cdn.jsdelivr.net/npm/luckysheet/dist/plugins/js/plugin.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/luckysheet/dist/luckysheet.umd.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/luckyexcel/dist/luckyexcel.umd.js"></script>
+
+    <!-- Internal Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/ai-assistant.css">
+    <link rel="stylesheet" href="css/timesheet.css">
+    <link rel="stylesheet" href="css/pu74.css">
+    <link rel="stylesheet" href="css/mexanika.css">
+    <link rel="stylesheet" href="css/landing.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+
+<body>
+    <!-- NEW: PU-74 Logic (loaded at bottom) -->
+    <!-- Snow Animation -->
+    <div class="snow-container">
+        <div class="snowflake"></div>
+        <div class="snowflake"></div>
+        <div class="snowflake"></div>
+        <div class="snowflake"></div>
+        <div class="snowflake"></div>
+        <div class="snowflake"></div>
+        <div class="snowflake"></div>
+        <div class="snowflake"></div>
+        <div class="snowflake"></div>
+        <div class="snowflake"></div>
+    </div>
+
+    <!-- Landing Page Section -->
+    <div id="landingPage" class="landing-page">
+        <header class="landing-header">
+            <div class="logo-box" style="margin-bottom: 30px;">
+                <img src="img/logo.png" alt="Logo" style="width: 120px; filter: drop-shadow(0 0 20px var(--primary));">
+            </div>
+            <h1 class="hero-title">SMART PCH</h1>
+            <p class="hero-subtitle">O'zbekiston Temir Yo'llari uchun intellektual dispetcherlik va boshqaruv
+                platformasi. Barcha bo'limlar integratsiyasi bir tizimda.</p>
+            <div class="hero-btns">
+                <button onclick="showLogin()" class="btn-primary">Tizimga Kirish</button>
+                <a href="#features" class="btn-secondary">Ma'lumotlar</a>
+            </div>
+            <div class="scroll-down" onclick="document.getElementById('features').scrollIntoView({behavior: 'smooth'})">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </header>
+
+        <section id="features" class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-microchip feature-icon"></i>
+                <h3>AI Dispetcher</h3>
+                <p>Tizim ma'lumotlarni tahlil qiladi va dispetcherlarga tezkor qaror qabul qilishda yordam beradi.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-route feature-icon"></i>
+                <h3>Real-Vaqt Xaritasi</h3>
+                <p>Poyezdlar, xodimlar va texnikalar harakatini interaktiv xaritada kuzatish.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-file-signature feature-icon"></i>
+                <h3>Raqamli Hujjatlar</h3>
+                <p>Barcha jurnal va dalolatnomalarni qog'ozsiz, raqamli formatda yuritish.</p>
+            </div>
+        </section>
+
+        <section class="stats-section">
+            <div class="stat-box">
+                <div class="stat-item">
+                    <h4>24/7</h4>
+                    <p>Onlayn Nazorat</p>
+                </div>
+                <div class="stat-item">
+                    <h4>100%</h4>
+                    <p>Ishonchlilik</p>
+                </div>
+                <div class="stat-item">
+                    <h4>10+</h4>
+                    <p>Integratsiyalar</p>
+                </div>
+            </div>
+        </section>
+
+        <footer
+            style="padding: 40px; text-align: center; color: var(--text-muted); border-top: 1px solid var(--glass-border);">
+            <p>&copy;
+                <script>document.write(new Date().getFullYear())</script> O'zbekiston Temir Yo'llari. Barcha huquqlar
+                himoyalangan.
+            </p>
+        </footer>
+    </div>
+
+    <!-- Login sahifasi -->
+    <div class="login-container" id="loginPage" style="display: none;">
+        <!-- Background Video -->
+        <video autoplay muted loop playsinline id="loginVideoBackground" onerror="this.style.display='none'">
+            <source src="IMG_1316.MP4" type="video/mp4">
+        </video>
+        <!-- Video yuklanmasa gradient fon ko'rsatiladi (CSS orqali) -->
+        <div class="video-overlay"></div>
+        <!-- Decorative floating elements -->
+        <div class="login-decoration">
+            <div class="floating-circle circle-1"></div>
+            <div class="floating-circle circle-2"></div>
+            <div class="floating-circle circle-3"></div>
+        </div>
+
+        <div class="login-box">
+            <!-- Animated train icon at top -->
+            <div class="login-logo">
+                <img src="img/logo.png" alt="Smart PCH Logo">
+            </div>
+
+            <h1 class="login-title">
+                <i class="fas fa-train"></i> SMART PCH
+            </h1>
+            <p class="login-subtitle">
+                <i class="fas fa-map-marker-alt"></i>
+                "<span class="masofa-name">Temir Yo'l Masofasi</span>" Tizimiga Xush Kelibsiz
+            </p>
+
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="username">
+                        <i class="fas fa-user"></i> Foydalanuvchi nomi
+                    </label>
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" id="username" class="form-input" placeholder="Login kiriting..." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i> Parol
+                    </label>
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="password" class="form-input" placeholder="Parol kiriting..." required>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Kirish
+                </button>
+
+                <div class="login-error" id="loginError">
+                    <i class="fas fa-exclamation-triangle"></i> Noto'g'ri foydalanuvchi nomi yoki parol!
+                </div>
+            </form>
+
+            <!-- Bottom decoration -->
+            <div class="login-footer">
+                <span><i class="fas fa-shield-alt"></i> Xavfsiz ulanish</span>
+                <span><i class="fas fa-clock"></i> 24/7</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asosiy tizim -->
+    <div class="main-system" id="mainSystem">
+        <div class="rail-top"></div>
+
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="logo">
+                <img src="img/logo.png" alt="Smart PCH Logo">
+                <div class="logo-text">
+                    <span class="main-title">SMART PCH</span>
+                    <span class="sub-title masofa-short-name">O'ZBEKISTON TEMIR YO'LLARI</span>
+                </div>
+            </div>
+            <div class="navbar-center">
+                <div class="global-search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="globalSearchInput" placeholder="Xodim, poyezd yoki hujjat qidirish...">
+                    <div id="searchResults" class="search-results-dropdown"></div>
+                </div>
+            </div>
+            <div class="user-info">
+                <button class="nav-extra-btn" id="backupDataBtn" title="Ma'lumotlarni Arxivlash">
+                    <i class="fas fa-file-archive"></i>
+                </button>
+                <button class="admin-nav-btn" id="openAdminPanelBtn" title="Admin Panel" style="display: none;">
+                    <i class="fas fa-cogs"></i>
+                </button>
+                <button class="map-nav-btn" id="openTrainMapBtn" title="Poyezdlar Xaritasi" style="display: none;">
+                    <i class="fas fa-map-marked-alt"></i>
+                </button>
+                <!-- PCH Stansiyalar Xaritasi -->
+                <button id="openPCHMapBtn" onclick="window.openPCHMap && window.openPCHMap()"
+                    title="PCh Stansiyalar Xaritasi" style="background: rgba(0,198,255,0.15); border: 1px solid rgba(0,198,255,0.4);
+                    width: 40px; height: 40px; border-radius: 50%; color: #00c6ff;
+                    cursor: pointer; transition: all 0.3s; margin-left: 5px;
+                    display: inline-flex; align-items: center; justify-content: center;
+                    font-size: 1rem;" onmouseover="this.style.background='rgba(0,198,255,0.3)'"
+                    onmouseout="this.style.background='rgba(0,198,255,0.15)'">
+                    <i class="fas fa-train"></i>
+                </button>
+                <button id="openAttendanceBtn"
+                    onclick="window.openGeneralFaceIDAttendance && window.openGeneralFaceIDAttendance()"
+                    title="Face ID Davomat" style="background: rgba(35, 134, 54, 0.2); border: 1px solid rgba(35, 134, 54, 0.5); 
+                    width: 40px; height: 40px; border-radius: 50%; color: #238636;
+                    cursor: pointer; transition: all 0.3s; margin-left: 10px;
+                    display: inline-flex; align-items: center; justify-content: center;
+                    font-size: 1.1rem;" onmouseover="this.style.background='rgba(35, 134, 54, 0.3)'"
+                    onmouseout="this.style.background='rgba(35, 134, 54, 0.2)'">
+                    <i class="fas fa-user-check"></i>
+                </button>
+                <button class="video-chat-nav-btn" id="openVideoChatBtn" title="Video Chat">
+                    <i class="fas fa-video"></i>
+                </button>
+                <button class="defectoscope-nav-btn" id="openDefectoscopeBtn" title="Defektaskop Nazorati"
+                    style="background: rgba(243, 156, 18, 0.2); border: 1px solid rgba(243, 156, 18, 0.5); width: 40px; height: 40px; border-radius: 50%; color: #f39c12; cursor: pointer; transition: all 0.3s; margin-left: 10px; display: none; align-items: center; justify-content: center;">
+                    <i class="fas fa-search-location"></i>
+                </button>
+                <button class="integration-nav-btn" id="openDispatcherIntegrationBtn" title="Dispetcher Tizimlari"
+                    style="background: rgba(155, 89, 182, 0.2); border: 1px solid rgba(155, 89, 182, 0.5); width: 40px; height: 40px; border-radius: 50%; color: white; cursor: pointer; transition: all 0.3s; margin-left: 10px; display: none; align-items: center; justify-content: center;">
+                    <i class="fas fa-network-wired"></i>
+                </button>
+                <div id="system-clock"
+                    style="color: white; font-weight: 600; font-family: 'Exo 2', sans-serif; display: flex; align-items: center; gap: 8px; margin-right: 15px; background: rgba(0, 198, 255, 0.1); padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(0, 198, 255, 0.2);">
+                    <i class="fas fa-clock" style="color: #00c6ff;"></i>
+                    <span id="nav-clock-time">00:00:00</span>
+                </div>
+                <div class="user-avatar" id="userAvatar">A</div>
+                <span id="userName">Administrator</span>
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Chiqish
+                </button>
+            </div>
+        </nav>
+
+        <div class="container">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-header" id="sidebarHeader"
+                    style="cursor: pointer; display: flex; flex-direction: column; gap: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; font-size: 1rem;">BO'LIMLAR BOSHQARMASI</h3>
+                        <i class="fas fa-chevron-down transition-icon" id="sidebarToggleIcon"></i>
+                    </div>
+                    <!-- Masofa ko'rsatgich -->
+                    <div id="sidebar-masofa-badge" style="font-size: 0.7rem; color: rgba(255,255,255,0.5);
+                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex;
+                        align-items: center; gap: 5px;">
+                        <i class="fas fa-train" style="color: #00c6ff;"></i>
+                        <span class="masofa-short-name" style="color: rgba(255,255,255,0.6);">---</span>
+                        <button onclick="resetMasofaSetup ? resetMasofaSetup() : null"
+                            title="Masofani o'zgartirish (admin)" style="margin-left: auto; background: none; border: none; color: rgba(255,255,255,0.3);
+                            cursor: pointer; font-size: 0.7rem; padding: 0;" id="changeMasofaBtn">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <ul class="sidebar-menu" id="sidebarMenu">
+                    <!-- JavaScript orqali yaratiladi -->
+                </ul>
+            </aside>
+
+            <!-- Content -->
+            <main class="content login-background" id="mainContent">
+                <!-- Bo'limlar JavaScript orqali yaratiladi -->
+            </main>
+        </div>
+
+        <!-- Video Chat Panel -->
+        <aside class="video-chat-panel hidden" id="videoChatPanel">
+            <div class="video-chat-header">
+                <h3><i class="fas fa-video"></i> Video Qo'ng'iroq</h3>
+                <button class="video-chat-toggle" id="videoChatToggle" title="Yashirish/Ko'rsatish">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <div class="video-chat-content">
+                <!-- Video oyna -->
+                <div class="video-preview-container">
+                    <video id="localVideo" autoplay muted playsinline style="display: none;"></video>
+                    <div class="video-preview-placeholder" id="videoPlaceholder">
+                        <i class="fas fa-video-slash"></i>
+                        <span>Kamera o'chirilgan</span>
+                    </div>
+                </div>
+
+                <!-- Video boshqaruv tugmalari -->
+                <div class="video-controls">
+                    <button class="video-control-btn" id="toggleCameraBtn" title="Kamerani yoqish/o'chirish">
+                        <i class="fas fa-video-slash"></i>
+                    </button>
+                    <button class="video-control-btn" id="toggleMicBtn" title="Mikrofonni yoqish/o'chirish">
+                        <i class="fas fa-microphone-slash"></i>
+                    </button>
+                    <button class="video-control-btn" id="shareScreenBtn" title="Ekranni ulashish">
+                        <i class="fas fa-desktop"></i>
+                    </button>
+                    <button class="video-control-btn danger" id="endCallBtn" title="Qo'ng'iroqni tugatish">
+                        <i class="fas fa-phone-slash"></i>
+                    </button>
+                </div>
+
+                <!-- Ishtirokchilar ro'yxati -->
+                <div class="participants-list">
+                    <div class="participants-header">
+                        <span><i class="fas fa-users"></i> Ishtirokchilar</span>
+                        <span class="participant-count" id="participantCount">3</span>
+                    </div>
+
+                    <div class="participant-item">
+                        <div class="participant-avatar">A</div>
+                        <div class="participant-info">
+                            <div class="participant-name">Administrator</div>
+                            <div class="participant-status">
+                                <span class="online-dot"></span> Online
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="participant-item">
+                        <div class="participant-avatar">T</div>
+                        <div class="participant-info">
+                            <div class="participant-name">Turobov H.H</div>
+                            <div class="participant-status">
+                                <span class="online-dot"></span> Online
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="participant-item">
+                        <div class="participant-avatar">S</div>
+                        <div class="participant-info">
+                            <div class="participant-name">Sattorov M.M</div>
+                            <div class="participant-status">
+                                <span class="online-dot"></span> Online
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="video-chat-actions">
+                <button class="video-action-btn" id="startCallBtn">
+                    <i class="fas fa-phone"></i> Qo'ng'iroq boshlash
+                </button>
+                <button class="video-action-btn secondary" id="inviteBtn">
+                    <i class="fas fa-user-plus"></i> Taklif qilish
+                </button>
+            </div>
+        </aside>
+
+        <!-- Admin Panel Modal -->
+        <div class="admin-panel-modal" id="adminPanelModal">
+            <div class="admin-panel-content">
+                <div class="admin-panel-header">
+                    <h2><i class="fas fa-cogs"></i> Administrator Paneli</h2>
+                    <button class="admin-panel-close" id="closeAdminPanel">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="admin-panel-tabs">
+                    <button class="admin-tab-btn active" data-admin-tab="charts">
+                        <i class="fas fa-chart-bar"></i> Grafiklar
+                    </button>
+                    <button class="admin-tab-btn" data-admin-tab="trains">
+                        <i class="fas fa-train"></i> Poyezdlar
+                    </button>
+                    <button class="admin-tab-btn" data-admin-tab="workers">
+                        <i class="fas fa-users"></i> Xodimlar
+                    </button>
+                    <button class="admin-tab-btn" data-admin-tab="stations">
+                        <i class="fas fa-map-marker-alt"></i> Stansiyalar
+                    </button>
+                    <button class="admin-tab-btn" data-admin-tab="bolinmalar">
+                        <i class="fas fa-building"></i> Bo'linmalar
+                    </button>
+                    <button class="admin-tab-btn" data-admin-tab="users">
+                        <i class="fas fa-user-shield"></i> Foydalanuvchilar
+                    </button>
+                </div>
+                <div class="admin-panel-body">
+                    <!-- Grafiklar Tab -->
+                    <div class="admin-tab-content active" id="admin-charts-tab">
+                        <h3 style="color: #ffd700; margin-bottom: 1rem;"><i class="fas fa-chart-bar"></i> Raqobat
+                            Grafigi Sozlamalari</h3>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                            <div class="content-card">
+                                <h4 style="color: #ffd700; margin-bottom: 1rem;">Bo'linmalar Ballari</h4>
+                                <div id="adminBolinmaScores">
+                                    <!-- JavaScript orqali to'ldiriladi -->
+                                </div>
+                            </div>
+                            <div class="content-card">
+                                <h4 style="color: #ffd700; margin-bottom: 1rem;">Grafik Turi</h4>
+                                <select id="adminChartType"
+                                    style="width: 100%; padding: 10px; border-radius: 8px; margin-bottom: 1rem;">
+                                    <option value="bar">Stolbchali</option>
+                                    <option value="line">Chiziqli</option>
+                                    <option value="pie">Doiraviy</option>
+                                    <option value="doughnut">Halqali</option>
+                                </select>
+                                <button class="control-btn green" id="saveAdminChartBtn" style="width: 100%;">
+                                    <i class="fas fa-save"></i> Saqlash
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Poyezdlar Tab -->
+                    <div class="admin-tab-content" id="admin-trains-tab">
+                        <h3 style="color: #ffd700; margin-bottom: 1rem;"><i class="fas fa-train"></i> Poyezdlar Jadvali
+                        </h3>
+                        <div
+                            style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                            <div class="content-card">
+                                <h4 style="color: #ffd700; margin-bottom: 1rem;">Yangi Poyezd Qo'shish</h4>
+                                <input type="text" id="newTrainNumber" placeholder="Poyezd raqami (P-006)"
+                                    style="width:100%; padding:8px; margin-bottom:8px; border-radius:5px;">
+                                <input type="text" id="newTrainRoute" placeholder="Yo'nalish (Toshkent - Buxoro)"
+                                    style="width:100%; padding:8px; margin-bottom:8px; border-radius:5px;">
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="time" id="newTrainDeparture"
+                                        style="flex:1; padding:8px; border-radius:5px;">
+                                    <input type="time" id="newTrainArrival"
+                                        style="flex:1; padding:8px; border-radius:5px;">
+                                </div>
+                                <button class="control-btn blue" id="addNewTrainBtn"
+                                    style="width:100%; margin-top:10px;">
+                                    <i class="fas fa-plus"></i> Qo'shish
+                                </button>
+                            </div>
+                            <div class="content-card">
+                                <h4 style="color: #ffd700; margin-bottom: 1rem;">Mavjud Poyezdlar</h4>
+                                <div id="adminTrainsList" style="max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Xodimlar Tab -->
+                    <div class="admin-tab-content" id="admin-workers-tab">
+                        <h3 style="color: #ffd700; margin-bottom: 1rem;"><i class="fas fa-users"></i> Xodimlar
+                            Boshqaruvi</h3>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                            <div class="content-card">
+                                <h4 style="color: #ffd700; margin-bottom: 1rem;">Yangi Xodim Qo'shish</h4>
+                                <input type="text" id="newWorkerName" placeholder="Xodim ismi"
+                                    style="width:100%; padding:8px; margin-bottom:8px; border-radius:5px;">
+                                <select id="newWorkerBolinma"
+                                    style="width:100%; padding:8px; margin-bottom:8px; border-radius:5px;">
+                                    <option value="">Bo'linmani tanlang</option>
+                                    <option value="1-bo'linma">1-bo'linma</option>
+                                    <option value="2-bo'linma">2-bo'linma</option>
+                                    <option value="3-bo'linma">3-bo'linma</option>
+                                    <option value="4-bo'linma">4-bo'linma</option>
+                                    <option value="5-bo'linma">5-bo'linma</option>
+                                    <option value="6-bo'linma">6-bo'linma</option>
+                                    <option value="7-bo'linma">7-bo'linma</option>
+                                    <option value="8-bo'linma">8-bo'linma</option>
+                                    <option value="9-bo'linma">9-bo'linma</option>
+                                    <option value="10-bo'linma">10-bo'linma</option>
+                                </select>
+                                <input type="text" id="newWorkerRole" placeholder="Lavozimi (Texnik)"
+                                    style="width:100%; padding:8px; margin-bottom:8px; border-radius:5px;">
+                                <input type="color" id="newWorkerColor" value="#3498db"
+                                    style="width:100%; height:35px; margin-bottom:8px; border-radius:5px;">
+                                <button class="control-btn green" id="addNewWorkerBtn" style="width:100%;">
+                                    <i class="fas fa-user-plus"></i> Xodim Qo'shish
+                                </button>
+                            </div>
+                            <div class="content-card">
+                                <h4 style="color: #ffd700; margin-bottom: 1rem;">Xodimlar Ro'yxati</h4>
+                                <div id="adminWorkersList" style="max-height: 250px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stansiyalar Tab -->
+                    <div class="admin-tab-content" id="admin-stations-tab">
+                        <h3 style="color: #ffd700; margin-bottom: 1rem;"><i class="fas fa-map-marker-alt"></i>
+                            Stansiyalar Boshqaruvi</h3>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                            <div class="content-card">
+                                <h4 style="color: #ffd700; margin-bottom: 1rem;">Yangi Stansiya Qo'shish</h4>
+                                <input type="text" id="newStationName" placeholder="Stansiya nomi"
+                                    style="width:100%; padding:8px; margin-bottom:8px; border-radius:5px;">
+                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                    <input type="number" id="newStationLat" placeholder="Kenglik (40.0)" step="0.01"
+                                        style="flex:1; padding:8px; border-radius:5px;">
+                                    <input type="number" id="newStationLng" placeholder="Uzunlik (65.5)" step="0.01"
+                                        style="flex:1; padding:8px; border-radius:5px;">
+                                </div>
+                                <select id="newStationBolinma"
+                                    style="width:100%; padding:8px; margin-bottom:8px; border-radius:5px;">
+                                    <option value="">Bo'linmaga biriktiring</option>
+                                    <option value="1">1-bo'linma</option>
+                                    <option value="2">2-bo'linma</option>
+                                    <option value="3">3-bo'linma</option>
+                                    <option value="4">4-bo'linma</option>
+                                    <option value="5">5-bo'linma</option>
+                                    <option value="6">6-bo'linma</option>
+                                    <option value="7">7-bo'linma</option>
+                                    <option value="8">8-bo'linma</option>
+                                    <option value="9">9-bo'linma</option>
+                                    <option value="10">10-bo'linma</option>
+                                </select>
+                                <button class="control-btn green" id="addNewStationBtn" style="width:100%;">
+                                    <i class="fas fa-map-pin"></i> Stansiya Qo'shish
+                                </button>
+                            </div>
+                            <div class="content-card">
+                                <h4 style="color: #ffd700; margin-bottom: 1rem;">Stansiyalar Ro'yxati</h4>
+                                <div id="adminStationsList" style="max-height: 250px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bo'linmalar Tab -->
+                    <div class="admin-tab-content" id="admin-bolinmalar-tab">
+                        <h3 style="color: #ffd700; margin-bottom: 1rem;"><i class="fas fa-building"></i> Bo'linmalar
+                            Joylashuvi</h3>
+                        <div id="adminBolinmalarList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Train Map Modal -->
+        <div class="train-map-modal" id="trainMapModal">
+            <div class="train-map-header">
+                <h2><i class="fas fa-map-marked-alt"></i> Poyezdlar va Xodimlar Xaritasi</h2>
+                <button class="admin-panel-close" id="closeTrainMap">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="train-map-body">
+                <div class="train-map-container">
+                    <div id="trainLiveMap"></div>
+                </div>
+                <div class="train-schedule-panel">
+                    <h3 class="schedule-title"><i class="fas fa-clock"></i> Poyezdlar Jadvali</h3>
+                    <div id="trainScheduleList">
+                        <!-- JavaScript orqali to'ldiriladi -->
+                    </div>
+                    <h3 class="schedule-title" style="margin-top: 1.5rem;"><i class="fas fa-users"></i> Xodimlar
+                        (Online)</h3>
+                    <div id="workersOnlineList">
+                        <!-- JavaScript orqali to'ldiriladi -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bo'lim oynalari -->
+        <div id="department-overlay" class="overlay"></div>
+
+        <!-- Bo'lim oynalari shablonlari -->
+        <template id="departmentWindowTemplate">
+            <div class="department-window">
+                <div class="window-header">
+                    <h2><i class="fas fa-industry"></i> <span class="department-name">Bo'lim nomi</span></h2>
+                    <button class="close-window">&times;</button>
+                </div>
+                <div class="window-content">
+                    <div class="file-management">
+                        <div class="file-controls">
+                            <button class="control-btn create-folder-btn">
+                                <i class="fas fa-folder-plus"></i> Papka yaratish
+                            </button>
+                            <button class="control-btn upload-file-btn" style="display: none;">
+                                <i class="fas fa-cloud-upload-alt"></i> Fayl Yuklash
+                            </button>
+                            <button class="control-btn orange set-deadline-btn">
+                                <i class="fas fa-calendar-alt"></i> Muddat belgilash
+                            </button>
+                            <button class="control-btn integrate-btn"
+                                style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+                                <i class="fas fa-external-link-alt"></i> Tizimga O'tish
+                            </button>
+                            <button class="control-btn timesheet-btn"
+                                style="display: none; background: linear-gradient(135deg, #2980b9, #3498db);">
+                                <i class="fas fa-table"></i> Elektron Tabel
+                            </button>
+                            <button class="control-btn pu74-btn"
+                                style="display: none; background: linear-gradient(135deg, #00c6ff, #0072ff); margin-left: 5px;">
+                                <i class="fas fa-clipboard-list"></i> PU-74
+                            </button>
+                        </div>
+
+                        <div class="folder-selector">
+                            <select class="folder-select">
+                                <option value="">Papka tanlang</option>
+                                <option value="hisobotlar">Hisobotlar</option>
+                                <option value="reja">Ish rejalari</option>
+                                <option value="monitoring">Monitoring ma'lumotlari</option>
+                            </select>
+
+                            <input type="text" class="new-folder-name" placeholder="Yangi papka nomi">
+
+                            <input type="date" class="deadline-date">
+
+                            <input type="file" class="file-input" multiple accept=".xlsx,.xls,.docx,.doc,.pdf,.txt"
+                                style="display: none;">
+                        </div>
+                    </div>
+
+                    <!-- Papka tarkibi -->
+                    <h3 class="section-title">Fayllar ro'yxati</h3>
+                    <table class="files-table">
+                        <thead>
+                            <tr>
+                                <th>Fayl nomi</th>
+                                <th>Hajmi</th>
+                                <th>Turi</th>
+                                <th>Muddat</th>
+                                <th>Holati</th>
+                                <th>Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody class="files-table-body">
+                            <!-- Fayllar JavaScript orqali qo'shiladi -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </template>
+
+        <!-- Integratsiya oynalari -->
+        <div id="obs-integration-window" class="integration-window">
+            <div class="window-header">
+                <h2><i class="fas fa-industry"></i> OBS Tizimi Integratsiyasi</h2>
+                <button class="close-window">&times;</button>
+            </div>
+            <div class="integration-content">
+                <div class="integration-tabs">
+                    <div class="integration-tab active" data-tab="obs-frame">OBS Tizimi</div>
+                    <div class="integration-tab" data-tab="kmo-frame">KMO Tizimi</div>
+                    <div class="integration-tab" data-tab="obs-info">Ma'lumotlar</div>
+                </div>
+
+                <iframe class="integration-frame active" id="obs-frame" src="https://obs.railwayinfra.uz/"
+                    style="display: block;"></iframe>
+                <iframe class="integration-frame" id="kmo-frame" src="https://kmo.railwayinfra.uz/"
+                    style="display: none;"></iframe>
+
+                <div class="integration-panel" id="obs-info" style="display: none;">
+                    <h3>OBS Tizimi Ma'lumotlari</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">45</div>
+                            <div>Faob ob'ektlar</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">12</div>
+                            <div>Bajarilayotgan loyihalar</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">3</div>
+                            <div>Yakunlangan loyihalar</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dispetcher Integratsiya oynasi -->
+        <div id="dispatcher-integration-window" class="integration-window">
+            <div class="window-header">
+                <h2><i class="fas fa-network-wired"></i> Dispetcher Integratsiyasi</h2>
+                <button class="close-window" id="closeDispatcherIntegrationBtn">&times;</button>
+            </div>
+            <div class="integration-content">
+                <div class="integration-tabs">
+                    <div class="integration-tab active" data-tab="tt-frame">TT Railway Infra</div>
+                    <div class="integration-tab" data-tab="kmo-disp-frame">KMO Railway Infra</div>
+                </div>
+
+                <iframe class="integration-frame active" id="tt-frame" src="https://tt.railwayinfra.uz/"
+                    style="display: block;"></iframe>
+                <iframe class="integration-frame" id="kmo-disp-frame" src="https://kmo.railwayinfra.uz/"
+                    style="display: none;"></iframe>
+            </div>
+        </div>
+
+        <div id="mexanika-monitor-window" class="integration-window">
+            <div class="window-header">
+                <h2><i class="fas fa-cog"></i> Mexanika Monitoringi va Nazorati</h2>
+                <button class="close-window">&times;</button>
+            </div>
+            <div class="integration-content">
+                <div class="integration-tabs">
+                    <div class="integration-tab active" data-tab="mex-monitor">Texnika Monitoringi</div>
+                    <div class="integration-tab" data-tab="mex-maintenance">Ta'mirlash Jadvali</div>
+                    <div class="integration-tab" data-tab="mex-inventory">Ehtiyot Qismlar</div>
+                </div>
+
+                <div class="integration-panel active" id="mex-monitor">
+                    <h3><i class="fas fa-desktop"></i> Texnika Holati Monitoringi</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #2ecc71;">24</div>
+                            <div>Ishchi holatda</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #e67e22;">5</div>
+                            <div>Ta'mirlashda</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #3498db;">3</div>
+                            <div>Zaxirada</div>
+                        </div>
+                    </div>
+                    <div class="content-card" style="margin-top: 1rem;">
+                        <table style="width: 100%; border-collapse: collapse; color: white;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                    <th style="padding: 10px; text-align: left;">Texnika nomi</th>
+                                    <th style="padding: 10px; text-align: left;">Raqami</th>
+                                    <th style="padding: 10px; text-align: left;">Holati</th>
+                                    <th style="padding: 10px; text-align: left;">Yoqilg'i</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 10px;">Ekskavator Komatsu</td>
+                                    <td style="padding: 10px;">EX-204</td>
+                                    <td style="padding: 10px;"><span class="status-badge status-approved">Faol</span>
+                                    </td>
+                                    <td style="padding: 10px;">85%</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 10px;">Buldozer CAT</td>
+                                    <td style="padding: 10px;">BD-105</td>
+                                    <td style="padding: 10px;"><span class="status-badge"
+                                            style="background: #e67e22;">Ta'mir</span></td>
+                                    <td style="padding: 10px;">12%</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px;">Avtokran XCMG</td>
+                                    <td style="padding: 10px;">CR-301</td>
+                                    <td style="padding: 10px;"><span class="status-badge status-approved">Faol</span>
+                                    </td>
+                                    <td style="padding: 10px;">92%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="integration-panel" id="mex-maintenance" style="display: none;">
+                    <h3><i class="fas fa-tools"></i> Rejali Texnik Xizmat Ko'rsatish (RTX)</h3>
+                    <div class="content-card">
+                        <ul style="list-style: none; padding: 0;">
+                            <li
+                                style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between;">
+                                <span>Ekskavator EX-204 (Yog' almashtirish)</span>
+                                <span style="color: #ffd700;">30.01.2024</span>
+                            </li>
+                            <li
+                                style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between;">
+                                <span>Gidravlik Press P-100 (Tekshiruv)</span>
+                                <span style="color: #ffd700;">05.02.2024</span>
+                            </li>
+                            <li style="padding: 10px; display: flex; justify-content: space-between;">
+                                <span>Generator G-50 (LTX-1)</span>
+                                <span style="color: #ffd700;">12.02.2024</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="integration-panel" id="mex-inventory" style="display: none;">
+                    <h3><i class="fas fa-boxes"></i> Ehtiyot Qismlar Ombori</h3>
+                    <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="stat-card">
+                            <div style="font-size: 0.9rem; margin-bottom: 5px;">Filtrlar (Moy/Havo)</div>
+                            <div class="progress-bar" style="height: 10px;">
+                                <div style="width: 75%; background: #2ecc71; height: 100%;"></div>
+                            </div>
+                            <div style="text-align: right; font-size: 0.8rem; margin-top: 5px;">Mavjud: 15 ta</div>
+                        </div>
+                        <div class="stat-card">
+                            <div style="font-size: 0.9rem; margin-bottom: 5px;">Shinalar (Katta hajmli)</div>
+                            <div class="progress-bar" style="height: 10px;">
+                                <div style="width: 30%; background: #e74c3c; height: 100%;"></div>
+                            </div>
+                            <div style="text-align: right; font-size: 0.8rem; margin-top: 5px;">Mavjud: 4 ta</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Chat Window -->
+    <div id="video-chat-window" class="integration-window">
+        <div class="window-header">
+            <h2><i class="fas fa-video"></i> Smart Konferensiya Aloqasi</h2>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div id="meet-room-name" style="font-size: 0.9rem; color: #00f2ff; font-family: monospace;"></div>
+                <button class="close-window" id="closeVideoChatBtn">&times;</button>
+            </div>
+        </div>
+        <div class="integration-content"
+            style="padding: 0; background: #000; display: flex; flex-direction: column; overflow: hidden;">
+            <div id="meet-container" style="flex: 1; width: 100%; height: 100%; border: none;"></div>
+        </div>
+    </div>
+
+    <!-- Tahrirlash oynalari -->
+    <div id="text-editor-window" class="editor-window">
+        <div class="editor-header">
+            <h2><i class="fas fa-edit"></i> Matn faylini tahrirlash</h2>
+            <button class="close-window" id="closeTextEditorBtn">&times;</button>
+        </div>
+        <div class="editor-content">
+            <div class="editor-toolbar">
+                <button class="toolbar-btn" data-command="bold"><i class="fas fa-bold"></i></button>
+                <button class="toolbar-btn" data-command="italic"><i class="fas fa-italic"></i></button>
+                <button class="toolbar-btn" data-command="underline"><i class="fas fa-underline"></i></button>
+                <button class="toolbar-btn" data-command="insertUnorderedList"><i class="fas fa-list-ul"></i></button>
+                <button class="toolbar-btn" data-command="insertOrderedList"><i class="fas fa-list-ol"></i></button>
+                <select class="toolbar-btn" id="fontSize">
+                    <option value="1">Kichik</option>
+                    <option value="3" selected>O'rta</option>
+                    <option value="5">Katta</option>
+                    <option value="7">Juda katta</option>
+                </select>
+                <select class="toolbar-btn" id="fontFamily">
+                    <option value="Arial">Arial</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Georgia">Georgia</option>
+                </select>
+            </div>
+            <div class="docs-editor">
+                <div class="docs-toolbar">
+                    <div class="docs-toolbar-group">
+                        <button class="docs-btn" data-command="bold"><i class="fas fa-bold"></i></button>
+                        <button class="docs-btn" data-command="italic"><i class="fas fa-italic"></i></button>
+                        <button class="docs-btn" data-command="underline"><i class="fas fa-underline"></i></button>
+                    </div>
+                    <div class="docs-toolbar-group">
+                        <button class="docs-btn" data-command="justifyLeft"><i class="fas fa-align-left"></i></button>
+                        <button class="docs-btn" data-command="justifyCenter"><i
+                                class="fas fa-align-center"></i></button>
+                        <button class="docs-btn" data-command="justifyRight"><i class="fas fa-align-right"></i></button>
+                        <button class="docs-btn" data-command="justifyFull"><i
+                                class="fas fa-align-justify"></i></button>
+                    </div>
+                    <div class="docs-toolbar-group">
+                        <button class="docs-btn" data-command="insertUnorderedList"><i
+                                class="fas fa-list-ul"></i></button>
+                        <button class="docs-btn" data-command="insertOrderedList"><i
+                                class="fas fa-list-ol"></i></button>
+                        <button class="docs-btn" data-command="outdent"><i class="fas fa-outdent"></i></button>
+                        <button class="docs-btn" data-command="indent"><i class="fas fa-indent"></i></button>
+                    </div>
+                </div>
+                <div class="docs-content" id="docsEditor" contenteditable="true">
+
+                    <!-- Google Docs style preview window -->
+                    <div id="docs-preview-window" class="docs-preview-window">
+                        <div class="docs-preview-header">
+                            <div class="docs-preview-title">
+                                <i class="fas fa-file-word" id="preview-file-icon"></i>
+                                <span id="preview-file-name">Fayl nomi</span>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="docs-preview-btn" id="print-preview-btn">
+                                    <i class="fas fa-print"></i> Chop etish
+                                </button>
+                                <button class="docs-preview-btn" id="download-preview-btn">
+                                    <i class="fas fa-download"></i> Yuklab olish
+                                </button>
+                                <button class="close-window">
+                                    <i class="fas fa-times"></i> Yopish
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="docs-preview-content">
+                            <div class="docs-preview-toolbar">
+                                <div class="docs-preview-toolbar-group">
+                                    <button class="docs-preview-btn" title="Qalin" onclick="formatText('bold')">
+                                        <i class="fas fa-bold"></i>
+                                    </button>
+                                    <button class="docs-preview-btn" title="Kursiv" onclick="formatText('italic')">
+                                        <i class="fas fa-italic"></i>
+                                    </button>
+                                    <button class="docs-preview-btn" title="Tag chizik"
+                                        onclick="formatText('underline')">
+                                        <i class="fas fa-underline"></i>
+                                    </button>
+                                </div>
+                                <div class="docs-preview-toolbar-group">
+                                    <button class="docs-preview-btn" title="Chapga hizalash"
+                                        onclick="formatText('justifyLeft')">
+                                        <i class="fas fa-align-left"></i>
+                                    </button>
+                                    <button class="docs-preview-btn" title="Markazga hizalash"
+                                        onclick="formatText('justifyCenter')">
+                                        <i class="fas fa-align-center"></i>
+                                    </button>
+                                    <button class="docs-preview-btn" title="O'ngga hizalash"
+                                        onclick="formatText('justifyRight')">
+                                        <i class="fas fa-align-right"></i>
+                                    </button>
+                                </div>
+                                <div class="docs-preview-toolbar-group">
+                                    <select class="docs-preview-btn" id="preview-font-size"
+                                        onchange="changeFontSize(this.value)">
+                                        <option value="14px">14px</option>
+                                        <option value="16px">16px</option>
+                                        <option value="18px">18px</option>
+                                        <option value="20px">20px</option>
+                                        <option value="24px">24px</option>
+                                    </select>
+                                    <select class="docs-preview-btn" id="preview-font-family"
+                                        onchange="changeFontFamily(this.value)">
+                                        <option value="Arial">Arial</option>
+                                        <option value="Times New Roman">Times New Roman</option>
+                                        <option value="Georgia">Georgia</option>
+                                        <option value="Verdana">Verdana</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="docs-preview-body" id="docs-preview-body" contenteditable="true">
+
+                                <!-- Hujjat mazmuni bu yerda bo'ladi -->
+                            </div>
+                        </div>
+                        <div class="editor-actions">
+                            <button class="control-btn red" id="cancelTextEditBtn">
+                                <i class="fas fa-times"></i> Bekor qilish
+                            </button>
+                            <button class="control-btn green" id="saveTextFileBtn">
+                                <i class="fas fa-save"></i> Saqlash
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <button class="sheets-btn" id="deleteColumnBtn"><i class="fas fa-minus"></i>
+                    Ustun</button>
+            </div>
+        </div>
+        <div class="sheets-grid" id="sheetsGrid">
+
+            <!-- Google Sheets style preview window -->
+            <div id="sheets-preview-window" class="sheets-preview-window">
+                <div class="docs-preview-header">
+                    <div class="docs-preview-title">
+                        <i class="fas fa-file-excel" id="sheets-preview-file-icon"></i>
+                        <span id="sheets-preview-file-name">Excel fayli</span>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="docs-preview-btn" id="export-excel-btn">
+                            <i class="fas fa-file-export"></i> Eksport
+                        </button>
+                        <button class="docs-preview-btn" id="download-excel-btn">
+                            <i class="fas fa-download"></i> Yuklab olish
+                        </button>
+                        <button class="close-window">
+                            <i class="fas fa-times"></i> Yopish
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sheets-preview-content">
+                    <div class="docs-preview-toolbar">
+                        <div class="docs-preview-toolbar-group">
+                            <button class="docs-preview-btn" title="Qalin" onclick="formatCell('bold')">
+                                <i class="fas fa-bold"></i>
+                            </button>
+                            <button class="docs-preview-btn" title="Kursiv" onclick="formatCell('italic')">
+                                <i class="fas fa-italic"></i>
+                            </button>
+                            <button class="docs-preview-btn" title="Tag chizik" onclick="formatCell('underline')">
+                                <i class="fas fa-underline"></i>
+                            </button>
+                        </div>
+                        <div class="docs-preview-toolbar-group">
+                            <button class="docs-preview-btn" title="Chapga hizalash"
+                                onclick="formatCell('justifyLeft')">
+                                <i class="fas fa-align-left"></i>
+                            </button>
+                            <button class="docs-preview-btn" title="Markazga hizalash"
+                                onclick="formatCell('justifyCenter')">
+                                <i class="fas fa-align-center"></i>
+                            </button>
+                            <button class="docs-preview-btn" title="O'ngga hizalash"
+                                onclick="formatCell('justifyRight')">
+                                <i class="fas fa-align-right"></i>
+                            </button>
+                        </div>
+                        <div class="docs-preview-toolbar-group">
+                            <input type="color" id="cell-color-picker" title="Hujayda rangi"
+                                style="width: 30px; height: 30px; border: none; background: none; cursor: pointer;">
+                        </div>
+                    </div>
+
+                    <div class="sheets-preview-grid" id="sheets-preview-grid">
+                        <!-- Excel jadvali JavaScript orqali yaratiladi -->
+                    </div>
+                </div>
+                <div class="editor-actions">
+                    <button class="control-btn red" id="cancelExcelEditBtn">
+                        <i class="fas fa-times"></i> Bekor qilish
+                    </button>
+                    <button class="control-btn green" id="saveExcelFileBtn">
+                        <i class="fas fa-save"></i> Saqlash
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="file-preview-window" class="editor-window">
+            <div class="editor-header">
+                <h2><i class="fas fa-file"></i> Faylni ko'rish</h2>
+                <button class="close-window" id="closePreviewBtn">&times;</button>
+            </div>
+            <div class="editor-content">
+                <div class="file-preview" id="filePreview">
+                    <!-- Fayl mazmuni JavaScript orqali ko'rsatiladi -->
+                </div>
+                <div class="editor-actions">
+                    <button class="control-btn" id="editPreviewFileBtn">
+                        <i class="fas fa-edit"></i> Tahrirlash
+                    </button>
+                    <button class="control-btn green" id="downloadPreviewFileBtn">
+                        <i class="fas fa-download"></i> Yuklab olish
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="rail-bottom"></div>
+    </div>
+
+    <!-- Chart editor window -->
+    <div id="chart-editor-window" class="chart-editor-window">
+        <div class="chart-editor-header">
+            <h2><i class="fas fa-chart-bar"></i> Raqobat Grafigini Tahrirlash</h2>
+            <button class="close-window">&times;</button>
+        </div>
+
+        <div class="chart-editor-content">
+            <div class="chart-editor-controls">
+                <div class="chart-control-group">
+                    <label><i class="fas fa-chart-bar"></i> Diagramma turi</label>
+                    <select id="chart-type-select">
+                        <option value="bar">Stolbchali diagramma</option>
+                        <option value="line">Chiziqli diagramma</option>
+                        <option value="pie">Pasta diagramma</option>
+                        <option value="doughnut">Donut diagramma</option>
+                        <option value="radar">Radar diagramma</option>
+                    </select>
+                </div>
+
+                <div class="chart-control-group">
+                    <label><i class="fas fa-palette"></i> Diagramma rangi</label>
+                    <div class="chart-color-picker">
+                        <div class="color-option active" style="background: #3498db;" data-color="#3498db"></div>
+                        <div class="color-option" style="background: #2ecc71;" data-color="#2ecc71">
+                        </div>
+                        <div class="color-option" style="background: #e74c3c;" data-color="#e74c3c">
+                        </div>
+                        <div class="color-option" style="background: #f39c12;" data-color="#f39c12">
+                        </div>
+                        <div class="color-option" style="background: #9b59b6;" data-color="#9b59b6">
+                        </div>
+                        <div class="color-option" style="background: #1abc9c;" data-color="#1abc9c">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-control-group">
+                    <label><i class="fas fa-font"></i> Matn rangi</label>
+                    <select id="chart-text-color">
+                        <option value="white">Oq</option>
+                        <option value="black">Qora</option>
+                        <option value="#ffd700">Sariq</option>
+                        <option value="#3498db">Moviy</option>
+                    </select>
+                </div>
+
+                <div class="chart-control-group">
+                    <label><i class="fas fa-arrows-alt-h"></i> Diagramma balandligi</label>
+                    <input type="range" id="chart-height" min="200" max="600" value="400">
+                    <span id="height-value">400px</span>
+                </div>
+
+                <div class="chart-control-group">
+                    <label><i class="fas fa-border-style"></i> Chegara qalinligi</label>
+                    <input type="range" id="border-width" min="1" max="10" value="1">
+                    <span id="border-value">1px</span>
+                </div>
+
+                <div class="chart-control-group">
+                    <label><i class="fas fa-sliders-h"></i> Qiymatlarni tahrirlash</label>
+                    <div class="chart-values-editor">
+                        <div class="chart-value-inputs" id="chart-value-inputs">
+                            <!-- Bo'limlar uchun qiymatlar bu yerda yaratiladi -->
+                        </div>
+                    </div>
+                </div>
+
+                <button class="control-btn green" style="width: 100%; margin-top: 1rem;" onclick="applyChartChanges()">
+                    <i class="fas fa-check"></i> O'zgarishlarni qo'llash
+                </button>
+            </div>
+
+            <div class="chart-editor-preview">
+                <h3 style="color: #ffd700; margin-bottom: 1rem;">Ko'rib chiqish</h3>
+                <div style="flex: 1; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 1rem;">
+                    <canvas id="chart-editor-preview-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="rail-bottom"></div>
+    </div>
+
+
+    <!-- Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- AI Assistant -->
+    <div class="ai-assistant-btn" onclick="toggleChat()">
+        <i class="fas fa-robot"></i>
+    </div>
+    <div id="chat-window" class="chat-window">
+        <div class="chat-header">
+            <span>Smart Assistant <i class="fas fa-sparkles" style="color:yellow;"></i></span>
+            <i class="fas fa-times" onclick="toggleChat()" style="cursor:pointer;"></i>
+        </div>
+        <div id="chat-messages" class="chat-messages">
+            <div class="chat-msg bot">Assalomu alaykum! Men Smart Assistantman. PCh-Qorlitog' tizimi
+                bo'yicha savollaringiz bormi?</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Savolingizni yozing..."
+                onkeypress="if(event.key==='Enter') sendChat()">
+            <button class="action-btn view" onclick="sendChat()"
+                style="border-radius:50%; width:40px; height:40px; justify-content:center; padding:0;"><i
+                    class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+
+
+    <!-- Text Editor Window (Word/Text) -->
+    <div id="text-editor-window" class="editor-window" style="width: 95%; height: 95%;">
+        <div class="ribbon-container">
+            <div class="ribbon-tabs">
+                <div class="ribbon-tab active" data-tab="word-home">Fayl</div>
+                <div class="ribbon-tab" data-tab="word-home">Asosiy</div>
+                <div class="ribbon-tab" data-tab="word-insert">Qo'shish</div>
+                <div class="ribbon-tab" data-tab="word-layout">Maket</div>
+            </div>
+            <div class="ribbon-content">
+                <div class="ribbon-group">
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn" onclick="saveTextFile()">
+                            <i class="fas fa-save" style="color: #2b579a;"></i>
+                            <span>Saqlash</span>
+                        </button>
+                        <button class="ribbon-btn" onclick="closeAllWindows()">
+                            <i class="fas fa-times-circle" style="color: #e74c3c;"></i>
+                            <span>Yopish</span>
+                        </button>
+                    </div>
+                    <div class="ribbon-group-label">Fayl</div>
+                </div>
+                <div class="ribbon-group">
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn" onclick="execQuill('bold')"><i
+                                class="fas fa-bold"></i><span>Qalin</span></button>
+                        <button class="ribbon-btn" onclick="execQuill('italic')"><i
+                                class="fas fa-italic"></i><span>Kursiv</span></button>
+                        <button class="ribbon-btn" onclick="execQuill('underline')"><i
+                                class="fas fa-underline"></i><span>Pastki</span></button>
+                    </div>
+                    <div class="ribbon-group-label">Shrift</div>
+                </div>
+                <div class="ribbon-group">
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn small" onclick="execQuill('align', '')"><i
+                                class="fas fa-align-left"></i></button>
+                        <button class="ribbon-btn small" onclick="execQuill('align', 'center')"><i
+                                class="fas fa-align-center"></i></button>
+                        <button class="ribbon-btn small" onclick="execQuill('align', 'right')"><i
+                                class="fas fa-align-right"></i></button>
+                    </div>
+                    <div class="ribbon-group-label">Paragraf</div>
+                </div>
+            </div>
+        </div>
+        <div class="editor-body docs-style" id="docsEditorBody">
+            <div class="paper-container">
+                <div id="docsEditor"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Excel Editor Window -->
+    <div id="excel-editor-window" class="editor-window" style="width: 95%; height: 95%;">
+        <div class="ribbon-container">
+            <div class="ribbon-tabs excel-theme">
+                <div class="ribbon-tab active">Asosiy</div>
+                <div class="ribbon-tab">Qo'shish</div>
+                <div class="ribbon-tab">Formulalar</div>
+                <div class="ribbon-tab">Ma'lumotlar</div>
+            </div>
+            <div class="ribbon-content">
+                <div class="ribbon-group">
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn" onclick="saveExcelFile()">
+                            <i class="fas fa-save" style="color: #217346;"></i>
+                            <span>Saqlash</span>
+                        </button>
+                    </div>
+                    <div class="ribbon-group-label">Fayl</div>
+                </div>
+                <div class="ribbon-group">
+                    <div class="ribbon-buttons">
+                        <button class="ribbon-btn" onclick="formatExcelCell('bold')"><i
+                                class="fas fa-bold"></i><span>Qalin</span></button>
+                        <button class="ribbon-btn" onclick="formatExcelCell('italic')"><i
+                                class="fas fa-italic"></i><span>Kursiv</span></button>
+                    </div>
+                    <div class="ribbon-group-label">Shrift</div>
+                </div>
+            </div>
+            <div class="formula-bar">
+                <div class="cell-address" id="active-cell-address">A1</div>
+                <i class="fas fa-italic" style="color: #666; font-size: 0.8rem;">fx</i>
+                <input type="text" class="formula-input" id="formula-input" placeholder="">
+            </div>
+        </div>
+        <div class="editor-body" id="excelEditor" style="overflow: auto; flex: 1; background: #fff;">
+            <!-- Excel table will be generated here -->
+        </div>
+    </div>
+
+    <!-- Integration Windows -->
+    <div id="obs-integration-window" class="integration-window">
+        <div class="editor-header">
+            <h3>OBS Integratsiya</h3><button class="action-btn delete" onclick="closeAllWindows()"><i
+                    class="fas fa-times"></i></button>
+        </div>
+        <div class="editor-body">Integratsiya oynasi</div>
+    </div>
+    <div id="exodim-integration-window" class="integration-window">
+        <div class="editor-header">
+            <h3>Exodim Integratsiya</h3><button class="action-btn delete" onclick="closeAllWindows()"><i
+                    class="fas fa-times"></i></button>
+        </div>
+        <div class="editor-body">Integratsiya oynasi</div>
+    </div>
+
+    <!-- Modals -->
+
+
+
+
+
+    <!-- Updated Excel Logic -->
+
+
+    <!-- Robust Excel Editor Loader (Fix for JSON serialization) -->
+
+
+    <!-- Smart Monitoring Edit Modal Styles -->
+
+
+    <div id="monitoring-edit-modal">
+        <div class="modal-window fade-in"
+            style="max-width: 600px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Monitoringni Tahrirlash</h2>
+                <button class="close-modal" onclick="closeSmartMonitoringEdit()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 20px;">
+                <form id="monitoring-edit-form" onsubmit="saveSmartMonitoringData(event)">
+                    <input type="hidden" id="edit-dept-id">
+
+                    <div id="dynamic-metrics-container">
+                        <!-- Basic fields will be here -->
+                        <div class="form-group">
+                            <label>Rels Harorati (°C)</label>
+                            <input type="number" id="edit-rail-temp" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Defektoskopiya (Nuqsonlar soni)</label>
+                            <input type="number" id="edit-defect-count" class="form-control" min="0" required>
+                        </div>
+
+
+
+                        <hr style="margin: 20px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <h4 style="color: #00c6ff; margin-bottom: 15px;">Qo'shimcha bo'limchalar
+                        </h4>
+                        <div id="extra-metrics-list"></div>
+                    </div>
+
+                    <button type="button" class="control-btn" onclick="addNewMetricField()"
+                        style="width: 100%; margin-top: 10px; background: rgba(0, 198, 255, 0.1); border: 1px dashed #00c6ff; color: #00c6ff;">
+                        <i class="fas fa-plus"></i> Yangi bo'limcha qo'shish
+                    </button>
+
+                    <div class="form-actions"
+                        style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; background: rgba(20, 30, 40, 0.95); padding-top: 10px;">
+                        <button type="button" class="control-btn" onclick="closeSmartMonitoringEdit()"
+                            style="background: #95a5a6;">Bekor
+                            qilish</button>
+                        <button type="submit" class="control-btn blue"><i class="fas fa-save"></i>
+                            Saqlash</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="history-modal" class="integration-window" style="z-index: 10005;">
+        <div class="window-header">
+            <h2><i class="fas fa-history"></i> Ish Rejalari Tarixi</h2>
+            <button class="action-btn delete"
+                onclick="document.getElementById('history-modal').classList.remove('active'); setTimeout(() => document.getElementById('history-modal').style.display='none', 300);"><i
+                    class="fas fa-times"></i></button>
+        </div>
+        <div class="editor-body" style="background: #1e272e; color: white;">
+            <div id="history-modal-content">
+                <div class="history-date-list" id="historyDateList">
+                    <!-- Dates will be loaded here -->
+                </div>
+                <div class="history-details" id="historyDetails">
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.3);">
+                        <i class="fas fa-calendar-day" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                        <p>Sanani tanlang</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Application Modules (Correct Loading Order) -->
+    <script src="js/masofaConfig.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/timesheet.js"></script>
+    <script src="js/attendance.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/metrology.js"></script>
+    <script src="js/defectoscope.js"></script>
+    <script src="js/hr.js"></script>
+    <script src="js/pu74.js"></script>
+    <script src="js/pu80.js"></script>
+    <!-- accounting.js materials.js dan OLDIN yuklanishi shart (dependency) -->
+    <script src="js/accounting.js"></script>
+    <script src="js/materials.js"></script>
+    <script src="js/safety.js"></script>
+    <script src="js/tnu19.js"></script>
+    <script src="js/tnu20.js"></script>
+    <script src="js/technical_maintenance.js"></script>
+    <script src="js/mexanika.js"></script>
+    <script src="js/fileApproval.js"></script>
+    <script src="js/marketplace.js"></script>
+    <script src="js/technical_training.js"></script>
+    <script src="js/incoming.js"></script>
+    <script src="js/fileApproval.js"></script>
+    <script src="js/ai-assistant.js"></script>
+    <script src="js/pchMap.js"></script>
+    <script src="js/landing.js"></script>
+
+    <script>
+        // Global Error Handling & Video Fallback
+        document.addEventListener('DOMContentLoaded', function () {
+            const loginVideo = document.getElementById('loginVideoBackground');
+            if (loginVideo) {
+                loginVideo.addEventListener('error', function () {
+                    console.warn('Login video failed to load. Falling back to image.');
+                    loginVideo.style.display = 'none';
+                }, true);
+            }
+
+            // 0. Check protocol (Only if not Electron)
+            if (window.location.protocol === 'file:' && !window.CONFIG.IS_ELECTRON) {
+                const warning = document.createElement('div');
+                warning.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:999999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; text-align:center; padding:20px; font-family:sans-serif;';
+                warning.innerHTML = `
+                    <h1 style="color:#ff4757; margin-bottom:20px;">DIQQAT! XATOLIK ANIQLANDI</h1>
+                    <p style="font-size:1.2rem; margin-bottom:30px;">Siz tizimni noto'g'ri usulda ochdingiz (fayl sifatida).<br>Tizim ma'lumotlar bazasi va barcha funksiyalar ishlashi uchun server orqali kirish shart!</p>
+                    <div style="background:#2f3542; padding:20px; border-radius:10px; border-left:5px solid #00c6ff; margin-bottom:30px; text-align:left;">
+                        <p style="margin-bottom:10px;"><strong>To'g'ri kirish uchun:</strong></p>
+                        <ol>
+                            <li>Brauzeringizda yangi oyna (tab) oching</li>
+                            <li>Manzil satriga <code>localhost:5000</code> deb yozing</li>
+                        </ol>
+                    </div>
+                    <a href="http://localhost:5000" style="background:#00c6ff; color:white; padding:15px 40px; border-radius:50px; text-decoration:none; font-weight:bold; font-size:1.1rem; box-shadow:0 10px 20px rgba(0,198,255,0.3);">http://localhost:5000 GA O'TISH</a>
+                `;
+                document.body.appendChild(warning);
+                return; // Stop further execution
+            }
+
+            // 1. Avval masofa tizimini ishga tushirish
+            if (typeof initMasofaSystem === 'function') {
+                initMasofaSystem();
+            }
+
+            // 2. Umumiy tizimni ishga tushirish
+            if (typeof initSmartSystem === 'function') {
+                initSmartSystem();
+            }
+
+            // 3. HR va TNU-19 ma'lumotlarini yuklash
+            (async () => {
+                if (typeof initHRData === 'function') {
+                    await initHRData();
+                }
+                if (typeof loadTNU19Records === 'function') {
+                    await loadTNU19Records();
+                }
+                console.log('✅ System data initialized');
+            })();
+        });
+    </script>
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(reg => {
+                    console.log('SW registered:', reg);
+                }).catch(err => {
+                    console.error('SW registration failed:', err);
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>

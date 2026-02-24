@@ -1,0 +1,169 @@
+/* Timesheet Modal Styling */
+.timesheet-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 15, 0.95);
+    z-index: 2000;
+    display: none;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+}
+
+.timesheet-modal.active {
+    display: flex;
+}
+
+.timesheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(0, 198, 255, 0.3);
+}
+
+.timesheet-title {
+    font-size: 1.5rem;
+    color: #00c6ff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.timesheet-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.ts-btn {
+    padding: 8px 15px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: 0.2s;
+}
+
+.ts-btn-primary {
+    background: rgba(0, 198, 255, 0.2);
+    border: 1px solid rgba(0, 198, 255, 0.5);
+    color: #00c6ff;
+}
+
+.ts-btn-primary:hover {
+    background: rgba(0, 198, 255, 0.4);
+}
+
+.ts-btn-success {
+    background: rgba(46, 204, 113, 0.2);
+    border: 1px solid rgba(46, 204, 113, 0.5);
+    color: #2ecc71;
+}
+
+.ts-btn-danger {
+    background: rgba(231, 76, 60, 0.2);
+    border: 1px solid rgba(231, 76, 60, 0.5);
+    color: #e74c3c;
+}
+
+/* Complex Table Container */
+.timesheet-content {
+    flex: 1;
+    overflow: auto;
+    background: rgba(20, 20, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.ts-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: white;
+    font-size: 0.8rem;
+    min-width: 1500px;
+    /* Force scroll for large columns */
+}
+
+.ts-table th,
+.ts-table td {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 5px;
+    text-align: center;
+}
+
+.ts-table thead th {
+    background: rgba(15, 23, 42, 0.95);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    font-weight: 600;
+}
+
+/* Sticky First Column (Names) */
+.ts-table td:first-child,
+.ts-table th:first-child {
+    position: sticky;
+    left: 0;
+    background: rgba(15, 23, 42, 0.95);
+    z-index: 20;
+    text-align: left;
+    min-width: 200px;
+    border-right: 2px solid rgba(0, 198, 255, 0.5);
+}
+
+/* Cell Inputs */
+.ts-cell {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+    cursor: text;
+    transition: 0.2s;
+}
+
+.ts-cell:focus {
+    background: rgba(0, 198, 255, 0.2);
+    box-shadow: inset 0 0 5px #00c6ff;
+}
+
+.ts-cell[data-val="8"] {
+    color: #2ecc71;
+}
+
+.ts-cell[data-val="12"] {
+    color: #f1c40f;
+}
+
+.ts-cell[data-val="0"] {
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.1);
+}
+
+.ts-cell[data-val="O"] {
+    color: #9b59b6;
+    font-weight: bold;
+}
+
+/* Otpusk */
+.ts-cell[data-val="K"] {
+    color: #e67e22;
+    font-weight: bold;
+}
+
+/* Kasallik */
+
+/* Totals Column */
+.ts-total {
+    font-weight: bold;
+    color: #00c6ff;
+}

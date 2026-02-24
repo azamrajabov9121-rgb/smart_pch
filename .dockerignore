@@ -1,0 +1,33 @@
+# Docker build uchun kerak bo'lmagan fayllarni istisno qilish
+
+# Node modules (npm install bilan o'rnatiladi)
+node_modules/
+
+# Electron build chiqishlari
+dist/
+out/
+
+# Ma'lumotlar bazasi (Render.com persistent disk ishlatadi)
+server/smart_pch.db
+*.db
+
+# Maxfiy fayllar
+.env
+server/.env
+.env.*
+
+# Python fayllar
+*.py
+__pycache__/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Electron fayllar (server deployment uchun kerak emas)
+main.js
+preload.js

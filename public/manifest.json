@@ -1,0 +1,21 @@
+{
+    "name": "Smart PCH Dispatcher System",
+    "short_name": "SmartPCH",
+    "description": "O'zbekiston Temir Yo'llari uchun dispetcherlik tizimi",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#1e293b",
+    "icons": [
+        {
+            "src": "img/logo.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "img/logo.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
