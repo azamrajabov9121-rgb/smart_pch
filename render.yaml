@@ -12,7 +12,3 @@ services:
         generateValue: true
       - key: PORT
         value: 5000
-    disk:
-      name: smart-pch-db
-      mountPath: /opt/render/project/src/server/data
-      sizeGB: 1
