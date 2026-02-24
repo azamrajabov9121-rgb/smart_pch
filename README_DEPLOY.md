@@ -16,33 +16,49 @@ Serverlar loyihani GitHub orqali qabul qiladi.
    git push -u origin main
    ```
 
-## 2. Render.com orqali bepul joylashtiring
-Render.com loyihangizni avtomatik ravishda GitHub-dan olib, bir necha daqiqada internetga chiqaradi.
+## 2. Variant A: Render.com orqali (Oson va Bepul boshlanishiga)
+*Qo'llanma yuqorida keltirilgan.*
 
-1. [Render.com](https://render.com/) saytiga kiring va GitHub orqali kiring.
-2. **"New +"** -> **"Web Service"** tugmasini bosing.
-3. GitHub-dagi o'sha loyihangizni tanlang.
-4. Quyidagi sozlamalarni kiriting:
-   - **Language:** `Node`
-   - **Build Command:** `npm install`
-   - **Start Command:** `npm start`
-5. **Advanced** bo'limida **"Add Environment Variable"** ni tanlang:
-   - `JWT_SECRET`: (o'zingiz xohlagan murakkab kod)
-   - `NODE_ENV`: `production`
-6. **"Deploy Web Service"** tugmasini bosing.
+## 3. Variant B: Eskiz.uz (VPS) orqali (Professional va Tezkor) - TAVSIYA ETILADI
+Bu usul O'zbekiston ichida eng tez ishlashini ta'minlaydi.
 
-## 3. SQLite ma'lumotlar bazasini saqlab qolish (Muhim!)
-Render-da bepul versiyada disk har o'chib-yonadi. Ma'lumotlar yo'qolmasligi uchun "Disk" (Storage) ulab qo'yishingiz kerak (Render dashboard-da "Disks" bo'limida):
-- **Mount Path:** `/opt/render/project/src/server/data`
-- **Size:** `1GB`
+### Qadamlar:
+1. **Eskiz.uz-dan VPS oling** (Ubuntu 22.04 OS tanlang).
+2. **Serverga kiring** (Menda `Putty` yoki terminal orqali):
+   ```bash
+   ssh root@SERVER_IP_MANZILI
+   ```
+3. **Avtomatik skriptni ishga tushiring:**
+   Men sizga bergan `scripts/setup_vps.sh` fayli ichidagi kodni nusxalab, serverda ishlating yoki loyihani yuklab olib, quyidagicha ishga tushiring:
+   ```bash
+   chmod +x scripts/setup_vps.sh
+   ./scripts/setup_vps.sh
+   ```
+4. **Loyihani GitHub-dan nusxalab oling:**
+   ```bash
+   cd /var/www/smartpch
+   git clone https://github.com/SIZING_USER/REPO .
+   npm install
+   ```
+5. **Dasturni yoqing:**
+   ```bash
+   pm2 start ecosystem.config.js --env production
+   pm2 save
+   ```
 
-Ushbu amallardan so'ng loyihangiz `https://smart-pch.onrender.com` kabi manzilga ega bo'ladi.
+### 🔐 SSL (HTTPS) o'rnatish (APK uchun shart!):
+Domen ulanganidan keyin serverda quyidagi buyruqni bosing:
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d smartpch.uz
+```
 
-## 4. O'zingizning domeningizni ulash (`smartpch.uz`)
-Agar sizda `smartpch.uz` domeni bo'lsa:
-1. Render dashboard -> **Settings** -> **Custom Domains**.
-2. Domen nomingizni yozing.
-3. Sizga berilgan CNAME va A recordlarini domeningiz boshqaruv panelida (masalan, `regis.uz` yoki `cpanel`-da) o'rnating.
+---
+**Tabriklayman!** Sizning tizimingiz endi:
+- 🌐 **Web:** https://smartpch.uz
+- 💻 **Desktop:** EXE (dist papkasida)
+- 📱 **Mobile:** APK (PWABuilder orqali)
+ko'rinishida to'liq ishlaydi!
 
 ---
 
