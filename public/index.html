@@ -26,13 +26,12 @@
     <!-- Core External Libraries (Only Once) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- XLSX yangi versiyasi (0.20.3) body oxirida yuklanadi -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <!-- PDF Generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- html2pdf body oxirida yuklanadi (dublikat oldini olish) -->
 
     <!-- Editors & PDF/Docx -->
     <!-- TinyMCE Editor (API key yo'q holda cheklangan rejimda ishlaydi) -->
@@ -49,37 +48,318 @@
     <script src='https://cdn.jsdelivr.net/npm/luckysheet/dist/luckysheet.umd.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/luckyexcel/dist/luckyexcel.umd.js"></script>
 
-    <!-- Internal Styles -->
+    <!-- Core Modern Styles -->
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/windows.css">
+    <link rel="stylesheet" href="css/responsive.css">
+
+    <!-- Module Specific Styles -->
     <link rel="stylesheet" href="css/ai-assistant.css">
     <link rel="stylesheet" href="css/timesheet.css">
     <link rel="stylesheet" href="css/pu74.css">
     <link rel="stylesheet" href="css/mexanika.css">
     <link rel="stylesheet" href="css/landing.css">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <!-- PREMIUM GOLD THEME - REFINED OBSIDIAN & GOLD -->
+    <style>
+        /* === PREMIUM METALLIC GREY & GOLD DESIGN === */
+        :root {
+            /* Futuristic Palette - Metallic Grey & Premium Gold */
+            --bg-deep: #020617;
+            --bg-obsidian: #1e293b;
+            /* Metallic Slate 800 */
+            --primary-gold: #94a3b8;
+            /* Metallic Grey / Steel */
+            --accent-gold: #ffd700;
+            /* Pure Gold */
+            --neon-gold: #f59e0b;
+            /* Amber Glow */
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+
+            /* Metallic Glassmorphism */
+            --glass-bg: rgba(30, 41, 59, 0.75);
+            --glass-border: rgba(212, 175, 55, 0.35);
+            --glass-blur: blur(20px);
+            --glass-shadow: 0 15px 45px rgba(0, 0, 0, 0.6);
+
+            /* Gradients & Glows */
+            --gold-gradient: linear-gradient(135deg, #d4af37 0%, #ffd700 50%, #b4941f 100%);
+            --metallic-gradient: linear-gradient(135deg, #475569 0%, #94a3b8 50%, #475569 100%);
+            --glow-gold: 0 0 25px rgba(212, 175, 55, 0.4);
+            --premium-transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(212, 175, 55, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: 'Inter', 'Exo 2', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* WOW Typography */
+        h1,
+        h2,
+        h3,
+        .main-title,
+        .hero-title,
+        .login-title,
+        .premium-text {
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800 !important;
+            letter-spacing: 1px;
+            filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3));
+        }
+
+        /* Sidebar & Navbar - Obsidian Glass Style */
+        .sidebar,
+        .navbar {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-blur) !important;
+            border-bottom: 1.5px solid var(--glass-border) !important;
+            box-shadow: var(--glass-shadow) !important;
+        }
+
+        .sidebar {
+            border-right: 1.5px solid var(--glass-border) !important;
+            border-bottom: none !important;
+        }
+
+        /* Neon Gold Icons for core structure only */
+        .sidebar i,
+        .navbar i,
+        .sidebar .fas,
+        .navbar .fas {
+            color: var(--accent-gold);
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+            transition: var(--premium-transition);
+        }
+
+        /* Menu Visibility & Hover */
+        .sidebar-menu li {
+            color: var(--text-dim) !important;
+            font-weight: 600 !important;
+            margin: 8px 15px !important;
+            border-radius: 12px !important;
+            transition: var(--premium-transition) !important;
+        }
+
+        .sidebar-menu li:hover {
+            background: rgba(212, 175, 55, 0.1) !important;
+            color: var(--accent-gold) !important;
+            transform: translateX(8px);
+        }
+
+        .sidebar-menu li.active {
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.2), transparent) !important;
+            color: var(--accent-gold) !important;
+            border-left: 4px solid var(--accent-gold) !important;
+            box-shadow: inset 10px 0 20px rgba(212, 175, 55, 0.05);
+        }
+
+        /* WOW Buttons */
+        .btn-primary,
+        .login-btn,
+        .action-btn {
+            background: var(--gold-gradient) !important;
+            color: #000 !important;
+            /* High contrast on gold */
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border: 1px solid var(--accent-gold) !important;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4) !important;
+            border-radius: 12px !important;
+            transition: var(--premium-transition) !important;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.6) !important;
+            filter: brightness(1.1);
+        }
+
+        /* Premium Panels & Containers */
+        .content-card,
+        .stat-card,
+        .department-window,
+        .login-box {
+            background: rgba(30, 41, 59, 0.5) !important;
+            backdrop-filter: var(--glass-blur) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 20px !important;
+            box-shadow: var(--glass-shadow) !important;
+        }
+
+        .stat-card h2,
+        .stat-card .value {
+            color: var(--accent-gold) !important;
+            font-size: 2.5rem;
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+        /* Custom Premium Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-gold);
+            border-radius: 10px;
+        }
+
+        /* Forms & Inputs — Global qoramtir tema */
+        input,
+        select,
+        textarea {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border: 1px solid var(--glass-border) !important;
+            color: #fff !important;
+            border-radius: 10px !important;
+        }
+
+        input:focus {
+            border-color: var(--accent-gold) !important;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2) !important;
+        }
+
+        /* ===== M-29 DALOLATNOMA FIX ===== */
+        /* Global qoramtir temadan M-29 hujjat inputlarini himoyalash */
+        /* Yuqori ustuvorlik (specificity) bilan yozish — barcha !important larni yengib o'tadi */
+        div#m29-printable-area input[type="text"],
+        div#m29-printable-area input[type="number"],
+        div#m29-printable-area input:not([type]),
+        div#m29-printable-area select,
+        div#m29-printable-area textarea {
+            background: transparent !important;
+            background-color: transparent !important;
+            color: black !important;
+            -webkit-text-fill-color: black !important;
+            border: none !important;
+            border-bottom: 1px solid black !important;
+            border-radius: 0 !important;
+            outline: none !important;
+            box-shadow: none !important;
+            font-family: 'Times New Roman', serif !important;
+            font-size: inherit !important;
+            padding: 2px 5px !important;
+            cursor: text !important;
+            pointer-events: auto !important;
+            position: relative !important;
+            z-index: 1 !important;
+        }
+
+        div#m29-printable-area input[type="text"]:focus,
+        div#m29-printable-area input[type="number"]:focus,
+        div#m29-printable-area input:not([type]):focus {
+            border: none !important;
+            border-bottom: 2px solid #2563eb !important;
+            box-shadow: none !important;
+            background: rgba(37, 99, 235, 0.05) !important;
+        }
+
+        div#m29-printable-area input::placeholder {
+            color: #aaa !important;
+            -webkit-text-fill-color: #aaa !important;
+            font-style: italic !important;
+        }
+
+        .sub-title {
+            color: var(--text-dim) !important;
+        }
+
+        /* Fix for headers gradient breaking icons */
+        h1 i,
+        h2 i,
+        h3 i,
+        .main-title i,
+        .hero-title i,
+        .login-title i,
+        .premium-text i {
+            -webkit-text-fill-color: currentColor !important;
+            background-clip: padding-box !important;
+        }
+
+        /* GLOBAL ICON FIX - Prevents icons from disappearing due to gradient/font inheritance */
+        i.fas,
+        i.far,
+        i.fab,
+        .fas,
+        .far,
+        .fab {
+            font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", sans-serif !important;
+            -webkit-text-fill-color: initial !important;
+            background-clip: padding-box !important;
+            font-style: normal !important;
+        }
+
+        .fas {
+            font-weight: 900 !important;
+        }
+
+        .far {
+            font-weight: 400 !important;
+        }
+    </style>
 </head>
 
 <body>
     <!-- NEW: PU-74 Logic (loaded at bottom) -->
-    <!-- Snow Animation -->
-    <div class="snow-container">
-        <div class="snowflake"></div>
-        <div class="snowflake"></div>
-        <div class="snowflake"></div>
-        <div class="snowflake"></div>
-        <div class="snowflake"></div>
-        <div class="snowflake"></div>
-        <div class="snowflake"></div>
-        <div class="snowflake"></div>
-        <div class="snowflake"></div>
-        <div class="snowflake"></div>
+    <!-- Mavsumiy Animatsiya (avtomatik: qor-qish, gul-bahor) -->
+    <div class="seasonal-container" id="seasonalContainer">
+        <!-- JavaScript orqali mavsumga qarab to'ldiriladi -->
     </div>
+    <script>
+        (function () {
+            const month = new Date().getMonth(); // 0=Yanvar, 11=Dekabr
+            const container = document.getElementById('seasonalContainer');
+            if (!container) return;
+
+            if (month >= 11 || month <= 1) {
+                // Qish: Dekabr, Yanvar, Fevral — Qor
+                container.className = 'snow-container';
+                for (let i = 0; i < 10; i++) {
+                    const flake = document.createElement('div');
+                    flake.className = 'snowflake';
+                    container.appendChild(flake);
+                }
+            } else if (month >= 2 && month <= 4) {
+                // Bahor: Mart, Aprel, May — Sakura gullari
+                container.className = 'snow-container';
+                for (let i = 0; i < 8; i++) {
+                    const petal = document.createElement('div');
+                    petal.className = 'snowflake';
+                    petal.style.cssText = 'background: linear-gradient(135deg, #ffb7c5, #ff69b4); border-radius: 50% 0 50% 50%; width: ' + (6 + Math.random() * 6) + 'px; height: ' + (6 + Math.random() * 6) + 'px; opacity: ' + (0.4 + Math.random() * 0.5);
+                    container.appendChild(petal);
+                }
+            }
+            // Yoz va Kuz — animatsiya yo'q
+        })();
+    </script>
 
     <!-- Landing Page Section -->
     <div id="landingPage" class="landing-page">
         <header class="landing-header">
             <div class="logo-box" style="margin-bottom: 30px;">
-                <img src="img/logo.png" alt="Logo" style="width: 120px; filter: drop-shadow(0 0 20px var(--primary));">
+                <img src="img/logo.png" alt="Logo"
+                    style="width: 140px; filter: drop-shadow(0 0 30px var(--accent-gold));">
             </div>
             <h1 class="hero-title">SMART PCH</h1>
             <p class="hero-subtitle">O'zbekiston Temir Yo'llari uchun intellektual dispetcherlik va boshqaruv
@@ -201,7 +481,7 @@
     </div>
 
     <!-- Asosiy tizim -->
-    <div class="main-system" id="mainSystem">
+    <div class="main-system" id="mainSystem" style="display: none;">
         <div class="rail-top"></div>
 
         <!-- Navbar -->
@@ -221,49 +501,62 @@
                 </div>
             </div>
             <div class="user-info">
-                <button class="nav-extra-btn" id="backupDataBtn" title="Ma'lumotlarni Arxivlash">
-                    <i class="fas fa-file-archive"></i>
-                </button>
-                <button class="admin-nav-btn" id="openAdminPanelBtn" title="Admin Panel" style="display: none;">
-                    <i class="fas fa-cogs"></i>
-                </button>
-                <button class="map-nav-btn" id="openTrainMapBtn" title="Poyezdlar Xaritasi" style="display: none;">
-                    <i class="fas fa-map-marked-alt"></i>
-                </button>
-                <!-- PCH Stansiyalar Xaritasi -->
-                <button id="openPCHMapBtn" onclick="window.openPCHMap && window.openPCHMap()"
-                    title="PCh Stansiyalar Xaritasi" style="background: rgba(0,198,255,0.15); border: 1px solid rgba(0,198,255,0.4);
-                    width: 40px; height: 40px; border-radius: 50%; color: #00c6ff;
-                    cursor: pointer; transition: all 0.3s; margin-left: 5px;
-                    display: inline-flex; align-items: center; justify-content: center;
-                    font-size: 1rem;" onmouseover="this.style.background='rgba(0,198,255,0.3)'"
-                    onmouseout="this.style.background='rgba(0,198,255,0.15)'">
-                    <i class="fas fa-train"></i>
-                </button>
-                <button id="openAttendanceBtn"
-                    onclick="window.openGeneralFaceIDAttendance && window.openGeneralFaceIDAttendance()"
-                    title="Face ID Davomat" style="background: rgba(35, 134, 54, 0.2); border: 1px solid rgba(35, 134, 54, 0.5); 
-                    width: 40px; height: 40px; border-radius: 50%; color: #238636;
-                    cursor: pointer; transition: all 0.3s; margin-left: 10px;
-                    display: inline-flex; align-items: center; justify-content: center;
-                    font-size: 1.1rem;" onmouseover="this.style.background='rgba(35, 134, 54, 0.3)'"
-                    onmouseout="this.style.background='rgba(35, 134, 54, 0.2)'">
-                    <i class="fas fa-user-check"></i>
-                </button>
-                <button class="video-chat-nav-btn" id="openVideoChatBtn" title="Video Chat">
-                    <i class="fas fa-video"></i>
-                </button>
-                <button class="defectoscope-nav-btn" id="openDefectoscopeBtn" title="Defektaskop Nazorati"
-                    style="background: rgba(243, 156, 18, 0.2); border: 1px solid rgba(243, 156, 18, 0.5); width: 40px; height: 40px; border-radius: 50%; color: #f39c12; cursor: pointer; transition: all 0.3s; margin-left: 10px; display: none; align-items: center; justify-content: center;">
-                    <i class="fas fa-search-location"></i>
-                </button>
-                <button class="integration-nav-btn" id="openDispatcherIntegrationBtn" title="Dispetcher Tizimlari"
-                    style="background: rgba(155, 89, 182, 0.2); border: 1px solid rgba(155, 89, 182, 0.5); width: 40px; height: 40px; border-radius: 50%; color: white; cursor: pointer; transition: all 0.3s; margin-left: 10px; display: none; align-items: center; justify-content: center;">
-                    <i class="fas fa-network-wired"></i>
-                </button>
+                <!-- Collapsible Tools Section -->
+                <div class="nav-tools-wrapper">
+                    <button class="nav-tools-toggle" id="navToolsToggle" type="button">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span>XIZMATLAR</span>
+                        <i class="fas fa-chevron-down toggle-arrow"></i>
+                    </button>
+                    <div class="nav-tools-container" id="navToolsContainer">
+                        <div class="tools-list">
+                            <button class="tool-list-item" id="backupDataBtn">
+                                <i class="fas fa-file-archive"></i>
+                                <span>Ma'lumotlarni Arxivlash</span>
+                            </button>
+                            <button class="tool-list-item admin-nav-btn" id="openAdminPanelBtn" style="display: none;">
+                                <i class="fas fa-cogs"></i>
+                                <span>Admin Panel</span>
+                            </button>
+                            <button class="tool-list-item admin-nav-btn" id="openAdminVisaBtn" style="display: none;"
+                                onclick="window.openAdminMurojaatWindow && window.openAdminMurojaatWindow()">
+                                <i class="fas fa-file-signature" style="color: #f39c12;"></i>
+                                <span>Rahbar Vizasi (Tasdiqlash)</span>
+                            </button>
+                            <button class="tool-list-item map-nav-btn" id="openTrainMapBtn" style="display: none;">
+                                <i class="fas fa-map-marked-alt"></i>
+                                <span>Poyezdlar Xaritasi</span>
+                            </button>
+                            <button class="tool-list-item" id="openPCHMapBtn"
+                                onclick="window.openPCHMap && window.openPCHMap()">
+                                <i class="fas fa-train" style="color: #00c6ff;"></i>
+                                <span>PCh Xaritasi</span>
+                            </button>
+                            <button class="tool-list-item" id="openAttendanceBtn"
+                                onclick="window.openGeneralFaceIDAttendance && window.openGeneralFaceIDAttendance()">
+                                <i class="fas fa-user-check" style="color: #238636;"></i>
+                                <span>Face ID Davomat</span>
+                            </button>
+                            <button class="tool-list-item video-chat-nav-btn" id="openVideoChatBtn">
+                                <i class="fas fa-video"></i>
+                                <span>Smart Konferensiya Aloqasi</span>
+                            </button>
+                            <button class="tool-list-item defectoscope-nav-btn" id="openDefectoscopeBtn"
+                                style="display: none;">
+                                <i class="fas fa-search-location" style="color: #f39c12;"></i>
+                                <span>Defektaskop Nazorati</span>
+                            </button>
+                            <button class="tool-list-item integration-nav-btn" id="openDispatcherIntegrationBtn"
+                                style="display: none;">
+                                <i class="fas fa-network-wired"></i>
+                                <span>Dispetcher Integratsiyasi</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div id="system-clock"
-                    style="color: white; font-weight: 600; font-family: 'Exo 2', sans-serif; display: flex; align-items: center; gap: 8px; margin-right: 15px; background: rgba(0, 198, 255, 0.1); padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(0, 198, 255, 0.2);">
-                    <i class="fas fa-clock" style="color: #00c6ff;"></i>
+                    style="color: var(--text-main); font-weight: 600; font-family: 'Exo 2', sans-serif; display: flex; align-items: center; gap: 8px; margin-right: 15px; background: rgba(212, 175, 55, 0.1); padding: 5px 15px; border-radius: 20px; border: 1px solid var(--glass-border);">
+                    <i class="fas fa-clock" style="color: var(--accent-gold);"></i>
                     <span id="nav-clock-time">00:00:00</span>
                 </div>
                 <div class="user-avatar" id="userAvatar">A</div>
@@ -280,15 +573,15 @@
                 <div class="sidebar-header" id="sidebarHeader"
                     style="cursor: pointer; display: flex; flex-direction: column; gap: 6px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; font-size: 1rem;">BO'LIMLAR BOSHQARMASI</h3>
-                        <i class="fas fa-chevron-down transition-icon" id="sidebarToggleIcon"></i>
+                        <h3 style="margin: 0; font-size: 0.95rem; padding-right: 50px;">BO'LIMLAR BOSHQARMASI</h3>
                     </div>
                     <!-- Masofa ko'rsatgich -->
-                    <div id="sidebar-masofa-badge" style="font-size: 0.7rem; color: rgba(255,255,255,0.5);
+                    <div id="sidebar-masofa-badge"
+                        style="font-size: 0.7rem; color: var(--text-dim);
                         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex;
-                        align-items: center; gap: 5px;">
-                        <i class="fas fa-train" style="color: #00c6ff;"></i>
-                        <span class="masofa-short-name" style="color: rgba(255,255,255,0.6);">---</span>
+                        align-items: center; gap: 5px; border: 1px solid var(--glass-border); padding: 4px; border-radius: 6px;">
+                        <i class="fas fa-train" style="color: var(--accent-gold);"></i>
+                        <span class="masofa-short-name" style="color: var(--text-main);">---</span>
                         <button onclick="resetMasofaSetup ? resetMasofaSetup() : null"
                             title="Masofani o'zgartirish (admin)" style="margin-left: auto; background: none; border: none; color: rgba(255,255,255,0.3);
                             cursor: pointer; font-size: 0.7rem; padding: 0;" id="changeMasofaBtn">
@@ -296,100 +589,24 @@
                         </button>
                     </div>
                 </div>
+                <!-- Floating Toggle for Sidebar - Positioned at Top -->
+                <button class="sidebar-floating-toggle top-toggle" id="sidebarFloatingToggle"
+                    onclick="document.getElementById('sidebarHeader').click()" title="Menyuni ochish/yopish">
+                    <i class="fas fa-bars"></i>
+                </button>
                 <ul class="sidebar-menu" id="sidebarMenu">
                     <!-- JavaScript orqali yaratiladi -->
                 </ul>
             </aside>
 
             <!-- Content -->
-            <main class="content login-background" id="mainContent">
+            <main class="content" id="mainContent">
                 <!-- Bo'limlar JavaScript orqali yaratiladi -->
             </main>
         </div>
 
         <!-- Video Chat Panel -->
-        <aside class="video-chat-panel hidden" id="videoChatPanel">
-            <div class="video-chat-header">
-                <h3><i class="fas fa-video"></i> Video Qo'ng'iroq</h3>
-                <button class="video-chat-toggle" id="videoChatToggle" title="Yashirish/Ko'rsatish">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            </div>
 
-            <div class="video-chat-content">
-                <!-- Video oyna -->
-                <div class="video-preview-container">
-                    <video id="localVideo" autoplay muted playsinline style="display: none;"></video>
-                    <div class="video-preview-placeholder" id="videoPlaceholder">
-                        <i class="fas fa-video-slash"></i>
-                        <span>Kamera o'chirilgan</span>
-                    </div>
-                </div>
-
-                <!-- Video boshqaruv tugmalari -->
-                <div class="video-controls">
-                    <button class="video-control-btn" id="toggleCameraBtn" title="Kamerani yoqish/o'chirish">
-                        <i class="fas fa-video-slash"></i>
-                    </button>
-                    <button class="video-control-btn" id="toggleMicBtn" title="Mikrofonni yoqish/o'chirish">
-                        <i class="fas fa-microphone-slash"></i>
-                    </button>
-                    <button class="video-control-btn" id="shareScreenBtn" title="Ekranni ulashish">
-                        <i class="fas fa-desktop"></i>
-                    </button>
-                    <button class="video-control-btn danger" id="endCallBtn" title="Qo'ng'iroqni tugatish">
-                        <i class="fas fa-phone-slash"></i>
-                    </button>
-                </div>
-
-                <!-- Ishtirokchilar ro'yxati -->
-                <div class="participants-list">
-                    <div class="participants-header">
-                        <span><i class="fas fa-users"></i> Ishtirokchilar</span>
-                        <span class="participant-count" id="participantCount">3</span>
-                    </div>
-
-                    <div class="participant-item">
-                        <div class="participant-avatar">A</div>
-                        <div class="participant-info">
-                            <div class="participant-name">Administrator</div>
-                            <div class="participant-status">
-                                <span class="online-dot"></span> Online
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="participant-item">
-                        <div class="participant-avatar">T</div>
-                        <div class="participant-info">
-                            <div class="participant-name">Turobov H.H</div>
-                            <div class="participant-status">
-                                <span class="online-dot"></span> Online
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="participant-item">
-                        <div class="participant-avatar">S</div>
-                        <div class="participant-info">
-                            <div class="participant-name">Sattorov M.M</div>
-                            <div class="participant-status">
-                                <span class="online-dot"></span> Online
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="video-chat-actions">
-                <button class="video-action-btn" id="startCallBtn">
-                    <i class="fas fa-phone"></i> Qo'ng'iroq boshlash
-                </button>
-                <button class="video-action-btn secondary" id="inviteBtn">
-                    <i class="fas fa-user-plus"></i> Taklif qilish
-                </button>
-            </div>
-        </aside>
 
         <!-- Admin Panel Modal -->
         <div class="admin-panel-modal" id="adminPanelModal">
@@ -419,15 +636,19 @@
                     <button class="admin-tab-btn" data-admin-tab="users">
                         <i class="fas fa-user-shield"></i> Foydalanuvchilar
                     </button>
+                    <button class="admin-tab-btn" data-admin-tab="audit">
+                        <i class="fas fa-history"></i> Audit (Tarix)
+                    </button>
                 </div>
                 <div class="admin-panel-body">
                     <!-- Grafiklar Tab -->
                     <div class="admin-tab-content active" id="admin-charts-tab">
-                        <h3 style="color: #ffd700; margin-bottom: 1rem;"><i class="fas fa-chart-bar"></i> Raqobat
+                        <h3 style="color: var(--accent-gold); margin-bottom: 1rem;"><i class="fas fa-chart-bar"></i>
+                            Raqobat
                             Grafigi Sozlamalari</h3>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
                             <div class="content-card">
-                                <h4 style="color: #ffd700; margin-bottom: 1rem;">Bo'linmalar Ballari</h4>
+                                <h4 style="color: var(--accent-gold); margin-bottom: 1rem;">Bo'linmalar Ballari</h4>
                                 <div id="adminBolinmaScores">
                                     <!-- JavaScript orqali to'ldiriladi -->
                                 </div>
@@ -450,7 +671,8 @@
 
                     <!-- Poyezdlar Tab -->
                     <div class="admin-tab-content" id="admin-trains-tab">
-                        <h3 style="color: #ffd700; margin-bottom: 1rem;"><i class="fas fa-train"></i> Poyezdlar Jadvali
+                        <h3 style="color: var(--accent-gold); margin-bottom: 1rem;"><i class="fas fa-train"></i>
+                            Poyezdlar Jadvali
                         </h3>
                         <div
                             style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
@@ -562,6 +784,66 @@
                             Joylashuvi</h3>
                         <div id="adminBolinmalarList"></div>
                     </div>
+
+                    <!-- Foydalanuvchilar Tab -->
+                    <div class="admin-tab-content" id="admin-users-tab">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="color: #ffd700; margin: 0;"><i class="fas fa-users-cog"></i> Tizim
+                                Foydalanuvchilari</h3>
+                            <button class="control-btn blue" onclick="openAddUserModal()">
+                                <i class="fas fa-user-plus"></i> Yangi foydalanuvchi
+                            </button>
+                        </div>
+                        <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>F.I.SH (Nomi)</th>
+                                        <th>Login</th>
+                                        <th>Rol</th>
+                                        <th>Bo'limlar</th>
+                                        <th>Amallar</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-users-list">
+                                    <!-- JS orqali to'ldiriladi -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Audit Tab -->
+                    <div class="admin-tab-content" id="admin-audit-tab">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="color: #ffd700; margin: 0;"><i class="fas fa-history"></i> Tizim xavfsizlik
+                                jurnali</h3>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="audit-search" placeholder="Qidiruv..."
+                                    style="padding: 8px; border-radius: 5px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                                <button class="control-btn" onclick="loadAuditLogs()"><i
+                                        class="fas fa-sync"></i></button>
+                            </div>
+                        </div>
+                        <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Sana/Vaqt</th>
+                                        <th>Foydalanuvchi</th>
+                                        <th>Amal</th>
+                                        <th>Obyekt</th>
+                                        <th>Tafsilot</th>
+                                        <th>IP Manzil</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-audit-list">
+                                    <!-- JS orqali to'ldiriladi -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -625,6 +907,14 @@
                             <button class="control-btn pu74-btn"
                                 style="display: none; background: linear-gradient(135deg, #00c6ff, #0072ff); margin-left: 5px;">
                                 <i class="fas fa-clipboard-list"></i> PU-74
+                            </button>
+                            <button class="control-btn pu29-btn"
+                                style="display: none; background: linear-gradient(135deg, #e74c3c, #c0392b); margin-left: 5px;">
+                                <i class="fas fa-tools"></i> PU-29
+                            </button>
+                            <button class="control-btn pu80-btn"
+                                style="display: none; background: linear-gradient(135deg, #e67e22, #d35400); margin-left: 5px;">
+                                <i class="fas fa-wrench"></i> PU-80
                             </button>
                         </div>
 
@@ -1183,11 +1473,14 @@
             <div class="chat-msg bot">Assalomu alaykum! Men Smart Assistantman. PCh-Qorlitog' tizimi
                 bo'yicha savollaringiz bormi?</div>
         </div>
-        <div class="chat-input-area">
+        <div class="chat-input-area" style="display:flex; gap: 5px;">
             <input type="text" id="chat-input" class="chat-input" placeholder="Savolingizni yozing..."
                 onkeypress="if(event.key==='Enter') sendChat()">
+            <button class="action-btn" onclick="startSmartAssistantVoice()" id="smart-mic-btn"
+                style="border-radius:50%; width:40px; height:40px; justify-content:center; padding:0; background: linear-gradient(135deg, #f39c12, #e67e22); min-width: 40px; transition: all 0.3s;"
+                title="Ovozli yordamchi"><i class="fas fa-microphone"></i></button>
             <button class="action-btn view" onclick="sendChat()"
-                style="border-radius:50%; width:40px; height:40px; justify-content:center; padding:0;"><i
+                style="border-radius:50%; width:40px; height:40px; justify-content:center; padding:0; min-width: 40px;"><i
                     class="fas fa-paper-plane"></i></button>
         </div>
     </div>
@@ -1195,13 +1488,15 @@
 
 
     <!-- Text Editor Window (Word/Text) -->
-    <div id="text-editor-window" class="editor-window" style="width: 95%; height: 95%;">
-        <div class="ribbon-container">
-            <div class="ribbon-tabs">
-                <div class="ribbon-tab active" data-tab="word-home">Fayl</div>
-                <div class="ribbon-tab" data-tab="word-home">Asosiy</div>
-                <div class="ribbon-tab" data-tab="word-insert">Qo'shish</div>
-                <div class="ribbon-tab" data-tab="word-layout">Maket</div>
+    <div id="text-editor-window" class="editor-window"
+        style="width: 95%; height: 95%; border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); border: 1px solid rgba(31,38,135,0.1);">
+        <div class="ribbon-container" style="background: #f8fafc; border-bottom: 1px solid rgba(31,38,135,0.1);">
+            <div class="ribbon-tabs" style="background: #e0e7ff; padding: 0 20px;">
+                <div class="ribbon-tab active" data-tab="word-home"
+                    style="border-bottom: 3px solid #2563eb; color: #1e293b; font-weight: 800;">Fayl</div>
+                <div class="ribbon-tab" data-tab="word-home" style="color: #64748b;">Asosiy</div>
+                <div class="ribbon-tab" data-tab="word-insert" style="color: #64748b;">Qo'shish</div>
+                <div class="ribbon-tab" data-tab="word-layout" style="color: #64748b;">Maket</div>
             </div>
             <div class="ribbon-content">
                 <div class="ribbon-group">
@@ -1249,13 +1544,15 @@
     </div>
 
     <!-- Excel Editor Window -->
-    <div id="excel-editor-window" class="editor-window" style="width: 95%; height: 95%;">
-        <div class="ribbon-container">
-            <div class="ribbon-tabs excel-theme">
-                <div class="ribbon-tab active">Asosiy</div>
-                <div class="ribbon-tab">Qo'shish</div>
-                <div class="ribbon-tab">Formulalar</div>
-                <div class="ribbon-tab">Ma'lumotlar</div>
+    <div id="excel-editor-window" class="editor-window"
+        style="width: 95%; height: 95%; border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); border: 1px solid rgba(31,38,135,0.1);">
+        <div class="ribbon-container" style="background: #f8fafc; border-bottom: 1px solid rgba(31,38,135,0.1);">
+            <div class="ribbon-tabs excel-theme" style="background: #ecfdf5; padding: 0 20px;">
+                <div class="ribbon-tab active"
+                    style="border-bottom: 3px solid #059669; color: #064e3b; font-weight: 800;">Asosiy</div>
+                <div class="ribbon-tab" style="color: #64748b;">Qo'shish</div>
+                <div class="ribbon-tab" style="color: #64748b;">Formulalar</div>
+                <div class="ribbon-tab" style="color: #64748b;">Ma'lumotlar</div>
             </div>
             <div class="ribbon-content">
                 <div class="ribbon-group">
@@ -1321,47 +1618,83 @@
 
     <div id="monitoring-edit-modal">
         <div class="modal-window fade-in"
-            style="max-width: 600px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
-            <div class="modal-header">
-                <h2><i class="fas fa-edit"></i> Monitoringni Tahrirlash</h2>
-                <button class="close-modal" onclick="closeSmartMonitoringEdit()"><i class="fas fa-times"></i></button>
+            style="max-width: 600px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; background: #fff; border-radius: 24px; box-shadow: 0 20px 60px rgba(31, 38, 135, 0.15); border: 1px solid rgba(212, 175, 55, 0.2); overflow: hidden;">
+            <div class="modal-header"
+                style="background: linear-gradient(90deg, #f8fafc 0%, #e0e7ff 100%); padding: 25px 30px; border-bottom: 1px solid rgba(37, 99, 235, 0.1); display: flex; justify-content: space-between; align-items: center;">
+                <h2
+                    style="margin: 0; color: #1e293b; font-size: 1.4rem; font-weight: 800; display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-edit" style="color: #d4af37;"></i> Monitoringni Tahrirlash
+                </h2>
+                <button class="close-modal" onclick="closeSmartMonitoringEdit()"
+                    style="background: rgba(239, 68, 68, 0.05); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.1); width: 36px; height: 36px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;"><i
+                        class="fas fa-times"></i></button>
             </div>
-            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 20px;">
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 30px; background: #fff;">
                 <form id="monitoring-edit-form" onsubmit="saveSmartMonitoringData(event)">
                     <input type="hidden" id="edit-dept-id">
 
-                    <div id="dynamic-metrics-container">
+                    <div id="dynamic-metrics-container" style="display: flex; flex-direction: column; gap: 20px;">
                         <!-- Basic fields will be here -->
                         <div class="form-group">
-                            <label>Rels Harorati (°C)</label>
-                            <input type="number" id="edit-rail-temp" class="form-control" required>
+                            <label
+                                style="display: block; font-weight: 700; color: #475569; margin-bottom: 8px; font-size: 0.95rem;">Rels
+                                Harorati (°C)</label>
+                            <input type="number" id="edit-rail-temp" class="form-control" required
+                                style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(31, 38, 135, 0.1); background: #f8fafc; color: #1e293b; font-weight: 600; outline: none; transition: 0.2s;">
                         </div>
 
                         <div class="form-group">
-                            <label>Defektoskopiya (Nuqsonlar soni)</label>
-                            <input type="number" id="edit-defect-count" class="form-control" min="0" required>
+                            <label
+                                style="display: block; font-weight: 700; color: #475569; margin-bottom: 8px; font-size: 0.95rem;">Defektoskopiya
+                                (Nuqsonlar soni)</label>
+                            <input type="number" id="edit-defect-count" class="form-control" min="0" required
+                                style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(31, 38, 135, 0.1); background: #f8fafc; color: #1e293b; font-weight: 600; outline: none; transition: 0.2s;">
                         </div>
 
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="form-group">
+                                <label
+                                    style="display: block; font-weight: 700; color: #475569; margin-bottom: 8px; font-size: 0.95rem;">Yeyilish
+                                    V (mm)</label>
+                                <input type="number" step="0.1" id="edit-wear-v" class="form-control" value="0"
+                                    style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(31, 38, 135, 0.1); background: #f8fafc; color: #1e293b; font-weight: 600; outline: none; transition: 0.2s;">
+                            </div>
+                            <div class="form-group">
+                                <label
+                                    style="display: block; font-weight: 700; color: #475569; margin-bottom: 8px; font-size: 0.95rem;">Yeyilish
+                                    G (mm)</label>
+                                <input type="number" step="0.1" id="edit-wear-h" class="form-control" value="0"
+                                    style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(31, 38, 135, 0.1); background: #f8fafc; color: #1e293b; font-weight: 600; outline: none; transition: 0.2s;">
+                            </div>
+                        </div>
 
+                        <div class="form-group">
+                            <label
+                                style="display: block; font-weight: 700; color: #475569; margin-bottom: 8px; font-size: 0.95rem;">Yillik
+                                tonna bruto (mln t.km)</label>
+                            <input type="number" step="0.1" id="edit-bruto" class="form-control" value="0"
+                                style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(31, 38, 135, 0.1); background: #f8fafc; color: #1e293b; font-weight: 600; outline: none; transition: 0.2s;">
+                        </div>
 
-                        <hr style="margin: 20px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.1);">
-                        <h4 style="color: #00c6ff; margin-bottom: 15px;">Qo'shimcha bo'limchalar
-                        </h4>
-                        <div id="extra-metrics-list"></div>
+                        <h4
+                            style="color: #ffd700; margin: 20px 0 10px 0; font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Qo'shimcha bo'limchalar</h4>
+                        <div id="extra-metrics-list" style="display: flex; flex-direction: column; gap: 15px;"></div>
                     </div>
 
                     <button type="button" class="control-btn" onclick="addNewMetricField()"
-                        style="width: 100%; margin-top: 10px; background: rgba(0, 198, 255, 0.1); border: 1px dashed #00c6ff; color: #00c6ff;">
+                        style="width: 100%; margin-top: 20px; background: rgba(37, 99, 235, 0.05); border: 2px dashed rgba(37, 99, 235, 0.2); color: #ffd700; padding: 15px; border-radius: 16px; font-weight: 700; cursor: pointer; transition: 0.2s;">
                         <i class="fas fa-plus"></i> Yangi bo'limcha qo'shish
                     </button>
 
                     <div class="form-actions"
-                        style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; background: rgba(20, 30, 40, 0.95); padding-top: 10px;">
+                        style="margin-top: 40px; display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid rgba(31, 38, 135, 0.05);">
                         <button type="button" class="control-btn" onclick="closeSmartMonitoringEdit()"
-                            style="background: #95a5a6;">Bekor
+                            style="background: #94a3b8; color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 700; cursor: pointer;">Bekor
                             qilish</button>
-                        <button type="submit" class="control-btn blue"><i class="fas fa-save"></i>
-                            Saqlash</button>
+                        <button type="submit" class="control-btn"
+                            style="background: linear-gradient(135deg, #d4af37, #b8860b); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);"><i
+                                class="fas fa-save" style="margin-right: 8px;"></i> SAQLASH</button>
                     </div>
                 </form>
             </div>
@@ -1369,23 +1702,28 @@
     </div>
 
 
-    <div id="history-modal" class="integration-window" style="z-index: 10005;">
-        <div class="window-header">
-            <h2><i class="fas fa-history"></i> Ish Rejalari Tarixi</h2>
+    <div id="history-modal" class="integration-window"
+        style="z-index: 10005; border-radius: 20px; overflow: hidden; border: 1px solid rgba(31, 38, 135, 0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.1);">
+        <div class="window-header"
+            style="background: linear-gradient(90deg, #f8fafc 0%, #e0e7ff 100%); padding: 18px 25px; border-bottom: 2px solid #d4af37;">
+            <h2 style="color:#1e293b; font-weight: 800;"><i class="fas fa-history" style="color:#d4af37;"></i> Ish
+                Rejalari Tarixi</h2>
             <button class="action-btn delete"
-                onclick="document.getElementById('history-modal').classList.remove('active'); setTimeout(() => document.getElementById('history-modal').style.display='none', 300);"><i
+                onclick="document.getElementById('history-modal').classList.remove('active'); setTimeout(() => document.getElementById('history-modal').style.display='none', 300);"
+                style="background: rgba(239, 68, 68, 0.05); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 10px; width: 34px; height: 34px; cursor: pointer;"><i
                     class="fas fa-times"></i></button>
         </div>
-        <div class="editor-body" style="background: #1e272e; color: white;">
-            <div id="history-modal-content">
-                <div class="history-date-list" id="historyDateList">
+        <div class="editor-body" style="background: #f8fafc; color: #1e293b;">
+            <div id="history-modal-content" style="display: flex;">
+                <div class="history-date-list" id="historyDateList"
+                    style="background: #fff; border-right: 1px solid rgba(0,0,0,0.05);">
                     <!-- Dates will be loaded here -->
                 </div>
-                <div class="history-details" id="historyDetails">
+                <div class="history-details" id="historyDetails" style="background: #f1f5f9; flex: 1;">
                     <div
-                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.3);">
-                        <i class="fas fa-calendar-day" style="font-size: 3rem; margin-bottom: 15px;"></i>
-                        <p>Sanani tanlang</p>
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #94a3b8;">
+                        <i class="fas fa-calendar-day" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3;"></i>
+                        <p style="font-weight: 600;">Sanani tanlang</p>
                     </div>
                 </div>
             </div>
@@ -1394,21 +1732,178 @@
 
 
     <!-- Application Modules (Correct Loading Order) -->
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="editor-window glass-modal"
+        style="z-index: 10100; border-radius: 28px; box-shadow: 0 40px 100px rgba(0,0,0,0.5); border: 1px solid rgba(212, 175, 55, 0.2); overflow: hidden; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(25px); width: 450px; left: 50%; top: 50%; transform: translate(-50%,-50%); border: 1px solid rgba(212, 175, 55, 0.3);">
+        <div class="window-header"
+            style="background: linear-gradient(90deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%); padding: 25px 30px; border-bottom: 2px solid var(--accent-gold); display: flex; justify-content: space-between; align-items: center;">
+            <h2 class="department-name"
+                style="color:var(--accent-gold); font-weight: 800; font-size: 1.4rem; margin: 0; text-shadow: 0 0 15px rgba(212, 175, 55, 0.3);">
+                <i class="fas fa-user-plus" style="margin-right: 12px;"></i> FOYDALANUVCHI QO'SHISH
+            </h2>
+            <button class="close-btn" onclick="document.getElementById('addUserModal').classList.remove('active')"
+                style="background: rgba(255, 255, 255, 0.05); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 38px; height: 38px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; transition: all 0.3s;">&times;</button>
+        </div>
+        <div class="window-content" style="padding: 30px;">
+            <form id="addUserForm" onsubmit="event.preventDefault(); submitAddUser();">
+                <div style="display: grid; gap: 20px;">
+                    <div>
+                        <label
+                            style="display:block; margin-bottom:8px; color:rgba(255,255,255,0.7); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">To'liq
+                            ism (F.I.SH)</label>
+                        <div style="position: relative;">
+                            <i class="fas fa-id-card"
+                                style="position: absolute; left: 15px; top: 15px; color: var(--accent-gold); opacity: 0.7;"></i>
+                            <input type="text" id="new_full_name" placeholder="Masalan: Azizov Aziz" required
+                                style="width:100%; padding:14px 18px 14px 45px; background:rgba(255,255,255,0.05); border:1px solid rgba(212,175,55,0.1); color:white; border-radius:14px; font-weight: 600; outline: none; transition: 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label
+                                style="display:block; margin-bottom:8px; color:rgba(255,255,255,0.7); font-weight: 700; font-size: 0.75rem; text-transform: uppercase;">Login</label>
+                            <div style="position: relative;">
+                                <i class="fas fa-at"
+                                    style="position: absolute; left: 15px; top: 15px; color: var(--accent-gold); opacity: 0.7;"></i>
+                                <input type="text" id="new_username" placeholder="username" required
+                                    style="width:100%; padding:14px 18px 14px 45px; background:rgba(255,255,255,0.05); border:1px solid rgba(212,175,55,0.1); color:white; border-radius:14px; font-weight: 600; outline: none; transition: 0.3s;">
+                            </div>
+                        </div>
+                        <div>
+                            <label
+                                style="display:block; margin-bottom:8px; color:rgba(255,255,255,0.7); font-weight: 700; font-size: 0.75rem; text-transform: uppercase;">Parol</label>
+                            <div style="position: relative;">
+                                <i class="fas fa-key"
+                                    style="position: absolute; left: 15px; top: 15px; color: var(--accent-gold); opacity: 0.7;"></i>
+                                <input type="password" id="new_password" placeholder="******" required
+                                    style="width:100%; padding:14px 18px 14px 45px; background:rgba(255,255,255,0.05); border:1px solid rgba(212,175,55,0.1); color:white; border-radius:14px; font-weight: 600; outline: none; transition: 0.3s;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label
+                            style="display:block; margin-bottom:8px; color:rgba(255,255,255,0.7); font-weight: 700; font-size: 0.75rem; text-transform: uppercase;">Foydalanuvchi
+                            Roli</label>
+                        <select id="new_role" required onchange="handleRoleChange(this.value)"
+                            style="width:100%; padding:14px 18px; background:rgba(30,41,59,0.8); border:1px solid rgba(212,175,55,0.2); color:white; border-radius:14px; font-weight: 700; outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23D4AF25%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto;">
+                            <option value="bolinma">Bo'linma (Usta / Shofyor)</option>
+                            <option value="department">Bo'lim (Boshqarma mutaxassisi)</option>
+                            <option value="admin">Administrator (To'liq nazorat)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="bolinma_group" style="margin-top: 20px;">
+                    <label
+                        style="display:block; margin-bottom:8px; color:var(--accent-gold); font-weight: 800; font-size: 0.7rem; text-transform: uppercase;">Bo'linmani
+                        tanlang</label>
+                    <select id="new_bolinmalar"
+                        style="width:100%; padding:14px 18px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:14px; outline: none; font-weight: 600;">
+                        <option value="bolinma1">1-bo'linma</option>
+                        <option value="bolinma2">2-bo'linma</option>
+                        <option value="bolinma3">3-bo'linma</option>
+                        <option value="bolinma4">4-bo'linma</option>
+                        <option value="bolinma5">5-bo'linma</option>
+                        <option value="bolinma6">6-bo'linma</option>
+                        <option value="bolinma7">7-bo'linma</option>
+                        <option value="bolinma8">8-bo'linma</option>
+                        <option value="bolinma9">9-bo'linma</option>
+                        <option value="bolinma10">10-bo'linma</option>
+                    </select>
+                </div>
+
+                <div id="dept_group" style="margin-top: 20px; display: none;">
+                    <label
+                        style="display:block; margin-bottom:12px; color:var(--accent-gold); font-weight: 800; font-size: 0.7rem; text-transform: uppercase;">Bo'limlarni
+                        tanlang</label>
+                    <div
+                        style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px;">
+                        <label
+                            style="color: rgba(255,255,255,0.8); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input
+                                type="checkbox" name="new_depts" value="ishlab-chiqarish"
+                                style="accent-color: var(--accent-gold);"> Ishlab chiqarish</label>
+                        <label
+                            style="color: rgba(255,255,255,0.8); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input
+                                type="checkbox" name="new_depts" value="xodimlar"
+                                style="accent-color: var(--accent-gold);"> Xodimlar</label>
+                        <label
+                            style="color: rgba(255,255,255,0.8); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input
+                                type="checkbox" name="new_depts" value="bugalteriya"
+                                style="accent-color: var(--accent-gold);"> Bugalteriya</label>
+                        <label
+                            style="color: rgba(255,255,255,0.8); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input
+                                type="checkbox" name="new_depts" value="iqtisod"
+                                style="accent-color: var(--accent-gold);"> Iqtisod</label>
+                        <label
+                            style="color: rgba(255,255,255,0.8); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input
+                                type="checkbox" name="new_depts" value="mexanika"
+                                style="accent-color: var(--accent-gold);"> Mexanika</label>
+                        <label
+                            style="color: rgba(255,255,255,0.8); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input
+                                type="checkbox" name="new_depts" value="mehnat-muhofazasi"
+                                style="accent-color: var(--accent-gold);"> Mehnat muhofazasi</label>
+                        <label
+                            style="color: rgba(255,255,255,0.8); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input
+                                type="checkbox" name="new_depts" value="dispetcher"
+                                style="accent-color: var(--accent-gold);"> Dispetcher</label>
+                        <label
+                            style="color: rgba(255,255,255,0.8); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;"><input
+                                type="checkbox" name="new_depts" value="metrologiya"
+                                style="accent-color: var(--accent-gold);"> Metrologiya</label>
+                    </div>
+                </div>
+
+                <div
+                    style="text-align:right; margin-top:30px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 25px;">
+                    <button type="submit" class="gold-btn"
+                        style="width: 100%; padding: 16px; border-radius: 16px; font-weight: 850; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase;">
+                        <i class="fas fa-plus-circle"></i> FOYDALANUVICHINI YARATISH
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function handleRoleChange(role) {
+            document.getElementById('bolinma_group').style.display = role === 'bolinma' ? 'block' : 'none';
+            document.getElementById('dept_group').style.display = role === 'department' ? 'block' : 'none';
+        }
+    </script>
+
+
+    <script src="js/utils.js?v=2026.03.16.2"></script>
     <script src="js/masofaConfig.js"></script>
     <script src="js/data.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/utils.js"></script>
+    <script src="js/ui-manager.js"></script>
+    <script src="js/search-engine.js"></script>
+    <script src="js/script.js?v=2026.03.16.2"></script>
+    <script src="js/admin-panel.js"></script>
+    <!-- E-IMZO Integration -->
+    <script src="js/lib/e-imzo.js"></script>
+    <script src="js/e-imzo-client.js"></script>
     <script src="js/timesheet.js"></script>
     <script src="js/attendance.js"></script>
-    <script src="js/script.js"></script>
-    <script src="js/metrology.js"></script>
+    <script src="js/dispatcher.js?v=11.0"></script>
+    <script src="js/map-logic.js"></script>
+    <script src="js/weather.js"></script>
+    <script src="js/metrology.js?v=2.0"></script>
     <script src="js/defectoscope.js"></script>
     <script src="js/hr.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <script src="js/pu74.js"></script>
-    <script src="js/pu80.js"></script>
+    <script src="js/pu28.js"></script>
+    <script src="js/pu29.js"></script>
+    <script src="js/track-defect.js"></script>
     <!-- accounting.js materials.js dan OLDIN yuklanishi shart (dependency) -->
     <script src="js/accounting.js"></script>
     <script src="js/materials.js"></script>
+    <script src="js/rahbar-visa.js"></script>
     <script src="js/safety.js"></script>
     <script src="js/tnu19.js"></script>
     <script src="js/tnu20.js"></script>
@@ -1418,11 +1913,14 @@
     <script src="js/marketplace.js"></script>
     <script src="js/technical_training.js"></script>
     <script src="js/incoming.js"></script>
-    <script src="js/fileApproval.js"></script>
+
     <script src="js/ai-assistant.js"></script>
     <script src="js/pchMap.js"></script>
     <script src="js/landing.js"></script>
-
+    <script src="js/pu80.js?v=2026.03.11.1"></script>
+    <!-- Face API and Biometrics (loaded after PU-80) -->
+    <script src="js/lib/face-api.min.js?v=2026.03.11.1"></script>
+    <script src="js/face-service.js?v=2026.03.11.1"></script>
     <script>
         // Global Error Handling & Video Fallback
         document.addEventListener('DOMContentLoaded', function () {
@@ -1434,21 +1932,21 @@
                 }, true);
             }
 
-            // 0. Check protocol (Only if not Electron)
-            if (window.location.protocol === 'file:' && !window.CONFIG.IS_ELECTRON) {
+            // 0. Check protocol
+            if (window.location.protocol === 'file:') {
                 const warning = document.createElement('div');
                 warning.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:999999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; text-align:center; padding:20px; font-family:sans-serif;';
                 warning.innerHTML = `
-                    <h1 style="color:#ff4757; margin-bottom:20px;">DIQQAT! XATOLIK ANIQLANDI</h1>
-                    <p style="font-size:1.2rem; margin-bottom:30px;">Siz tizimni noto'g'ri usulda ochdingiz (fayl sifatida).<br>Tizim ma'lumotlar bazasi va barcha funksiyalar ishlashi uchun server orqali kirish shart!</p>
-                    <div style="background:#2f3542; padding:20px; border-radius:10px; border-left:5px solid #00c6ff; margin-bottom:30px; text-align:left;">
-                        <p style="margin-bottom:10px;"><strong>To'g'ri kirish uchun:</strong></p>
-                        <ol>
-                            <li>Brauzeringizda yangi oyna (tab) oching</li>
-                            <li>Manzil satriga <code>localhost:5000</code> deb yozing</li>
+                    <h1 style="background:var(--gold-gradient); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:20px; font-weight:900;">DIQQAT! TIZIMGA ULANISH</h1>
+                    <p style="font-size:1.2rem; margin-bottom:30px; color:var(--text-silver);">Siz tizimni brauzer xavfsizlik cheklovlari bilan ochdingiz.<br>Tizim ma'lumotlar bazasi va barcha funksiyalar server orqali ishlashi shart!</p>
+                    <div style="background:rgba(212,175,55,0.05); padding:20px; border-radius:15px; border-left:5px solid var(--accent-gold); margin-bottom:30px; text-align:left; border:1px solid var(--glass-border);">
+                        <p style="margin-bottom:10px; color:var(--accent-gold);"><strong>Qanday qilib to'g'ri ishga tushirish kerak?</strong></p>
+                        <ol style="color:var(--text-silver);">
+                            <li>Terminalda <code>npm start</code> buyrug'ini yuboring</li>
+                            <li>Brauzerda <code>localhost:5050</code> manzilini oching</li>
                         </ol>
                     </div>
-                    <a href="http://localhost:5000" style="background:#00c6ff; color:white; padding:15px 40px; border-radius:50px; text-decoration:none; font-weight:bold; font-size:1.1rem; box-shadow:0 10px 20px rgba(0,198,255,0.3);">http://localhost:5000 GA O'TISH</a>
+                    <a href="http://localhost:5050" class="btn-primary" style="display:inline-flex; text-decoration:none;">LOKAL SERVERGA O'TISH</a>
                 `;
                 document.body.appendChild(warning);
                 return; // Stop further execution
@@ -1464,15 +1962,24 @@
                 initSmartSystem();
             }
 
-            // 3. HR va TNU-19 ma'lumotlarini yuklash
+            // 3. Server Monitoring (Always Online)
+            if (window.SmartUtils && window.SmartUtils.startServerWatchdog) {
+                window.SmartUtils.startServerWatchdog();
+            }
+
+            // 3. HR va TNU-19 ma'lumotlarini yuklash (Faqat login qilingan bo'lsa)
             (async () => {
-                if (typeof initHRData === 'function') {
-                    await initHRData();
+                if (window.Auth && window.Auth.isLoggedIn()) {
+                    if (typeof initHRData === 'function') {
+                        await initHRData();
+                    }
+                    if (typeof loadTNU19Records === 'function') {
+                        await loadTNU19Records();
+                    }
+                    console.log('✅ System data initialized for logged in user');
+                } else {
+                    console.log('ℹ️ Waiting for login to initialize data');
                 }
-                if (typeof loadTNU19Records === 'function') {
-                    await loadTNU19Records();
-                }
-                console.log('✅ System data initialized');
             })();
         });
     </script>
@@ -1480,8 +1987,28 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
+                // Eski keshlarni tozalash (yangi Network First SW uchun)
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        if (name !== 'smart-pch-v20260312.1') caches.delete(name);
+                    });
+                });
                 navigator.serviceWorker.register('/sw.js').then(reg => {
                     console.log('SW registered:', reg);
+
+                    // Update monitoring
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed') {
+                                if (navigator.serviceWorker.controller) {
+                                    console.log('Yangi versiya mavjud. Yangilash uchun sahifani qo\'lda yangilang.');
+                                } else {
+                                    console.log('Kontent keshga saqlandi.');
+                                }
+                            }
+                        };
+                    };
                 }).catch(err => {
                     console.error('SW registration failed:', err);
                 });

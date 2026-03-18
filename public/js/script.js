@@ -2,6 +2,8 @@
 
 // GLOBAL REFERENCES - Auth moduldan olingan
 const defaultUsers = (window.Auth && window.Auth.roleStructure) || {};
+window.subdivisionReports = window.subdivisionReports || {};
+const subdivisionReports = window.subdivisionReports;
 
 // HRM TIZIMI FUNKSIYALARI
 function openHRMNewTab() {
@@ -43,9 +45,20 @@ setTimeout(() => {
 window.roadManagementData = window.roadManagementData || JSON.parse(localStorage.getItem('roadManagementData')) || {};
 window.monitoringData = window.monitoringData || JSON.parse(localStorage.getItem('monitoringData')) || {};
 
+// ============ ARTIFICIAL STRUCTURES DATA (Sun'iy inshootlar) ============
+window.artificialStructuresData = [
+    { id: 1, type: 'bridge', name: 'Zeravshan daryosi kôprigi', km: 4022.5, bolinma: '1-bo\'linma', length: '120m', status: 'good', lat: 39.730, lng: 64.240 },
+    { id: 2, type: 'culvert', name: 'Temir-beton truba (d=1.5m)', km: 4035.8, bolinma: '1-bo\'linma', length: '12m', status: 'warning', lat: 39.805, lng: 64.015 },
+    { id: 3, type: 'pedestrian_bridge', name: 'Piyodalar kôprigi', km: 4056.2, bolinma: '2-bo\'linma', length: '45m', status: 'good', lat: 39.885, lng: 63.750 },
+    { id: 4, type: 'tunnel', name: 'Qorlitog\' tonneli', km: 4120.4, bolinma: '4-bo\'linma', length: '1200m', status: 'good', lat: 40.180, lng: 62.850 },
+    { id: 5, type: 'bridge', name: 'Amudaryo kanali kôprigi', km: 4285.6, bolinma: '9-bo\'linma', length: '85m', status: 'good', lat: 41.320, lng: 61.050 },
+    { id: 6, type: 'culvert', name: 'Metall truba (d=2.0m)', km: 4150.2, bolinma: '5-bo\'linma', length: '15m', status: 'good', lat: 40.320, lng: 62.390 },
+    { id: 7, type: 'bridge', name: 'Sel o\'tkazgich ko\'prik', km: 4180.7, bolinma: '6-bo\'linma', length: '30m', status: 'repair', lat: 40.455, lng: 61.960 }
+];
+
 // ============ SOCKET.IO INITIALIZATION ============
 if (typeof io !== 'undefined') {
-    window.socket = io(window.CONFIG?.API_URL?.replace('/api', '') || 'http://127.0.0.1:5000');
+    window.socket = io(window.CONFIG?.WS_URL || 'http://127.0.0.1:5050');
 
     window.socket.on('connect', () => {
         console.log('Connected to real-time server');
@@ -58,8 +71,107 @@ if (typeof io !== 'undefined') {
             loadReportsFromServer();
         }
     });
+
+    window.socket.on('broadcast_message', (data) => {
+        showBroadcastNotification(data);
+    });
 } else {
     console.warn('Socket.IO client not loaded. Real-time features will be disabled.');
+}
+
+// ============ BROADCAST NOTIFICATION ============
+function showBroadcastNotification(data) {
+    const { title, message, priority, sender_name, created_at } = data;
+
+    // Create container if not exists
+    let container = document.getElementById('broadcast-notifications-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'broadcast-notifications-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 99999;
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: none;
+        `;
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        background: rgba(15, 23, 42, 0.9);
+        backdrop-filter: blur(15px);
+        border: 1px solid ${priority === 'urgent' ? '#ef4444' : (priority === 'important' ? '#f59e0b' : '#3b82f6')};
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        color: white;
+        pointer-events: auto;
+        animation: slideInBroadcast 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        overflow: hidden;
+    `;
+
+    // Glow effect for urgent
+    if (priority === 'urgent') {
+        toast.style.boxShadow = '0 0 25px rgba(239, 68, 68, 0.4)';
+    }
+
+    const typeLabel = priority === 'urgent' ? '🔴 TEZKOR' : (priority === 'important' ? '🟡 MUHIM' : '🔵 E\'LON');
+
+    toast.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+            <div style="font-weight: 800; font-size: 0.8rem; letter-spacing: 1px;">${typeLabel}</div>
+            <button onclick="this.parentElement.parentElement.remove()" style="background: transparent; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 1.1rem; padding: 4px;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        ${title ? `<h4 style="margin: 0 0 8px 0; font-size: 1.1rem; color: #fff; font-weight: 700;">${title}</h4>` : ''}
+        <p style="margin: 0; font-size: 0.95rem; line-height: 1.5; color: rgba(255,255,255,0.9);">${message}</p>
+        <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: rgba(255,255,255,0.4);">
+            <div><i class="fas fa-user-shield"></i> Admin: ${sender_name}</div>
+            <div>${new Date(created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>
+    `;
+
+    // Add animation style if not exists
+    if (!document.getElementById('broadcast-style')) {
+        const style = document.createElement('style');
+        style.id = 'broadcast-style';
+        style.textContent = `
+            @keyframes slideInBroadcast {
+                from { transform: translateX(120%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    container.appendChild(toast);
+
+    // Audio notify
+    try {
+        const audio = new Audio(priority === 'urgent' ? 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' : 'https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+        audio.volume = 0.4;
+        audio.play();
+    } catch (e) { }
+
+    // Auto remove normal ones after 10s
+    if (priority === 'normal') {
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.style.transform = 'translateX(120%)';
+                toast.style.opacity = '0';
+                toast.style.transition = 'all 0.5s ease';
+                setTimeout(() => toast.remove(), 500);
+            }
+        }, 12000);
+    }
 }
 
 // ============ RAQOBAT GRAFIGI ============
@@ -68,139 +180,11 @@ let xSpreadsheet = null;
 
 const bolinmaData = window.INITIAL_DATA.bolinmaData;
 
-async function fetchWeatherData() {
-    const weatherContainer = document.querySelector('.weather-container');
-    if (!weatherContainer) return;
-
-    weatherContainer.innerHTML = '<div class="weather-loading"><i class="fas fa-spinner fa-spin"></i> Havo ma\'lumotlari yuklanmoqda...</div>';
-
-    try {
-        const response = await fetch(
-            `${window.CONFIG.API_URL}/weather?lat=${window.CONFIG.BUKHARA_COORDS.lat}&lon=${window.CONFIG.BUKHARA_COORDS.lon}`
-        );
-
-        if (!response.ok) throw new Error('API xatosi');
-
-        const data = await response.json();
-        displayCurrentWeather(data);
-    } catch (error) {
-        console.error('Ob-havo xatosi:', error);
-        displayFallbackWeather();
-    }
-}
-
-function displayCurrentWeather(data) {
-    const weatherContainer = document.querySelector('.weather-container');
-    if (!weatherContainer) return;
-
-    const iconCode = data.weather[0].icon;
-    const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
-
-    weatherContainer.innerHTML = `
-                                    <div class="weather-current">
-                                        <div class="weather-main">
-                                            <img src="${iconUrl}" alt="Ob-havo" class="weather-icon-img">
-                                            <div class="weather-temp">${Math.round(data.main.temp)}°C</div>
-                                        </div>
-                                        <div class="weather-details">
-                                            <div class="weather-desc">${data.weather[0].description}</div>
-                                            <div class="weather-info-grid">
-                                                <div class="weather-info-item">
-                                                    <i class="fas fa-temperature-high"></i>
-                                                    <span>Seziladi: ${Math.round(data.main.feels_like)}°C</span>
-                                                </div>
-                                                <div class="weather-info-item">
-                                                    <i class="fas fa-tint"></i>
-                                                    <span>Namlik: ${data.main.humidity}%</span>
-                                                </div>
-                                                <div class="weather-info-item">
-                                                    <i class="fas fa-wind"></i>
-                                                    <span>Shamol: ${data.wind.speed} m/s</span>
-                                                </div>
-                                                <div class="weather-info-item">
-                                                    <i class="fas fa-compress-arrows-alt"></i>
-                                                    <span>Bosim: ${data.main.pressure} hPa</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="weather-location">
-                                        <i class="fas fa-map-marker-alt"></i> Buxoro shahri
-                                        <span class="weather-update-time">Yangilangan: ${new Date().toLocaleTimeString('uz-UZ')}</span>
-                                    </div>
-                                `;
-}
-
-function displayFallbackWeather() {
-    const weatherContainer = document.querySelector('.weather-container');
-    if (!weatherContainer) return;
-
-    // Offline holat uchun taxminiy ma'lumot
-    const now = new Date();
-    const month = now.getMonth();
-    let temp, desc, icon;
-
-    if (month >= 5 && month <= 8) { // Yoz
-        temp = 35 + Math.floor(Math.random() * 5);
-        desc = 'Issiq va ochiq havo';
-        icon = 'fa-sun';
-    } else if (month >= 11 || month <= 1) { // Qish
-        temp = 2 + Math.floor(Math.random() * 5);
-        desc = 'Sovuq va bulutli';
-        icon = 'fa-cloud';
-    } else { // Bahor/Kuz
-        temp = 18 + Math.floor(Math.random() * 8);
-        desc = 'Mo\'tadil havo';
-        icon = 'fa-cloud-sun';
-    }
-
-    weatherContainer.innerHTML = `
-                                    <div class="weather-current">
-                                        <div class="weather-main">
-                                            <i class="fas ${icon} weather-icon"></i>
-                                            <div class="weather-temp">${temp}°C</div>
-                                        </div>
-                                        <div class="weather-details">
-                                            <div class="weather-desc">${desc}</div>
-                                            <div class="weather-info-grid">
-                                                <div class="weather-info-item">
-                                                    <i class="fas fa-temperature-high"></i>
-                                                    <span>Seziladi: ${temp - 2}°C</span>
-                                                </div>
-                                                <div class="weather-info-item">
-                                                    <i class="fas fa-tint"></i>
-                                                    <span>Namlik: 45%</span>
-                                                </div>
-                                                <div class="weather-info-item">
-                                                    <i class="fas fa-wind"></i>
-                                                    <span>Shamol: 3 m/s</span>
-                                                </div>
-                                                <div class="weather-info-item">
-                                                    <i class="fas fa-compress-arrows-alt"></i>
-                                                    <span>Bosim: 1015 hPa</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="weather-location">
-                                        <i class="fas fa-map-marker-alt"></i> Buxoro shahri
-                                        <span class="weather-offline">(Offline rejim)</span>
-                                    </div>
-                                `;
-}
-
-// Ob-havo yangilash tugmasi
-document.addEventListener('click', function (e) {
-    if (e.target.closest('.refresh-weather')) {
-        fetchWeatherData();
-    }
-});
-
-// Dashboard yuklanganda grafik va ob-havo ishga tushirish
+// Dashboard widgets initialization
 function initDashboardWidgets() {
     setTimeout(() => {
-        createCompetitionChart();
-        fetchWeatherData();
+        if (typeof createCompetitionChart === 'function') createCompetitionChart();
+        if (typeof loadWeatherData === 'function') loadWeatherData();
     }, 500);
 }
 
@@ -275,10 +259,7 @@ workersData.forEach(worker => {
     ];
 });
 
-let trainLiveMap = null;
-let workerMarkers = [];
-let trainMarkers = [];
-let routePolylines = [];
+// trainLiveMap, workerMarkers, trainMarkers, routePolylines declared in map-logic.js
 
 // Bo'limlar ma'lumotlari
 const departments = window.INITIAL_DATA.departments;
@@ -289,61 +270,29 @@ const sectionsData = {};
 departments.forEach(dept => {
     if (dept.id !== 'dashboard') {
         sectionsData[dept.id] = [
-            { id: 1, name: 'Ishlab chiqarish', icon: 'fas fa-industry', description: 'Mahsulot ishlab chiqarish va sifati nazorati' },
-            { id: 2, name: 'Xodimlar', icon: 'fas fa-users', description: 'Xodimlar boshqaruvi va mehnat shartnomalari' },
-            { id: 3, name: 'Bugalteriya', icon: 'fas fa-calculator', description: 'Moliya hisoboti va byudjet rejalashtirish' },
-            { id: 4, name: 'Mexanika', icon: 'fas fa-cog', description: "Texnika texnik xizmat ko'rsatish va ta'mirlash", integrations: ['mexanika-monitor'] },
-            { id: 5, name: 'Iqtisod', icon: 'fas fa-chart-line', description: 'Iqtisodiy tahlil, PU-74 va narxlar siyosati' },
-            { id: 6, name: 'Dispetcher', icon: 'fas fa-tower-broadcast', description: 'Transport harakatini boshqarish' },
-            { id: 7, name: 'Metrologiya', icon: 'fas fa-ruler-combined', description: "O'lchov asboblarini kalibrlash" },
-            { id: 8, name: 'Mehnat muhofazasi', icon: 'fas fa-hard-hat', description: 'Ish xavfsizligi va atrof-muhit' }
+            { id: 1, name: 'Ishlab chiqarish', icon: 'fas fa-industry', description: 'Ishlab chiqarish jarayonlari' },
+            { id: 2, name: 'Xodimlar', icon: 'fas fa-users-gear', description: 'Kadrlar boshqaruvi' },
+            { id: 3, name: 'Bugalteriya', icon: 'fas fa-calculator', description: 'Moliyaviy hisobotlar' },
+            { id: 4, name: 'Mexanika', icon: 'fas fa-gears', description: 'Texnik xizmat ko\'rsatish' },
+            { id: 5, name: 'Iqtisodiyot', icon: 'fas fa-chart-line', description: 'Iqtisodiy tahlil' },
+            { id: 7, name: 'Metrologiya', icon: 'fas fa-scale-balanced', description: 'O\'lchov standartlari' },
+            { id: 8, name: 'Mehnat muhofazasi', icon: 'fas fa-shield-halved', description: 'Ish xavfsizligi' },
+            { id: 6, name: 'Dispetcher', icon: 'fas fa-tower-broadcast', description: 'Transport harakatini boshqarish' }
         ];
     }
 });
 
-// Dispatcher Daily Work System Logic (Subdivision -> Dispatcher)
-let subdivisionReports = {};
-let reportsHistory = {};
-let roadManagementData = {};
+// Dispatcher logic moved to dispatcher.js
 
-async function initPersistentData() {
-    subdivisionReports = await SmartUtils.load('subdivisionReports', {});
-    reportsHistory = await SmartUtils.load('subdivisionReportsHistory', {});
-    roadManagementData = await SmartUtils.load('roadManagementData', {});
 
-    // Cleanup reports for old dates and Archive them
-    const todayStr = new Date().toLocaleDateString();
-    let dataChanged = false;
 
-    for (const bId in subdivisionReports) {
-        const report = subdivisionReports[bId];
-        const reportDate = report.date;
-
-        if (!reportsHistory[reportDate]) {
-            reportsHistory[reportDate] = {};
-        }
-        reportsHistory[reportDate][bId] = report;
-
-        if (report.date !== todayStr) {
-            delete subdivisionReports[bId];
-            dataChanged = true;
-        }
-    }
-
-    if (dataChanged) {
-        await SmartUtils.save('subdivisionReportsHistory', reportsHistory);
-        await SmartUtils.save('subdivisionReports', subdivisionReports);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-    await initPersistentData();
-});
 
 function getReportSubmissionPanelHTML(bolinmaId) {
     const report = subdivisionReports[bolinmaId];
     const isSent = report && report.date === new Date().toLocaleDateString();
-    const isSubUser = currentUser.role === 'bolinma' && currentUser.bolinmalar.includes(bolinmaId);
+
+    const _u = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : (window.Auth && window.Auth.currentUser);
+    const isSubUser = _u && _u.role === 'bolinma' && (_u.bolinmalar || []).includes(bolinmaId);
 
     if (!isSubUser) {
         return `
@@ -385,9 +334,9 @@ function getReportSubmissionPanelHTML(bolinmaId) {
                                         <div class="dispatcher-form" style="display: ${isSent ? 'none' : 'grid'}">
                                             <div class="form-group" style="grid-column: span 2;">
                                                 <label style="display: block; margin-bottom: 5px; font-size: 0.8rem; color: rgba(255,255,255,0.6);">Bugungi ish rejasi:</label>
-                                                <textarea id="report-content-input-${bolinmaId}" placeholder="Bugungi rejalashtirilgan ishlar haqida yozing..." style="width: 100%; min-height: 120px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; padding: 12px; outline: none; transition: border-color 0.3s;"></textarea>
+                                                <textarea id="report-content-input-${bolinmaId.replace(/'/g, '-')}" placeholder="Bugungi rejalashtirilgan ishlar haqida yozing..." style="width: 100%; min-height: 120px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; padding: 12px; outline: none; transition: border-color 0.3s;"></textarea>
                                             </div>
-                                            <button class="send-task-btn" onclick="submitSubdivisionReport('${bolinmaId}')" style="background: linear-gradient(45deg, #2ecc71, #27ae60); border: none; padding: 12px; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.2s;">
+                                            <button class="send-task-btn" onclick="submitSubdivisionReport(\`${bolinmaId}\`)" style="background: linear-gradient(45deg, #2ecc71, #27ae60); border: none; padding: 12px; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.2s;">
                                                 <i class="fas fa-paper-plane"></i> Yuborish
                                             </button>
                                         </div>
@@ -396,8 +345,8 @@ function getReportSubmissionPanelHTML(bolinmaId) {
                                                 <i class="fas fa-check-double"></i> Bugungi hisobot dispetcerga yuborildi.
                                             </div>
                                             <div style="display: flex; gap: 10px;">
-                                                <button class="control-btn" style="padding: 8px 15px; font-size: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px;" onclick="editSubdivisionReport('${bolinmaId}')">Tahrirlash</button>
-                                                <button class="control-btn" style="padding: 8px 15px; font-size: 0.8rem; background: rgba(231, 76, 60, 0.2); border: 1px solid rgba(231, 76, 60, 0.5); color: #e74c3c; border-radius: 8px;" onclick="SmartUtils.exportToPDF('print-area-${bolinmaId}', 'Hisobot_${bolinmaId}', {title: 'KUNLIK ISH REJASI', subtitle: '${bolinmaId} - ' + new Date().toLocaleDateString()})">
+                                                <button class="control-btn" style="padding: 8px 15px; font-size: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px;" onclick="editSubdivisionReport(\`${bolinmaId}\`)">Tahrirlash</button>
+                                                <button class="control-btn" style="padding: 8px 15px; font-size: 0.8rem; background: rgba(231, 76, 60, 0.2); border: 1px solid rgba(231, 76, 60, 0.5); color: #e74c3c; border-radius: 8px;" onclick="SmartUtils.exportToPDF(\`print-area-${bolinmaId}\`, \`Hisobot_${bolinmaId}\`, {title: 'KUNLIK ISH REJASI', subtitle: \`${bolinmaId} - \` + new Date().toLocaleDateString()})">
                                                     <i class="fas fa-file-pdf"></i> PDF Yuklash
                                                 </button>
                                             </div>
@@ -407,7 +356,7 @@ function getReportSubmissionPanelHTML(bolinmaId) {
 }
 
 async function submitSubdivisionReport(bolinmaId) {
-    const input = document.getElementById(`report-content-input-${bolinmaId}`);
+    const input = document.getElementById(`report-content-input-${bolinmaId.replace(/'/g, '-')}`);
     const content = input.value.trim();
 
     if (!content) {
@@ -421,7 +370,7 @@ async function submitSubdivisionReport(bolinmaId) {
             body: JSON.stringify({
                 bolinma_id: bolinmaId,
                 content: content,
-                user_id: currentUser.id
+                user_id: (window.currentUser && window.currentUser.id) || (window.Auth && window.Auth.currentUser && window.Auth.currentUser.id)
             })
         });
 
@@ -496,35 +445,37 @@ function getDispatcherDashboardHTML() {
     const pendingCount = totalSub - sentCount;
 
     return `
-                                    <div class="dispatcher-dashboard" style="background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(0, 198, 255, 0.2); padding: 25px; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.4);">
+                                    <div class="dispatcher-dashboard" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(212, 175, 55, 0.2); padding: 30px; margin-bottom: 25px; box-shadow: 0 15px 45px rgba(31, 38, 135, 0.05);">
                                         <!-- Dashboard Header -->
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(31, 38, 135, 0.1); padding-bottom: 20px;">
                                             <div>
-                                                <h2 style="margin: 0; font-size: 1.8rem; background: linear-gradient(45deg, #00c6ff, #0072ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; display: flex; align-items: center; gap: 15px;">
+                                                <h2 style="margin: 0; font-size: 2rem; background: linear-gradient(45deg, #1e3a8a, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; display: flex; align-items: center; gap: 15px;">
                                                     <i class="fas fa-satellite-dish"></i> Markaziy Dispetcher Nazorati
                                                 </h2>
                                                 <div style="display: flex; align-items: center; gap: 15px; margin-top: 8px;">
-                                                    <span style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">
+                                                    <span style="font-size: 0.9rem; color: #475569; font-weight: 600;">
                                                         <i class="far fa-calendar-alt"></i> ${new Date().toLocaleDateString()}
                                                     </span>
-                                                    <span class="pulse-badge" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px;">
+                                                    <span class="pulse-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;">
                                                         <i class="fas fa-circle" style="font-size: 0.5rem; vertical-align: middle; margin-right: 5px;"></i> LIVE TRACKING
                                                     </span>
                                                 </div>
                                             </div>
 
                                             <div style="display: flex; gap: 20px;">
-                                                <div style="background: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.2); padding: 12px 20px; border-radius: 15px; min-width: 120px; text-align: center;">
-                                                    <div style="color: #2ecc71; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Qabul qilindi</div>
-                                                    <div style="color: #fff; font-size: 1.5rem; font-weight: 800;">${sentCount}</div>
+                                                <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.1); padding: 12px 20px; border-radius: 18px; min-width: 140px; text-align: center;">
+                                                    <div style="color: #059669; font-size: 0.8rem; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Qabul qilindi</div>
+                                                    <div style="color: #ffd700; font-size: 1.8rem; font-weight: 900;">${sentCount}</div>
+                                                    <div style="color: #1e3a8a; font-size: 1.8rem; font-weight: 900;">${sentCount}</div>
                                                 </div>
-                                                <div style="background: rgba(241, 196, 15, 0.1); border: 1px solid rgba(241, 196, 15, 0.2); padding: 12px 20px; border-radius: 15px; min-width: 120px; text-align: center;">
-                                                    <div style="color: #f1c40f; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Kutilmoqda</div>
-                                                    <div style="color: #fff; font-size: 1.5rem; font-weight: 800;">${pendingCount}</div>
+                                                <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.1); padding: 12px 20px; border-radius: 18px; min-width: 140px; text-align: center;">
+                                                    <div style="color: #d97706; font-size: 0.8rem; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Kutilmoqda</div>
+                                                    <div style="color: #ffd700; font-size: 1.8rem; font-weight: 900;">${pendingCount}</div>
+                                                    <div style="color: #1e3a8a; font-size: 1.8rem; font-weight: 900;">${pendingCount}</div>
                                                 </div>
-                                                <button onclick="openHistoryModal()" style="background: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52, 152, 219, 0.2); padding: 0 20px; border-radius: 15px; cursor: pointer; color: #3498db; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                                    <i class="fas fa-history" style="font-size: 1.2rem; margin-bottom: 5px;"></i>
-                                                    <span style="font-size: 0.8rem; font-weight: bold;">Tarix</span>
+                                                <button onclick="openHistoryModal()" style="background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.1); padding: 0 25px; border-radius: 18px; cursor: pointer; color: #1e40af; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                                    <i class="fas fa-history" style="font-size: 1.3rem; margin-bottom: 4px;"></i>
+                                                    <span style="font-size: 0.8rem; font-weight: 800;">Tarix</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -536,42 +487,44 @@ function getDispatcherDashboardHTML() {
         const isSent = report && report.date === new Date().toLocaleDateString();
 
         return `
-                                    <div class="report-card" onclick="openAdminSubdivisionView('${s.id}')" style="background: rgba(255,255,255,0.03); border: 1px solid ${isSent ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.05)'}; border-radius: 18px; padding: 22px; position: relative; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;">
+                                    <div class="report-card" onclick="openAdminSubdivisionView('${s.id}')" style="background: rgba(255,255,255,0.6); border: 1px solid ${isSent ? 'rgba(16, 185, 129, 0.2)' : 'rgba(31, 38, 135, 0.05)'}; border-radius: 20px; padding: 25px; position: relative; transition: all 0.3s var(--transition); cursor: pointer; box-shadow: 0 8px 25px rgba(31, 38, 135, 0.03);">
                                                         ${isSent ? `
-                                                            <div style="position: absolute; top: -10px; right: 20px; background: #2ecc71; color: white; padding: 4px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: bold; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);">
+                                                            <div style="position: absolute; top: -12px; right: 25px; background: #10b981; color: white; padding: 5px 15px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);">
                                                                 <i class="fas fa-check-double"></i> QABUL QILINDI
                                                             </div>
                                                         ` : ''}
 
                                                         <div style="display: flex; gap: 15px; align-items: flex-start; margin-bottom: 20px;">
-                                                            <div style="width: 50px; height: 50px; border-radius: 14px; background: ${isSent ? 'linear-gradient(135deg, #2ecc71, #27ae60)' : 'rgba(255,255,255,0.05)'}; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: ${isSent ? 'white' : 'rgba(255,255,255,0.2)'};">
+                                                            <div style="width: 55px; height: 55px; border-radius: 16px; background: ${isSent ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(31, 38, 135, 0.05)'}; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: ${isSent ? 'white' : '#94a3b8'};">
                                                                 <i class="fas fa-hard-hat"></i>
                                                             </div>
                                                             <div style="flex: 1;">
-                                                                <h4 style="margin: 0; font-size: 1.1rem; color: #fff; font-weight: 700;">${s.name}</h4>
+                                                                <h4 style="margin: 0; font-size: 1.2rem; color: #ffd700; font-weight: 800;">${s.name}</h4>
+                                                                <h4 style="margin: 0; font-size: 1.2rem; color: #1e3a8a; font-weight: 800;">${s.name}</h4>
                                                                 <div style="display: flex; align-items: center; gap: 8px; margin-top: 5px;">
-                                                                    <i class="fas fa-user-tie" style="font-size: 0.75rem; color: rgba(255,255,255,0.4);"></i>
-                                                                    <span style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">${s.manager || 'Ma\'sul xodim'}</span>
+                                                                    <i class="fas fa-user-tie" style="font-size: 0.8rem; color: #64748b;"></i>
+                                                                    <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">${s.manager || 'Ma\'sul xodim'}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
 
-                                                        <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 18px; border-left: 3px solid ${isSent ? '#2ecc71' : 'rgba(255,255,255,0.1)'}; min-height: 90px;">
-                                                            <div style="font-size: 0.95rem; line-height: 1.6; color: ${isSent ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)'}; font-style: ${isSent ? 'normal' : 'italic'};">
+                                                        <div style="background: rgba(255, 255, 255, 0.8); border-radius: 15px; padding: 20px; border-left: 4px solid ${isSent ? '#10b981' : 'rgba(31, 38, 135, 0.1)'}; min-height: 100px; box-shadow: inset 0 2px 8px rgba(31, 38, 135, 0.02);">
+                                                            <div style="font-size: 1rem; line-height: 1.7; color: ${isSent ? '#1e293b' : '#94a3b8'}; font-weight: 500; font-style: ${isSent ? 'normal' : 'italic'};">
                                                                 ${isSent ? report.text : 'Ushbu bo\'linma tomonidan hali ish rejasi taqdim etilmadi...'}
                                                             </div>
                                                         </div>
 
-                                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                                                            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.4);">
+                                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 22px;">
+                                                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 600;">
                                                                 <i class="far fa-clock"></i> ${isSent ? report.time : '--:--'}
                                                             </div>
-                                                            <div style="display: flex; align-items: center; gap: 10px;">
-                                                                <button onclick="openTrainScheduleModal('${s.id}', event)" style="background: rgba(0, 198, 255, 0.1); border: 1px solid rgba(0, 198, 255, 0.3); color: #00c6ff; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,198,255,0.2)'" onmouseout="this.style.background='rgba(0,198,255,0.1)'">
+                                                            <div style="display: flex; align-items: center; gap: 12px;">
+                                                                <button onclick="openTrainScheduleModal('${s.id}', event)" style="background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.2); color: #ffd700; padding: 6px 14px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: all 0.2s;" onmouseover="this.style.background='rgba(37,99,235,0.15)', this.style.transform='translateY(-2px)'" onmouseout="this.style.background='rgba(37,99,235,0.08)', this.style.transform='none'">
+                                                                <button onclick="openTrainScheduleModal('${s.id}', event)" style="background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.2); color: #2563eb; padding: 6px 14px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: all 0.2s;" onmouseover="this.style.background='rgba(37,99,235,0.15)', this.style.transform='translateY(-2px)'" onmouseout="this.style.background='rgba(37,99,235,0.08)', this.style.transform='none'">
                                                                     <i class="fas fa-train"></i> Poyezdlar
                                                                 </button>
-                                                                <div style="font-size: 0.75rem; font-weight: 600; color: ${isSent ? '#2ecc71' : '#f1c40f'}; text-transform: uppercase; letter-spacing: 0.5px;">
-                                                                    ${isSent ? 'Barcha ma\'lumotlar joyida' : 'KIRISH KUTILMOQDA'}
+                                                                <div style="font-size: 0.75rem; font-weight: 800; color: ${isSent ? '#10b981' : '#d97706'}; text-transform: uppercase; letter-spacing: 0.8px;">
+                                                                    ${isSent ? 'MA\'LUMOT JOVIDA' : 'KUTILMOQDA'}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -587,45 +540,147 @@ function getDispatcherDashboardHTML() {
 function getSmartSubdivisionDashboardHTML(user) {
     return `
                                 <style>
-                                    /* Smart Dashboard Styles */
-                                    .smart-dashboard-grid { display: grid; grid-template-columns: 1fr 350px; gap: 25px; margin-bottom: 30px; }
-                                    .announcement-ticker { background: rgba(0, 198, 255, 0.1); border: 1px solid rgba(0, 198, 255, 0.3); border-radius: 10px; padding: 10px 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 25px; color: #00c6ff; overflow: hidden; }
+                                    .smart-dashboard-grid {
+                                        display: grid;
+                                        grid-template-columns: 1fr 300px;
+                                        gap: 15px;
+                                        margin-bottom: 15px;
+                                        width: 100%;
+                                        max-width: 1400px;
+                                        margin-left: auto;
+                                        margin-right: auto;
+                                    }
+                                    .announcement-ticker {
+                                        background: rgba(255, 255, 255, 0.7);
+                                        backdrop-filter: blur(15px);
+                                        border: 1px solid rgba(212, 175, 55, 0.3);
+                                        border-radius: 12px;
+                                        padding: 8px 16px;
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 12px;
+                                        margin-bottom: 20px;
+                                        color: #ffd700;
+                                        color: #1e3a8a;
+                                        font-size: 0.9rem;
+                                        font-weight: 700;
+                                        width: 100%;
+                                        max-width: 1400px;
+                                        margin-left: auto;
+                                        margin-right: auto;
+                                        box-shadow: 0 8px 25px rgba(31, 38, 135, 0.03);
+                                    }
                                     .ticker-wrapper { flex: 1; overflow: hidden; }
-                                    .ticker-text { display: inline-block; white-space: nowrap; animation: ticker 30s linear infinite; color: white; }
+                                    .ticker-text { display: inline-block; white-space: nowrap; animation: ticker 45s linear infinite; color: #ffd700; }
+                                    .ticker-text { display: inline-block; white-space: nowrap; animation: ticker 45s linear infinite; color: #1e3a8a; }
                                     @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-                                    
-                                    .digital-twin-map { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); padding: 25px; min-height: 400px; display: flex; flex-direction: column; position: relative; }
-                                    .map-viz { flex: 1; position: relative; background: rgba(0,0,0,0.2); border-radius: 15px; margin-top: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-                                    .track-main { width: 90%; height: 8px; background: #34495e; position: relative; border-radius: 4px; }
-                                    .track-defect { position: absolute; width: 24px; height: 24px; background: #e74c3c; border-radius: 50%; top: -8px; box-shadow: 0 0 15px #e74c3c; animation: pulse-red 1.5s infinite; cursor: pointer; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.6rem; color: white; z-index: 2; transition: transform 0.2s; }
+
+                                    .digital-twin-map {
+                                        background: rgba(255, 255, 255, 0.8);
+                                        backdrop-filter: blur(25px);
+                                        border-radius: 20px;
+                                        border: 1px solid rgba(212, 175, 55, 0.2);
+                                        padding: 24px;
+                                        min-height: 280px;
+                                        display: flex;
+                                        flex-direction: column;
+                                        position: relative;
+                                        overflow: hidden;
+                                        box-shadow: 0 15px 45px rgba(31, 38, 135, 0.05);
+                                    }
+                                    .map-viz {
+                                        flex: 1;
+                                        position: relative;
+                                        background: rgba(31, 38, 135, 0.03);
+                                        border-radius: 16px;
+                                        margin-top: 15px;
+                                        overflow: hidden;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        border: 1px solid rgba(31, 38, 135, 0.05);
+                                    }
+                                    .track-main { width: 90%; height: 6px; background: #34495e; position: relative; border-radius: 3px; }
+                                    .track-defect {
+                                        position: absolute; width: 22px; height: 22px;
+                                        background: #ef4444; border-radius: 50%; top: -8px;
+                                        box-shadow: 0 0 10px #ef4444; animation: pulse-red 1.5s infinite;
+                                        cursor: pointer; border: 2px solid white;
+                                        display: flex; align-items: center; justify-content: center;
+                                        font-weight: bold; font-size: 0.55rem; color: white; z-index: 2;
+                                    }
                                     .track-defect:hover { transform: scale(1.2); z-index: 10; }
                                     .track-ok { position: absolute; width: 16px; height: 16px; background: #2ecc71; border-radius: 50%; top: -4px; box-shadow: 0 0 10px #2ecc71; cursor: pointer; }
                                     @keyframes pulse-red { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
 
-                                    .smart-sidebar { display: flex; flex-direction: column; gap: 20px; }
-                                    .smart-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-                                    .advice-card { background: linear-gradient(135deg, rgba(243, 156, 18, 0.1), rgba(241, 196, 15, 0.1)); border-color: rgba(241, 196, 15, 0.3); }
-                                    .countdown-display { display: flex; justify-content: space-around; margin-top: 10px; font-family: monospace; font-size: 1.5rem; color: #00c6ff; }
-                                    
-                                    .kanban-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 30px; }
-                                    .kanban-col { background: rgba(255,255,255,0.03); border-radius: 15px; padding: 15px; min-height: 200px; transition: background 0.3s; }
-                                    .kanban-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
-                                    .add-task-btn { background: none; border: none; color: white; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; font-size: 1.1rem; }
-                                    .add-task-btn:hover { opacity: 1; color: #2ecc71; }
-                                    .task-card { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #2ecc71; transition: transform 0.2s; cursor: grab; font-size: 0.9rem; position: relative; user-select: none; }
-                                    .task-card:active { cursor: grabbing; }
-                                    .task-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.08); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-                                    .task-card.urgent { border-left-color: #e74c3c; }
+                                    .smart-sidebar { display: flex; flex-direction: column; gap: 12px; }
+                                    .smart-card {
+                                        background: rgba(255, 255, 255, 0.7);
+                                        border: 1px solid rgba(212, 175, 55, 0.3);
+                                        border-radius: 18px;
+                                        padding: 20px;
+                                        box-shadow: 0 8px 30px rgba(31, 38, 135, 0.05);
+                                    }
+                                    .advice-card { background: linear-gradient(135deg, rgba(212, 175, 55, 0.05), rgba(255, 215, 0, 0.05)); border: 1.5px solid rgba(212, 175, 55, 0.2); }
+                                    .countdown-display { display: flex; justify-content: space-around; margin-top: 5px; font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: #ffd700; font-weight: 800; }
+                                    .countdown-display { display: flex; justify-content: space-around; margin-top: 5px; font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: #1e3a8a; font-weight: 800; }
+
+                                    .kanban-board {
+                                        display: grid;
+                                        grid-template-columns: repeat(4, 1fr);
+                                        gap: 10px;
+                                        margin-top: 10px;
+                                        margin-bottom: 15px;
+                                        width: 100%;
+                                        max-width: 1400px;
+                                        margin-left: auto;
+                                        margin-right: auto;
+                                    }
+                                    .kanban-col { background: rgba(255, 255, 255, 0.5); border-radius: 16px; padding: 15px; min-height: 120px; transition: var(--transition); border: 1px solid rgba(31, 38, 135, 0.05); }
+                                    .kanban-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: 800; border-bottom: 2px solid rgba(31, 38, 135, 0.05); padding-bottom: 8px; font-size: 0.95rem; }
+                                    .add-task-btn { background: rgba(37, 99, 235, 0.1); border: none; color: #ffd700; cursor: pointer; border-radius: 6px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; transition: var(--transition); font-size: 1rem; }
+                                    .add-task-btn { background: rgba(37, 99, 235, 0.1); border: none; color: #2563eb; cursor: pointer; border-radius: 6px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; transition: var(--transition); font-size: 1rem; }
+                                    .add-task-btn:hover { background: #2563eb; color: white; transform: scale(1.1); }
+                                    .task-card {
+                                        background: white;
+                                        padding: 12px;
+                                        border-radius: 12px;
+                                        margin-bottom: 10px;
+                                        border-left: 4px solid #10b981;
+                                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                                        cursor: grab;
+                                        font-size: 0.85rem;
+                                        color: #ffd700;
+                                        color: #1e3a8a;
+                                        font-weight: 600;
+                                        position: relative;
+                                        box-shadow: 0 4px 12px rgba(31, 38, 135, 0.03);
+                                    }
+                                    .task-card:active { cursor: grabbing; box-shadow: 0 10px 25px rgba(31, 38, 135, 0.1); }
+                                    .task-card:hover { transform: translateY(-3px) translateX(3px); box-shadow: 0 8px 20px rgba(31, 38, 135, 0.08); border-left-width: 6px; }
+                                    .task-card.urgent { border-left-color: #ef4444; }
                                     .task-actions { position: absolute; top: 5px; right: 5px; display: none; }
                                     .task-card:hover .task-actions { display: flex; gap: 5px; }
                                     .edit-btn, .delete-btn { background: rgba(0,0,0,0.3); border: none; color: white; border-radius: 3px; padding: 2px 5px; cursor: pointer; font-size: 0.7rem; }
                                     .delete-btn:hover { background: #e74c3c; }
                                     .edit-btn:hover { background: #3498db; }
-                                    
+
                                     /* Map Controls */
                                     .map-controls { position: absolute; top: 15px; right: 25px; display: flex; gap: 10px; }
-                                    .map-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; padding: 5px 10px; cursor: pointer; backdrop-filter: blur(5px); transition: all 0.2s; }
-                                    .map-btn:hover { background: rgba(255,255,255,0.2); }
+                                    .map-btn { background: rgba(255, 255, 255, 0.6); border: 1.5px solid rgba(212, 175, 55, 0.3); color: #ffd700; border-radius: 12px; padding: 6px 14px; cursor: pointer; backdrop-filter: blur(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 700; }
+                                    .map-btn { background: rgba(255, 255, 255, 0.6); border: 1.5px solid rgba(212, 175, 55, 0.3); color: #1e3a8a; border-radius: 12px; padding: 6px 14px; cursor: pointer; backdrop-filter: blur(10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 700; }
+                                    .map-btn:hover { background: white; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(31, 38, 135, 0.08), 0 0 10px rgba(212, 175, 55, 0.2); }
+
+                                    @media (max-width: 1600px) {
+                                        .smart-dashboard-grid { grid-template-columns: 1fr 280px; }
+                                    }
+                                    @media (max-width: 1400px) {
+                                        .smart-dashboard-grid { grid-template-columns: 1fr; }
+                                        .kanban-board { grid-template-columns: repeat(2, 1fr); }
+                                    }
+                                    @media (max-width: 800px) {
+                                        .kanban-board { grid-template-columns: 1fr; }
+                                    }
                                 </style>
 
                                 <div class="announcement-ticker">
@@ -638,16 +693,62 @@ function getSmartSubdivisionDashboardHTML(user) {
                                 </div>
 
                                 <div class="smart-dashboard-grid">
+                                    <!-- Dispetcherga Hisobot Bo'limi (Royal Edition Integration) -->
+                                    <div style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(25px); border: 1.5px solid rgba(212, 175, 55, 0.3); border-radius: 20px; padding: 25px; margin-bottom: 25px; grid-column: 1 / -1; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 15px 45px rgba(31, 38, 135, 0.05);">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(31, 38, 135, 0.1); padding-bottom: 15px; margin-bottom: 5px;">
+                                            <div style="display: flex; align-items: center; gap: 15px;">
+                                                <div style="width: 55px; height: 55px; background: rgba(37, 99, 235, 0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; border: 1.5px solid rgba(37, 99, 235, 0.2);">
+                                                    <i class="fas fa-tower-broadcast" style="color: #ffd700; font-size: 1.5rem;"></i>
+                                                    <i class="fas fa-tower-broadcast" style="color: #2563eb; font-size: 1.5rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <h3 style="margin: 0; font-size: 1.4rem; font-weight: 800; color: #ffd700; text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);">Dispetcherga Kunlik Hisobot</h3>
+                                                    <p style="margin: 3px 0 0 0; color: #e2e8f0; font-size: 0.85rem; font-weight: 600;">Status: <span style="color: #10b981; font-weight: 800;"><i class="fas fa-circle-check"></i> Faol</span></p>
+                                                </div>
+                                            </div>
+                                            <button onclick="openSubdivisionReportDetail()" style="padding: 12px 28px; background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; border: none; border-radius: 15px; font-weight: 850; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);">
+                                                <i class="fas fa-pen-fancy"></i> RAPORT YOZISH
+                                            </button>
+                                        </div>
+                                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 10px;">
+                                            <div style="background: white; border: 1px solid rgba(31, 38, 135, 0.05); padding: 18px; border-radius: 16px; box-shadow: 0 4px 12px rgba(31, 38, 135, 0.02);">
+                                                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 6px; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Oxirgi raport</div>
+                                                <div id="last-report-time" style="font-weight: 800; color: #1e293b; font-size: 1.1rem;">${subdivisionReports[user.bolinmalar[0]]?.time || '--:--'}</div>
+                                            </div>
+                                            <div style="background: white; border: 1px solid rgba(31, 38, 135, 0.05); padding: 18px; border-radius: 16px; box-shadow: 0 4px 12px rgba(31, 38, 135, 0.02);">
+                                                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 6px; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Status</div>
+                                                <div style="font-weight: 800; color: #10b981; font-size: 1.1rem;">Yuborilgan</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <script>
+                                        // Bu script bo'lim yuklanganda ishlaydi
+                                        window.openSubdivisionReportDetail = function() {
+                                            const bid = '${user.bolinmalar[0]}';
+                                            if (typeof renderSubdivisionReportSendView === 'function') {
+                                                const container = document.getElementById('mainContent');
+                                                if(container) {
+                                                    container.innerHTML = renderSubdivisionReportSendView(bid);
+                                                    // Ensure style elements are processed
+                                                    window.scrollTo(0,0);
+                                                }
+                                            } else {
+                                                console.error('Dispatcher module not loaded');
+                                            }
+                                        }
+                                    </script>
+
                                     <!-- Left: Digital Twin Map -->
                                     <div class="digital-twin-map">
                                         <div style="display: flex; justify-content: space-between; align-items: start;">
                                             <div>
-                                                <h3 style="margin: 0; color: white;"><i class="fas fa-map-marked-alt"></i> Mening Hududim (Raqamli Egizak)</h3>
-                                                <span id="pk-range-display" onclick="editPKRange()" style="cursor: pointer; background: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 3px 10px; border-radius: 10px; font-size: 0.8rem; display: inline-block; margin-top: 5px;" title="Tahrirlash uchun bosing">PK 145 - PK 165</span>
+                                                <h3 style="margin: 0; color: #ffd700; font-weight: 850; text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);"><i class="fas fa-map-marked-alt"></i> Mening Hududim (Raqamli Egizak)</h3>
+                                                <span id="pk-range-display" onclick="editPKRange()" style="cursor: pointer; background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 800; display: inline-block; margin-top: 8px; border: 1px solid rgba(16, 185, 129, 0.2);" title="Tahrirlash uchun bosing">PK 145 - PK 165</span>
                                             </div>
                                             <div class="map-controls">
-                                                <button class="map-btn" onclick="addDefectPrompt()" title="Nuqson qo'shish"><i class="fas fa-plus-circle"></i> Nuqson</button>
-                                                <button class="map-btn" onclick="refreshMap()" title="Yangilash"><i class="fas fa-sync-alt"></i></button>
+                                                <button class="map-btn" onclick="addDefectPrompt()" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; border: none; padding: 10px 18px; border-radius: 14px; font-weight: 850; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);" title="Nuqson qo'shish"><i class="fas fa-plus-circle"></i> Nuqson</button>
+                                                <button class="map-btn" onclick="refreshMap()" style="background: rgba(255, 255, 255, 0.8); color: #ffd700; border: 1.5px solid rgba(212, 175, 55, 0.3); padding: 10px; border-radius: 14px; font-weight: 800;" title="Yangilash"><i class="fas fa-sync-alt"></i></button>
                                             </div>
                                         </div>
                                         <div class="map-viz" id="subdivisionMap">
@@ -665,32 +766,32 @@ function getSmartSubdivisionDashboardHTML(user) {
                                     <div class="smart-sidebar">
                                         <!-- Smart Advice -->
                                         <div class="smart-card advice-card">
-                                            <h4 style="margin: 0 0 10px 0; color: #f1c40f;"><i class="fas fa-lightbulb"></i> Smart Tavsiya</h4>
-                                            <div id="smart-advice-text" style="font-size: 0.9rem; line-height: 1.4; color: rgba(255,255,255,0.9);">
+                                            <h4 style="margin: 0 0 12px 0; color: #d4af37; font-weight: 850;"><i class="fas fa-lightbulb"></i> Smart Tavsiya</h4>
+                                            <div id="smart-advice-text" style="font-size: 0.95rem; line-height: 1.6; color: #1e293b; font-weight: 600;">
                                                 <i class="fas fa-spinner fa-spin"></i> Yuklanmoqda...
                                             </div>
                                         </div>
 
                                         <!-- Countdown -->
                                         <div class="smart-card">
-                                            <h4 style="margin: 0 0 10px 0; color: #00c6ff;"><i class="fas fa-stopwatch"></i> Oylik hisobotgacha</h4>
+                                            <h4 style="margin: 0 0 12px 0; color: #ffd700; font-weight: 850; text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);"><i class="fas fa-stopwatch"></i> Oylik hisobotgacha</h4>
                                             <div class="countdown-display">
                                                 <div style="text-align: center;">
-                                                    <div id="cnt-days">--</div>
-                                                    <div style="font-size: 0.7rem; color: #888;">Kun</div>
+                                                     <div id="cnt-days" style="color: #ffd700;">--</div>
+                                                     <div style="font-size: 0.75rem; color: #e2e8f0; font-weight: 700; text-transform: uppercase;">Kun</div>
                                                 </div>
-                                                <div>:</div>
+                                                <div style="color: #ffd700;">:</div>
                                                 <div style="text-align: center;">
-                                                    <div id="cnt-hours">--</div>
-                                                    <div style="font-size: 0.7rem; color: #888;">Soat</div>
+                                                     <div id="cnt-hours" style="color: #ffd700;">--</div>
+                                                     <div style="font-size: 0.75rem; color: #e2e8f0; font-weight: 700; text-transform: uppercase;">Soat</div>
                                                 </div>
-                                                <div>:</div>
+                                                <div style="color: #ffd700;">:</div>
                                                 <div style="text-align: center;">
-                                                    <div id="cnt-minutes">--</div>
-                                                    <div style="font-size: 0.7rem; color: #888;">Daqiqa</div>
+                                                     <div id="cnt-minutes" style="color: #ffd700;">--</div>
+                                                     <div style="font-size: 0.75rem; color: #e2e8f0; font-weight: 700; text-transform: uppercase;">Daqiqa</div>
                                                 </div>
                                             </div>
-                                            <div style="margin-top: 10px; font-size: 0.8rem; text-align: center; color: rgba(255,255,255,0.5);">
+                                            <div style="margin-top: 15px; font-size: 0.8rem; text-align: center; color: #e2e8f0; font-weight: 600;">
                                                 Oylik hisobot muddati
                                             </div>
                                         </div>
@@ -712,35 +813,47 @@ function getSmartSubdivisionDashboardHTML(user) {
                                 </div>
 
                                 <!-- Bottom: Kanban Tasks -->
-                                <h3 style="margin: 0; color: white;"><i class="fas fa-tasks"></i> Bugungi Vazifalar (Tahrirlash: 2 marta bosing)</h3>
+                                <h3 style="margin: 20px 0 15px 0; color: #ffd700; font-size: 1.4rem; font-weight: 850; text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);"><i class="fas fa-tasks"></i> Bugungi Vazifalar</h3>
                                 <div class="kanban-board">
                                     <div class="kanban-col" id="col-todo" ondrop="drop(event)" ondragover="allowDrop(event)">
                                         <div class="kanban-header">
-                                            <span style="color: #f1c40f;">Bajarish kerak (To Do)</span>
-                                            <button class="add-task-btn" onclick="addNewTask('todo')"><i class="fas fa-plus"></i></button>
+                                            <span style="color: #ffd700;">Bajarish kerak (To Do)</span>
+                                            <button class="add-task-btn" onclick="addNewTask('todo')" style="color: #ffd700;"><i class="fas fa-plus"></i></button>
                                         </div>
                                         <!-- Dynamic tasks -->
                                     </div>
 
                                     <div class="kanban-col" id="col-progress" ondrop="drop(event)" ondragover="allowDrop(event)">
                                         <div class="kanban-header">
-                                            <span style="color: #3498db;">Jarayonda (In Progress)</span>
-                                            <button class="add-task-btn" onclick="addNewTask('progress')"><i class="fas fa-plus"></i></button>
+                                            <span style="color: #60a5fa;">Jarayonda (In Progress)</span>
+                                            <button class="add-task-btn" onclick="addNewTask('progress')" style="color: #60a5fa;"><i class="fas fa-plus"></i></button>
                                         </div>
                                         <!-- Dynamic tasks -->
                                     </div>
 
                                     <div class="kanban-col" id="col-done" ondrop="drop(event)" ondragover="allowDrop(event)">
                                         <div class="kanban-header">
-                                            <span style="color: #2ecc71;">Bajarildi (Done)</span>
-                                            <button class="add-task-btn" onclick="addNewTask('done')"><i class="fas fa-plus"></i></button>
+                                            <span style="color: #34d399;">Bajarildi (Done)</span>
+                                            <button class="add-task-btn" onclick="addNewTask('done')" style="color: #34d399;"><i class="fas fa-plus"></i></button>
                                         </div>
                                         <!-- Dynamic tasks -->
                                     </div>
                                 </div>
 
+                                <!-- Journal Cards (Bo'limlar) for Subdivision -->
+                                <h3 style="margin: 40px 0 20px 0; color: #ffd700; font-size: 1.4rem; font-weight: 850; text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);"><i class="fas fa-th-large"></i> Bo'limlar va Jurnallar</h3>
+                                <div class="journal-list">
+                                    ${(window.sectionsData && window.sectionsData[currentUser.bolinmalar[0]] || [])
+            .map(s => `
+                                            <div class="journal-card" data-department="${currentUser.bolinmalar[0]}-section-${s.id}">
+                                                <h4><i class="${s.icon}"></i> ${s.name}</h4>
+                                                <p>${s.description || ''}</p>
+                                            </div>
+                                        `).join('')}
+                                </div>
+
                                 <!-- ADDED: Chart, Weather, News for Subdivision -->
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                                <div class="subdivision-bottom-grid">
                                     
                                     <!-- Weather -->
                                     <div class="weather-section" style="margin: 0;">
@@ -1164,7 +1277,7 @@ async function renderMapDefects() {
 }
 
 async function addDefectToMap(pk, issue) {
-    const bolinmaId = currentUser.bolinmalar ? currentUser.bolinmalar[0] : null;
+    const bolinmaId = window.viewingSubdivisionId || (currentUser.bolinmalar ? currentUser.bolinmalar[0] : null);
     if (!bolinmaId) return;
 
     try {
@@ -1207,7 +1320,8 @@ function renderHomepageMonitoring() {
             temp: Math.floor(Math.random() * (55 - 20) + 20),
             defects: 0,
             wearV: 0.0,
-            wearH: 0.0
+            wearH: 0.0,
+            bruto: 12.5
         };
         window.monitoringData[bolinmaId] = monitorData;
     }
@@ -1239,6 +1353,12 @@ function renderHomepageMonitoring() {
                     <span style="color: rgba(255,255,255,0.7);">Nuqsonlar:</span>
                     <span style="color: ${monitorData.defects > 0 ? '#e74c3c' : '#2ecc71'}; font-weight: bold;">
                         ${monitorData.defects} ta
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: rgba(255,255,255,0.7);">Yillik tonna bruto:</span>
+                    <span style="color: #ffd700; font-weight: bold;">
+                        ${monitorData.bruto || 0} mln t.km
                     </span>
                 </div>
             </div>
@@ -1306,7 +1426,83 @@ function renderHomepageMonitoring() {
                 <i class="fas fa-eye"></i> Batafsil Ko'rish
             </button>
         </div>
+
+        <div class="smart-card" style="background: rgba(155, 89, 182, 0.1); border-color: rgba(155, 89, 182, 0.3); border-left: 4px solid #9b59b6; margin-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="margin: 0; color: #9b59b6; font-size: 1rem;">
+                    <i class="fas fa-map-marked-alt"></i> Stansiyalar Xaritasi
+                </h4>
+                <button onclick="if(window.openPCHMap) window.openPCHMap()" style="background: #9b59b6; border: none; color: white; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">
+                    Xaritani Ochish
+                </button>
+            </div>
+            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); line-height: 1.4;">
+                <i class="fas fa-location-dot"></i> Qorlitog' TYM hududidagi barcha stansiyalar interaktiv xaritasi.
+            </div>
+        </div>
+
+        <div class="smart-card" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); border-left: 4px solid #10b981; margin-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="margin: 0; color: #10b981; font-size: 1rem;">
+                    <i class="fas fa-bridge"></i> Sun'iy Inshootlar
+                </h4>
+                <button onclick="if(window.openArtificialStructures) window.openArtificialStructures('${bolinmaId}')" style="background: #10b981; border: none; color: white; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">
+                    Batafsil
+                </button>
+            </div>
+            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); line-height: 1.4;">
+                <i class="fas fa-circle-info"></i> Ko'priklar, trubalar va tonnellar holati monitoringi.
+            </div>
+        </div>
+        <!-- DISPETCHERGA ISH YUBORISH CARDI -->
+        <div class="smart-card" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); border-left: 4px solid #38bdf8; margin-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="margin: 0; color: #38bdf8; font-size: 1rem;">
+                    <i class="fas fa-paper-plane"></i> Kunlik Ish Rejasi
+                </h4>
+                <button onclick="if(self.openDepartmentWindow) self.openDepartmentWindow('dispetcher')" style="background: #38bdf8; border: none; color: #0f172a; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">
+                    Yuborish
+                </button>
+            </div>
+            <div id="quick-task-display-${bolinmaId}" style="font-size: 0.85rem; color: rgba(255,255,255,0.7); line-height: 1.4;">
+                <i class="fas fa-spinner fa-spin"></i> Tekshirilmoqda...
+            </div>
+        </div>
+
+        <div class="smart-card" style="background: rgba(230, 126, 34, 0.1); border-color: rgba(230, 126, 34, 0.3); border-left: 4px solid #e67e22; margin-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="margin: 0; color: #e67e22; font-size: 1rem;">
+                    <i class="fas fa-truck-monster"></i> Mexanika Holati
+                </h4>
+                <button onclick="if(window.openDepartmentWindow) window.openDepartmentWindow('mexanika')" style="background: #e67e22; border: none; color: white; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">
+                    Ochish
+                </button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.85rem;">
+                <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; text-align: center;">
+                    <div style="color: #2ecc71; font-weight: bold;">${(window.waybillData?.vehicles?.filter(v => v.status === 'free' && (!v.departmentId || v.departmentId === bolinmaId)).length || 0)}</div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 0.7rem;">Tayyor</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; text-align: center;">
+                    <div style="color: #f1c40f; font-weight: bold;">${(window.waybillData?.vehicles?.filter(v => v.status === 'repair' && (!v.departmentId || v.departmentId === bolinmaId)).length || 0)}</div>
+                </div>
+            </div>
+        </div>
     `;
+
+    if (self.initDispatcherData) {
+        self.initDispatcherData().then(() => {
+            const display = document.getElementById(`quick-task-display-${bolinmaId}`);
+            if (display) {
+                if (self.subdivisionReports && self.subdivisionReports[bolinmaId]) {
+                    const report = self.subdivisionReports[bolinmaId];
+                    display.innerHTML = `<span style="color: #2ecc71;"><i class="fas fa-check"></i> Yuborilgan:</span> ${report.content.substring(0, 40)}${report.content.length > 40 ? '...' : ''}`;
+                } else {
+                    display.innerHTML = `<span style="color: #64748b; font-style: italic;">Bugun hali ish rejasi yuborilmadi</span>`;
+                }
+            }
+        }).catch(e => console.warn("Dispatcher card update failed", e));
+    }
 }
 
 // --- ADMIN MODAL FOR SUBDIVISION VIEW ---
@@ -1490,47 +1686,37 @@ const functionalDepartments = [
     {
         id: 'ishlab-chiqarish',
         name: 'Ishlab chiqarish bo\'limi',
-        manager: 'Turobov H.H',
+        manager: 'Anvarov T.',
         icon: 'fas fa-industry',
-        description: 'Ishlab chiqarish jarayonlari va mahsulot sifati nazorati',
-        integrations: ['obs', 'kmo']
+        description: 'Ishlab chiqarish jarayonlari va mahsulot nazorati'
     },
     {
         id: 'xodimlar',
         name: 'Xodimlar bo\'limi',
-        manager: 'Sattorov M.M',
-        icon: 'fas fa-users',
-        description: 'Xodimlar ro\'yxati, mehnat shartnomalari va malaka oshirish',
-        integrations: ['exodim']
+        manager: 'Sattorov J.',
+        icon: 'fas fa-users-gear',
+        description: 'Xodimlarni boshqarish va mehnat munosabatlari'
     },
     {
         id: 'bugalteriya',
         name: 'Bugalteriya bo\'limi',
-        manager: 'Bozorov F.',
+        manager: 'Karimov S.',
         icon: 'fas fa-calculator',
-        description: 'Moliya hisoboti, byudjet rejalashtirish va soliq hisobi'
-    },
-    {
-        id: 'iqtisod',
-        name: 'Iqtisod bo\'limi',
-        manager: 'Nosirov S.',
-        icon: 'fas fa-chart-line',
-        description: 'Iqtisodiy tahlil, narxlar siyosati va bozor tadqiqotlari'
+        description: 'Moliyaviy hisobotlar va buxgalteriya hisobi'
     },
     {
         id: 'mexanika',
         name: 'Mexanika bo\'limi',
-        manager: 'Xudoyberdiyev J.',
-        icon: 'fas fa-cog',
-        description: 'Texnika texnik xizmat ko\'rsatish, ta\'mirlash va modernizatsiya',
-        integrations: ['mexanika-monitor']
+        manager: 'Rustamov M.',
+        icon: 'fas fa-gears',
+        description: 'Texnik xizmat ko\'rsatish va mexanizatsiyalash'
     },
     {
-        id: 'mehnat-muhofazasi',
-        name: 'Mehnat muhofazasi bo\'limi',
-        manager: 'Olimov O.',
-        icon: 'fas fa-hard-hat',
-        description: 'Ish xavfsizligi, sog\'liqni saqlash va atrof-muhit muhofazasi'
+        id: 'iqtisod',
+        name: 'Iqtisod bo\'limi',
+        manager: 'Zokirov F.',
+        icon: 'fas fa-chart-line',
+        description: 'Iqtisodiy tahlil va rejalashtirish'
     },
     {
         id: 'dispetcher',
@@ -1539,13 +1725,6 @@ const functionalDepartments = [
         icon: 'fas fa-tower-broadcast',
         description: 'Transport harakatini boshqarish va monitoring qilish',
         integrations: ['obs']
-    },
-    {
-        id: 'metrologiya',
-        name: 'Metrologiya bo\'limi',
-        manager: 'Juzgenov M.',
-        icon: 'fas fa-ruler-combined',
-        description: 'O\'lchov asboblarini kalibrlash va metrologik nazorat'
     }
 ];
 
@@ -1556,18 +1735,19 @@ let uploadedFiles = [];
 let currentEditingFile = null;
 let currentUser = null;
 let newsData = [];
-let weatherData = null;
+// weatherData is declared in weather.js
+// currentWeatherView is declared in weather.js
 let competitionChart = null;
 let currentSelectedCell = null;
-let currentWeatherView = 'current';
 let currentPreviewFile = null;
 let chartEditor = null;
 let currentChartData = null;
-let liveMap = null;
-let subdivisionMarkers = [];
+// liveMap is declared in map-logic.js
+// subdivisionMarkers is declared in map-logic.js
 let competitionData = {
     type: 'bar',
     colors: ['rgba(52, 152, 219, 0.7)', 'rgba(46, 204, 113, 0.7)'],
+    colors: ['rgba(212, 175, 55, 0.8)', 'rgba(255, 215, 0, 0.6)'],
     textColor: 'white',
     borderWidth: 1,
     height: 400,
@@ -1682,6 +1862,8 @@ function createCompetitionChart() {
                     data: performanceData,
                     backgroundColor: competitionData.colors?.[0] || 'rgba(52, 152, 219, 0.7)',
                     borderColor: competitionData.colors?.[0] || 'rgba(52, 152, 219, 1)',
+                    backgroundColor: competitionData.colors?.[0] || 'rgba(212, 175, 55, 0.8)',
+                    borderColor: competitionData.colors?.[0] || 'rgba(212, 175, 55, 1)',
                     borderWidth: competitionData.borderWidth || 1
                 },
                 {
@@ -1689,6 +1871,8 @@ function createCompetitionChart() {
                     data: efficiencyData,
                     backgroundColor: competitionData.colors?.[1] || 'rgba(46, 204, 113, 0.7)',
                     borderColor: competitionData.colors?.[1] || 'rgba(46, 204, 113, 1)',
+                    backgroundColor: competitionData.colors?.[1] || 'rgba(255, 215, 0, 0.6)',
+                    borderColor: competitionData.colors?.[1] || 'rgba(255, 215, 0, 1)',
                     borderWidth: competitionData.borderWidth || 1
                 }
             ]
@@ -1857,7 +2041,7 @@ setInterval(() => {
     if (mainSystem && mainSystem.style.display !== 'none') {
         injectDailyGoalToDispatcher();
     }
-}, 1000);
+}, 5000);
 
 // Havo ma'lumotlarini yuklash
 async function loadWeatherData() {
@@ -2256,126 +2440,8 @@ const railwayNews = [
     }
 ];
 
-// Yangiliklarni yuklash
-async function loadNews() {
-    try {
-        newsData = railwayNews;
-    } catch (error) {
-        console.error('Yangiliklarni yuklashda xatolik:', error);
-        newsData = railwayNews;
-    }
+// News handling is managed at the end of the file in the newer consolidated function
 
-    renderNews();
-}
-
-// Yangiliklarni ko'rsatish
-function renderNews() {
-    const newsContainer = document.querySelector('.news-container');
-    if (!newsContainer) return;
-
-    newsContainer.innerHTML = '';
-
-    if (newsData.length === 0) {
-        newsContainer.innerHTML = `
-                    <div class="loading-news">
-                        <i class="fas fa-spinner fa-spin"></i> Yangiliklarni yuklanmoqda...
-                    </div>
-                `;
-        return;
-    }
-
-    newsData.forEach(news => {
-        const newsCard = document.createElement('div');
-        newsCard.className = 'news-card';
-
-        const formattedDate = news.date.toLocaleDateString('uz-UZ', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-
-        newsCard.innerHTML = `
-                    <div class="news-image" style="background-image: url('${news.image}')">
-                        <i class="fas fa-newspaper"></i>
-                    </div>
-                    <div class="news-content">
-                        <span class="news-category">${news.category}</span>
-                        <h3 class="news-title-card">${news.title}</h3>
-                        <p class="news-excerpt">${news.description}</p>
-                        <div class="news-meta">
-                            <span class="news-date">
-                                <i class="far fa-clock"></i> ${formattedDate}
-                            </span>
-                            <span>Kun.uz</span>
-                        </div>
-                    </div>
-                `;
-
-        newsContainer.appendChild(newsCard);
-    });
-}
-
-// Excel jadvalini yaratish (Google Sheets style)
-function createExcelTable(data = null) {
-    const sheetsGrid = document.getElementById('sheetsGrid');
-    sheetsGrid.innerHTML = '';
-
-    const table = document.createElement('table');
-    table.className = 'sheets-table';
-
-    // Jadval sarlavhasi
-    const headerRow = document.createElement('tr');
-    const cornerHeader = document.createElement('th');
-    cornerHeader.className = 'corner-header';
-    cornerHeader.innerHTML = '';
-    headerRow.appendChild(cornerHeader);
-
-    // Ustun sarlavhalari (A, B, C, ...)
-    for (let i = 0; i < 10; i++) {
-        const th = document.createElement('th');
-        th.textContent = String.fromCharCode(65 + i); // A, B, C, ...
-        headerRow.appendChild(th);
-    }
-    table.appendChild(headerRow);
-
-    // Jadval tarkibi
-    for (let row = 0; row < 15; row++) {
-        const tr = document.createElement('tr');
-
-        // Qator sarlavhasi
-        const rowHeader = document.createElement('th');
-        rowHeader.className = 'row-header';
-        rowHeader.textContent = row + 1;
-        tr.appendChild(rowHeader);
-
-        for (let col = 0; col < 10; col++) {
-            const td = document.createElement('td');
-            const input = document.createElement('input');
-            input.className = 'cell-input';
-            input.type = 'text';
-
-            // Agar ma'lumot mavjud bo'lsa
-            if (data && data[row] && data[row][col]) {
-                input.value = data[row][col];
-            }
-
-            input.addEventListener('focus', function () {
-                if (currentSelectedCell) {
-                    currentSelectedCell.classList.remove('selected');
-                }
-                td.classList.add('selected');
-                currentSelectedCell = td;
-            });
-
-            td.appendChild(input);
-            tr.appendChild(td);
-        }
-
-        table.appendChild(tr);
-    }
-
-    sheetsGrid.appendChild(table);
-}
 // Chart editor funksiyalari
 function openChartEditor() {
     const editorWindow = document.getElementById('chart-editor-window');
@@ -2616,10 +2682,17 @@ function closeChartEditor() {
 
 // Ilovani ishga tushirish
 document.addEventListener('DOMContentLoaded', async function () {
-    await loadDatabase();
+    // 1. Event listenerlarni DARHOL o'rnatamiz (Login formasi ishlashi uchun)
     setupEventListeners();
 
-    // Agar avval login qilingan bo'lsa
+    // 2. Keyin ma'lumotlarni yuklaymiz
+    try {
+        await loadDatabase();
+    } catch (e) {
+        console.error("Database load failed:", e);
+    }
+
+    // 3. Agar avval login qilingan bo'lsa
     if (window.Auth && window.Auth.isLoggedIn()) {
         currentUser = window.Auth.currentUser;
         showMainSystem();
@@ -2628,13 +2701,13 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 function setupEventListeners() {
     // Login form
-    document.getElementById('loginForm').addEventListener('submit', function (e) {
+    document.getElementById('loginForm')?.addEventListener('submit', function (e) {
         e.preventDefault();
         login();
     });
 
     // Logout
-    document.getElementById('logoutBtn').addEventListener('click', function () {
+    document.getElementById('logoutBtn')?.addEventListener('click', function () {
         logout();
     });
 
@@ -3502,8 +3575,26 @@ function showLoginPage() {
 }
 
 function showMainSystem() {
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('mainSystem').style.display = 'block';
+    const landing = document.getElementById('landingPage');
+    if (landing) {
+        landing.style.setProperty('display', 'none', 'important');
+        landing.style.setProperty('opacity', '0', 'important');
+        landing.style.setProperty('visibility', 'hidden', 'important');
+        landing.style.setProperty('z-index', '-9999', 'important');
+    }
+
+    const login = document.getElementById('loginPage');
+    if (login) {
+        login.style.setProperty('display', 'none', 'important');
+        login.style.setProperty('opacity', '0', 'important');
+        login.style.setProperty('visibility', 'hidden', 'important');
+    }
+
+    const mainSys = document.getElementById('mainSystem');
+    if (mainSys) {
+        mainSys.style.setProperty('display', 'flex', 'important');
+        mainSys.style.cssText += ' display: flex !important; visibility: visible !important; opacity: 1 !important; ';
+    }
 
     // Foydalanuvchi ma'lumotlarini yangilash
     document.getElementById('userName').textContent = currentUser.name;
@@ -3589,25 +3680,27 @@ if (typeof competitionData === 'undefined' || !competitionData || !competitionDa
 }
 
 function initializeSystem() {
-    renderSidebar();
-    renderMainContent();
-    loadNews(); // Yangiliklarni yuklash
-    loadWeatherData(); // Havo ma'lumotlarini yuklash
-    createCompetitionChart(); // Raqobat grafigini yaratish
-    createExcelTable(); // Excel jadvalini yaratish
-    showAdminButton(); // Admin tugmasini ko'rsatish (faqat admin uchun)
-    showDispatcherElements(); // Dispetcher elementlarini ko'rsatish
+    try {
+        renderSidebar();
+        renderMainContent();
+        loadNews(); // Yangiliklarni yuklash
+        loadWeatherData(); // Havo ma'lumotlarini yuklash
+        createCompetitionChart(); // Raqobat grafigini yaratish
+        createExcelTable(); // Excel jadvalini yaratish
+        showAdminButton(); // Admin tugmasini ko'rsatish (faqat admin uchun)
+        showDispatcherElements(); // Dispetcher elementlarini ko'rsatish
 
-    // Load initial data from server
-    if (typeof loadReportsFromServer === 'function') loadReportsFromServer();
-    // Tasks and Defects are loaded inside subdivision dashboard render logic, 
-    // but we can trigger a pre-fetch if needed.
+        // Load initial data from server
+        if (typeof loadReportsFromServer === 'function') loadReportsFromServer();
+    } catch (e) {
+        console.error("System Initialization Failed:", e);
+    }
 }
 
 function showDispatcherElements() {
     const btn = document.getElementById('openDispatcherIntegrationBtn');
     if (btn) {
-        if (currentUser && (currentUser.role === 'admin' || currentUser.departments.includes('dispetcher'))) {
+        if (currentUser && (currentUser.role === 'admin' || (currentUser.departments || []).includes('dispetcher'))) {
             btn.style.display = 'flex';
         } else {
             btn.style.display = 'none';
@@ -3663,6 +3756,7 @@ function renderSidebar() {
         sidebarMenu.appendChild(li);
     });
 
+
     // Sidebar navigatsiya
     document.querySelectorAll("[data-target]").forEach(item => {
         item.addEventListener("click", () => {
@@ -3672,12 +3766,23 @@ function renderSidebar() {
 
             document.querySelectorAll(".content-section").forEach(sec => sec.classList.remove("active"));
             const section = document.getElementById(target);
-            if (section) section.classList.add("active");
+            if (section) {
+                section.classList.add("active");
+            }
+
+            // Mexanika bo'limi uchun — tugmalarni darhol ochish
+            const isDept = functionalDepartments.some(d => d.id === target);
+            if (isDept) {
+                if (typeof self.openDepartmentWindow === "function") {
+                    self.openDepartmentWindow(target);
+                }
+            }
         });
     });
 
     // Faol bo'limni belgilash
-    if (currentUser.departments && currentUser.departments.includes('mexanika')) {
+    // ADMIN har doim Dashboard (Bosh sahifa) da qolsin
+    if (currentUser.role !== 'admin' && (currentUser.departments || []).includes('mexanika')) {
         const mexLink = sidebarMenu.querySelector('[data-target="mexanika"]');
         if (mexLink) {
             mexLink.classList.add('active');
@@ -3689,7 +3794,14 @@ function renderSidebar() {
             if (sidebarMenu.firstElementChild) sidebarMenu.firstElementChild.classList.add('active');
         }
     } else {
-        if (sidebarMenu.firstElementChild) sidebarMenu.firstElementChild.classList.add('active');
+        // Standart holat - birinchi element (Dashboard)
+        if (sidebarMenu.firstElementChild) {
+            sidebarMenu.firstElementChild.classList.add('active');
+            const target = sidebarMenu.firstElementChild.getAttribute('data-target');
+            document.querySelectorAll(".content-section").forEach(sec => sec.classList.remove("active"));
+            const section = document.getElementById(target);
+            if (section) section.classList.add("active");
+        }
     }
 }
 
@@ -3698,16 +3810,27 @@ function createDashboardSection() {
     section.id = 'dashboard';
     section.className = 'content-section active';
 
-    const userFiles = uploadedFiles.filter(f => currentUser.departments.includes(f.department));
+    const userDepts = currentUser.departments || [];
+    const userFiles = uploadedFiles.filter(f => userDepts.includes(f.department));
     const totalFiles = userFiles.length;
     const approvedFiles = userFiles.filter(f => f.status === 'approved').length;
     const pendingFiles = userFiles.filter(f => f.status === 'pending').length;
 
     // HRM bo'limi - faqat admin va xodimlar bo'limi uchun
     let hrmSection = '';
-    if (currentUser.role === 'admin' || currentUser.departments.includes('xodimlar')) {
+    if (currentUser.role === 'admin' || userDepts.includes('xodimlar')) {
         if (typeof renderHRDashboard === 'function') {
-            hrmSection = renderHRDashboard();
+            hrmSection = `
+                <div class="hr-integrated-section" style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px;">
+                    <div style="margin-bottom: 25px;">
+                        <h2 style="color: #00c6ff; display: flex; align-items: center; gap: 12px; margin: 0; font-size: 1.8rem; font-weight: 850; text-shadow: 0 0 15px rgba(0, 198, 255, 0.3);">
+                            <i class="fas fa-users-cog" style="color: #00c6ff;"></i>
+                            Xodimlar Bo'limi - Boshqaruv Paneli
+                        </h2>
+                    </div>
+                    ${renderHRDashboard()}
+                </div>
+            `;
             // Chartlarni ishga tushirish
             setTimeout(() => {
                 if (typeof initHRCharts === 'function') initHRCharts();
@@ -3754,7 +3877,80 @@ function createDashboardSection() {
     // Dashboard Content Logic
     let dashboardContent = '';
 
-    if (currentUser.departments.includes('dispetcher')) {
+    if (currentUser.role === 'admin') {
+        // ======== ADMIN DASHBOARD ========
+        dashboardContent = `
+            <!-- Admin Boshqaruv Markazi -->
+            <div style="background: linear-gradient(135deg, rgba(0,198,255,0.08), rgba(0,114,255,0.04)); border: 1px solid rgba(0,198,255,0.12); border-radius: 20px; padding: 28px; margin-bottom: 25px; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(0,198,255,0.06), transparent); border-radius: 50%;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: relative; z-index: 1;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 1.6rem; background: linear-gradient(45deg, #00c6ff, #0072ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800;">
+                            <i class="fas fa-crown" style="-webkit-text-fill-color: #ffd700; margin-right: 10px;"></i> Administrator Boshqaruv Markazi
+                        </h2>
+                        <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.5); font-size: 0.9rem;">
+                            <i class="far fa-calendar-alt"></i> ${new Date().toLocaleDateString('uz-UZ', { year: 'numeric', month: 'long', day: 'numeric' })} &bull;
+                            <span style="color: #2ecc71;"><i class="fas fa-circle" style="font-size: 0.5rem; vertical-align: middle;"></i> Tizim faol</span>
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="document.getElementById('openAdminPanelBtn')?.click()" style="padding: 10px 20px; background: linear-gradient(135deg, #e74c3c, #c0392b); border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; transition: all 0.3s;">
+                            <i class="fas fa-cogs"></i> Admin Panel
+                        </button>
+                        <button onclick="document.getElementById('openTrainMapBtn')?.click()" style="padding: 10px 20px; background: linear-gradient(135deg, #3498db, #2980b9); border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; transition: all 0.3s;">
+                            <i class="fas fa-map-marked-alt"></i> Xarita
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Umumiy Statistika -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div style="background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.2); border-radius: 15px; padding: 20px; text-align: center;">
+                    <i class="fas fa-users" style="font-size: 2rem; color: #2ecc71; margin-bottom: 8px;"></i>
+                    <div style="font-size: 2rem; font-weight: 800; color: #2ecc71;">${subdivisions.length}</div>
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">Bo'linmalar</div>
+                </div>
+                <div style="background: rgba(241,196,15,0.1); border: 1px solid rgba(241,196,15,0.2); border-radius: 15px; padding: 20px; text-align: center;">
+                    <i class="fas fa-file-alt" style="font-size: 2rem; color: #f1c40f; margin-bottom: 8px;"></i>
+                    <div style="font-size: 2rem; font-weight: 800; color: #f1c40f;">${totalFiles}</div>
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">Jami hujjatlar</div>
+                </div>
+                <div style="background: rgba(155,89,182,0.1); border: 1px solid rgba(155,89,182,0.2); border-radius: 15px; padding: 20px; text-align: center;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; color: #9b59b6; margin-bottom: 8px;"></i>
+                    <div style="font-size: 2rem; font-weight: 800; color: #9b59b6;">${approvedFiles}</div>
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">Tasdiqlangan</div>
+                </div>
+            </div>
+
+            <!-- Bo'linmalar holati -->
+            <div style="background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px; margin-bottom: 25px;">
+                <h3 style="margin: 0 0 18px 0; color: #ffd700; font-size: 1.15rem; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-sitemap"></i> Bo'linmalar holati
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
+                    ${subdivisions.map((sub, idx) => `
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.3s;"
+                            onmouseover="this.style.background='rgba(0,198,255,0.06)'; this.style.borderColor='rgba(0,198,255,0.2)'; this.style.transform='translateY(-2px)'"
+                            onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(255,255,255,0.06)'; this.style.transform='none'"
+                            onclick="document.querySelector('[data-target=\\'${sub.id}\\']')?.click()">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, hsl(${(idx * 36) % 360}, 70%, 50%), hsl(${(idx * 36 + 30) % 360}, 60%, 40%)); display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; font-size: 0.85rem; flex-shrink: 0;">
+                                ${idx + 1}
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; color: #fff; font-size: 0.9rem;">${sub.name}</div>
+                                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${sub.manager} — ${sub.department}</div>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: rgba(255,255,255,0.2); font-size: 0.7rem;"></i>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+
+            ${hrmSection}
+        `;
+    } else if (userDepts.includes('dispetcher')) {
         dashboardContent = `
             <div style="margin-bottom: 30px;">
                 ${getDispatcherDashboardHTML()}
@@ -3764,7 +3960,7 @@ function createDashboardSection() {
         dashboardContent = getSmartSubdivisionDashboardHTML(currentUser);
         // Initialize functionality after render
         setTimeout(initSubdivisionFeatures, 500);
-    } else if (currentUser.departments.includes('mexanika')) {
+    } else if (userDepts.includes('mexanika')) {
         // SPECIAL: Render Mechanics Management for Mechanics user dashboard
         setTimeout(() => {
             const container = section.querySelector('#mechanics-dashboard-container');
@@ -3773,14 +3969,53 @@ function createDashboardSection() {
             }
         }, 100);
         dashboardContent = `<div id="mechanics-dashboard-container">Mexanika tizimi yuklanmoqda...</div>`;
+    } else if (userDepts.includes('ishlab-chiqarish')) {
+        dashboardContent = `
+            <div style="margin-bottom: 30px;">
+                <div id="dashboard-inline-track-defect" style="box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 15px; margin-top: 20px;">
+                    <div style="padding: 40px; text-align: center; color: #00c6ff;">Yuklanmoqda...</div>
+                </div>
+            </div>
+        `;
+        setTimeout(() => {
+            if (window.renderInlineTrackDefectMonitor) {
+                // We pass 'ishlab-chiqarish' or null so it loads all defects
+                window.renderInlineTrackDefectMonitor('dashboard-inline-track-defect', 'ishlab-chiqarish');
+            }
+        }, 500);
     } else {
         dashboardContent = hrmSection;
     }
 
+    // Statistika gridi (faqat bo'limlar uchun — admin allaqachon o'z dashboardida ko'radi)
+    let statsGrid = '';
+    if (currentUser.role !== 'admin' && (currentUser.role === 'department' && !userDepts.includes('ishlab-chiqarish'))) {
+        statsGrid = `
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <i class="fas fa-file-alt"></i>
+                    <div class="stat-number">${totalFiles}</div>
+                    <div class="stat-label">Jami hujjatlar</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-check-circle" style="color: #2ecc71;"></i>
+                    <div class="stat-number">${approvedFiles}</div>
+                    <div class="stat-label">Tasdiqlangan</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-clock" style="color: #f1c40f;"></i>
+                    <div class="stat-number">${pendingFiles}</div>
+                    <div class="stat-label">Kutilmoqda</div>
+                </div>
+            </div>
+        `;
+    }
+
     section.innerHTML = `
+                ${statsGrid}
                 ${dashboardContent}
                 
-                ${(currentUser.role === 'admin' || currentUser.departments.includes('mehnat-muhofazasi')) && typeof getCentralSafetyMonitorHTML === 'function' ?
+                ${(currentUser.role === 'admin' || userDepts.includes('mehnat-muhofazasi')) && typeof getCentralSafetyMonitorHTML === 'function' ?
             getCentralSafetyMonitorHTML() : ''}
 
                 ${currentUser.role !== 'bolinma' ? `
@@ -3851,7 +4086,7 @@ function createDashboardSection() {
                     <div class="collapsible-content" id="departmentsContent" style="display: none;">
                         <div class="journal-list" id="functionalDepartmentsList">
                             ${functionalDepartments
-                .filter(dept => currentUser.departments.includes(dept.id))
+                .filter(dept => currentUser.role === 'admin' || userDepts.includes(dept.id))
                 .map(dept => `
                                 <div class="journal-card" data-department="${dept.id}">
                                     <h4><i class="${dept.icon}"></i> ${dept.name}</h4>
@@ -3868,93 +4103,114 @@ function createDashboardSection() {
 }
 
 function renderMainContent() {
-    const mainContent = document.getElementById('mainContent');
-    mainContent.innerHTML = '';
+    try {
+        const mainContent = document.getElementById('mainContent');
+        if (!mainContent) return;
+        mainContent.innerHTML = '';
 
-    // Dashboard
-    const dashboardSection = createDashboardSection();
-    mainContent.appendChild(dashboardSection);
+        // Dashboard
+        const dashboardSection = createDashboardSection();
+        if (dashboardSection) mainContent.appendChild(dashboardSection);
 
-    // New Sections
-    if (typeof createTasksSection === 'function') mainContent.appendChild(createTasksSection());
-    if (typeof createMaintenanceSection === 'function') mainContent.appendChild(createMaintenanceSection());
+        // New Sections
+        if (typeof createTasksSection === 'function') {
+            const tasksSection = createTasksSection();
+            if (tasksSection) mainContent.appendChild(tasksSection);
+        }
+        if (typeof createMaintenanceSection === 'function') {
+            const maintenanceSection = createMaintenanceSection();
+            if (maintenanceSection) mainContent.appendChild(maintenanceSection);
+        }
 
-    // Bo'linmalar uchun section yaratish
-    departments.slice(1).forEach(dept => {
-        const section = createDepartmentSection(dept);
-        mainContent.appendChild(section);
-    });
+        // Bo'linmalar uchun section yaratish
+        if (departments && departments.slice) {
+            departments.slice(1).forEach(dept => {
+                const section = createDepartmentSection(dept);
+                if (section) mainContent.appendChild(section);
+            });
+        }
+    } catch (e) {
+        console.error("Main Content Rendering Failed:", e);
+    }
+}
 
-    // AI Development section
+// AI Development section
 
-    // Bo'lim oynalarini ochish
-    document.addEventListener('click', function (e) {
-        if (e.target.closest('.journal-card[data-department]')) {
-            const card = e.target.closest('.journal-card[data-department]');
-            const departmentId = card.getAttribute('data-department');
+// Bo'lim oynalarini ochish
+document.addEventListener('click', function (e) {
+    if (e.target.closest('.journal-card[data-department]')) {
+        const card = e.target.closest('.journal-card[data-department]');
+        const departmentId = card.getAttribute('data-department');
 
-            // Bo'linma ichidagi bo'lim ekanligini tekshirish
-            if (departmentId.includes('-section-')) {
-                // Bo'linma ichidagi bo'lim - bolinma1-section-1 formatida
-                const parts = departmentId.split('-section-');
-                const bolinmaId = parts[0]; // bolinma1
-                const sectionId = parts[1]; // 1
+        // Bo'linma ichidagi bo'lim ekanligini tekshirish
+        if (departmentId.includes('-section-')) {
+            // Bo'linma ichidagi bo'lim - bolinma1-section-1 formatida
+            const parts = departmentId.split('-section-');
+            const bolinmaId = parts[0]; // bolinma1
+            const sectionId = parts[1]; // 1
 
-                // Admin har qanday bo'limga kirishi mumkin
-                if (currentUser.role === 'admin') {
-                    openBolinmaSectionWindow(bolinmaId, sectionId);
-                } else {
-                    // Boshqa foydalanuvchilar uchun
-                    openBolinmaSectionWindow(bolinmaId, sectionId);
-                }
+            // Admin har qanday bo'limga kirishi mumkin
+            if (currentUser.role === 'admin') {
+                openBolinmaSectionWindow(bolinmaId, sectionId);
             } else {
-                // Oddiy functional department
-                if (currentUser.role === 'admin' || currentUser.departments.includes(departmentId)) {
-                    openDepartmentWindow(departmentId);
-                } else {
-                    alert('Sizga bu bo\'limga kirish ruxsati berilmagan!');
-                }
+                // Boshqa foydalanuvchilar uchun
+                openBolinmaSectionWindow(bolinmaId, sectionId);
+            }
+        } else {
+            // Oddiy functional department
+            // Ruxsat berish: admin, bo'lim xodimi yoki bo'linma xodimi (mexanika uchun)
+            const isAllowed = currentUser.role === 'admin' ||
+                (currentUser.departments && currentUser.departments.includes(departmentId)) ||
+                (currentUser.role === 'bolinma' && (departmentId === 'mexanika' || departmentId === 'dispetcher'));
+
+            if (isAllowed) {
+                openDepartmentWindow(departmentId);
+            } else {
+                alert('Sizga bu bo\'limga kirish ruxsati berilmagan!');
             }
         }
-    });
+    }
+});
 
-    // Bo'lim oynalarini yopish
-    document.addEventListener('click', function (e) {
-        if (e.target.classList.contains('close-window')) {
-            closeAllWindows();
-        }
-    });
+// Bo'lim oynalarini yopish
+document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('close-window')) {
+        closeAllWindows();
+    }
+});
 
-    // Overlay orqali yopish
-    document.getElementById('department-overlay').addEventListener('click', () => {
+// Overlay orqali yopish
+const deptOverlay = document.getElementById('department-overlay');
+if (deptOverlay) {
+    deptOverlay.addEventListener('click', () => {
         closeAllWindows();
     });
-
-    // Integratsiya tablari
-    document.addEventListener('click', function (e) {
-        if (e.target.classList.contains('integration-tab')) {
-            const tab = e.target;
-            const tabId = tab.getAttribute('data-tab');
-            const parentWindow = tab.closest('.integration-window');
-
-            // Barcha tablarni yopish
-            parentWindow.querySelectorAll('.integration-tab').forEach(t => t.classList.remove('active'));
-            parentWindow.querySelectorAll('.integration-frame, .integration-panel').forEach(content => {
-                content.style.display = 'none';
-            });
-
-            // Faol tabni ochish
-            tab.classList.add('active');
-            const activeContent = parentWindow.querySelector(`#${tabId}`);
-            if (activeContent) {
-                activeContent.style.display = activeContent.classList.contains('integration-frame') ? 'block' : 'block';
-            }
-        }
-    });
-
-    // Dashboard widgetlarini ishga tushirish
-    initDashboardWidgets();
 }
+
+// Integratsiya tablari
+document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('integration-tab')) {
+        const tab = e.target;
+        const tabId = tab.getAttribute('data-tab');
+        const parentWindow = tab.closest('.integration-window');
+
+        // Barcha tablarni yopish
+        parentWindow.querySelectorAll('.integration-tab').forEach(t => t.classList.remove('active'));
+        parentWindow.querySelectorAll('.integration-frame, .integration-panel').forEach(content => {
+            content.style.display = 'none';
+        });
+
+        // Faol tabni ochish
+        tab.classList.add('active');
+        const activeContent = parentWindow.querySelector(`#${tabId}`);
+        if (activeContent) {
+            activeContent.style.display = activeContent.classList.contains('integration-frame') ? 'block' : 'block';
+        }
+    }
+});
+
+// Dashboard widgetlarini ishga tushirish
+initDashboardWidgets();
 
 function createDepartmentSection(department) {
     const section = document.createElement('section');
@@ -3974,6 +4230,8 @@ function createDepartmentSection(department) {
 
     const deptFiles = uploadedFiles.filter(f => f.department === department.id);
 
+    const userDepts = currentUser.departments || [];
+
     // Bo'limlarni aniqlash va filtrlash
     let displaySectionsList = [];
     if (sectionsData[department.id]) {
@@ -3982,15 +4240,33 @@ function createDepartmentSection(department) {
         // Agar foydalanuvchi bo'lim (department) role'ida bo'lsa, 
         // faqat o'ziga tegishli bo'limni ko'rsatish
         if (currentUser.role === 'department') {
-            const userDeptId = currentUser.departments[0];
+            const userDeptId = userDepts[0];
             const userDept = functionalDepartments.find(d => d.id === userDeptId);
             if (userDept) {
                 const cleanName = userDept.name.replace(" bo'limi", "").toLowerCase();
                 displaySectionsList = displaySectionsList.filter(s => s.name.toLowerCase().includes(cleanName));
             }
         }
+
+        // Agar Admin bo'lsa, xodimlar jurnalini qo'shish (failsafe)
+        if (currentUser.role === 'admin') {
+            const hasHRM = displaySectionsList.some(s => s.id === 'hrm-jurnal' || s.id === 2);
+            if (!hasHRM) {
+                displaySectionsList.push({
+                    id: 'hrm-jurnal',
+                    name: 'Xodimlar Jurnali',
+                    icon: 'fas fa-users-cog',
+                    description: 'Xodimlarni boshqarish va tabel yuritish'
+                });
+            }
+        }
     } else {
-        displaySectionsList = functionalDepartments.filter(dept => currentUser.departments.includes(dept.id));
+        // Admin hamma bo'limlarni ko'rsin, bo'linma/bo'lim xodimi faqat o'zinikini
+        if (currentUser.role === 'admin') {
+            displaySectionsList = [...functionalDepartments];
+        } else {
+            displaySectionsList = functionalDepartments.filter(dept => userDepts.includes(dept.id));
+        }
     }
 
     section.innerHTML = `
@@ -4039,6 +4315,31 @@ function createDepartmentSection(department) {
 
 // Bo'linma ichidagi bo'lim uchun oyna ochish
 function openBolinmaSectionWindow(bolinmaId, sectionId) {
+    const _u = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : (window.Auth && window.Auth.currentUser);
+    if (!_u) return;
+
+    // Security check
+    if (_u.role !== 'admin') {
+        if (_u.role === 'bolinma') {
+            if (!_u.bolinmalar || !_u.bolinmalar.includes(bolinmaId)) {
+                if (window.showToast) window.showToast("Sizga ushbu bo'linma ma'lumotlarini ko'rish ruxsati berilmagan!", "error");
+                else alert("Ruxsat yo'q!");
+                return;
+            }
+        } else if (_u.role === 'department') {
+            const deptIdMap = {
+                'ishlab-chiqarish': 1, 'xodimlar': 2, 'bugalteriya': 3, 'mexanika': 4,
+                'iqtisod': 5, 'dispetcher': 6, 'metrologiya': 7, 'mehnat-muhofazasi': 8
+            };
+            const userAllowedSections = (_u.departments || []).map(d => deptIdMap[d]);
+            if (!userAllowedSections.includes(parseInt(sectionId))) {
+                if (window.showToast) window.showToast("Sizga ushbu yo'nalish bo'yicha ma'lumotlarni ko'rish ruxsati berilmagan!", "error");
+                else alert("Ruxsat yo'q!");
+                return;
+            }
+        }
+    }
+
     const bolinmaSections = sectionsData[bolinmaId];
     if (!bolinmaSections) return;
 
@@ -4084,6 +4385,39 @@ function openBolinmaSectionWindow(bolinmaId, sectionId) {
                     openTimesheet(`${bolinmaNum}-bo'linma`);
                 };
 
+                // Murojaat yuborish tugmasini qo'shish
+                let murojaatBtn = existingWindow.querySelector('.hr-murojaat-btn');
+                const isSubdivision = window.Auth?.currentUser && window.Auth.currentUser.role !== 'hr';
+                if (!murojaatBtn && isSubdivision) {
+                    murojaatBtn = document.createElement('button');
+                    murojaatBtn.className = 'control-btn hr-murojaat-btn';
+                    murojaatBtn.style.cssText = `
+                        background: var(--gold-gradient);
+                        color: #000;
+                        margin-left: 8px;
+                        border: none;
+                        padding: 8px 20px;
+                        border-radius: 10px;
+                        font-weight: 800;
+                        font-size: 0.85rem;
+                        cursor: pointer;
+                        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+                        transition: 0.3s;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    `;
+                    murojaatBtn.innerHTML = '<i class="fas fa-file-signature"></i> MUROJAAT';
+                    murojaatBtn.title = "Xodimlar bo'limiga murojaat yuborish (Face ID & Imzo)";
+                    murojaatBtn.onclick = () => {
+                        const bolinmaNum = bolinmaId.replace('bolinma', '');
+                        const deptParam = `${bolinmaNum}-bo'linma`;
+                        if (window.openHRMurojaatWindow) window.openHRMurojaatWindow(deptParam);
+                        else SmartUtils.showToast("Murojaat moduli yuklanmagan!", "error");
+                    };
+                    timesheetBtn.parentNode.appendChild(murojaatBtn);
+                }
+
                 // Xodimlar bo'limiga faqat tabel kerak, TNU-19/TNU-20/TO jurnallari kerak emas
             } else {
                 timesheetBtn.style.display = 'none';
@@ -4115,24 +4449,44 @@ function openBolinmaSectionWindow(bolinmaId, sectionId) {
     // 2. Check for Special Sections
     const sName = section.name.toLowerCase();
 
-    // B) Ishlab Chiqarish Section (Production)
+    // --- Nom asosida bo'lim turini aniqlash ---
     const isIshlab = sName.includes('ishlab') || section.id == 1;
-    if (isIshlab) {
-        console.log('Production section detected:', section.name);
-        renderProductionSection(existingWindow, bolinmaId);
-    } else {
-        // Cleanup production view
-        const existingView = existingWindow.querySelector('#production-journals-view');
-        if (existingView) existingView.remove();
-    }
-
-    // --- Nom asosida bo'lim turini aniqlash (magic number emas!) ---
     const isIqtisod = sName.includes('iqtisod');
     const isDispetcher = sName.includes('dispetcher');
     const isMetrology = sName.includes('metrologiya');
     const isBugalter = sName.includes('bugalteriya');
     const isMehnat = sName.includes('mehnat');
     const isMexanika = sName.includes('mexanika');
+
+    const isSpecialSection = isIshlab || isIqtisod || isDispetcher || isMetrology || isBugalter || isMehnat || isMexanika;
+
+    // 2. Standart elementlarni boshqarish (yashirish yoki ko'rsatish)
+    const fileMgmt = existingWindow.querySelector('.file-management');
+    const folderSelector = existingWindow.querySelector('.folder-selector');
+    const sectionTitle = existingWindow.querySelector('.section-title');
+    const filesTable = existingWindow.querySelector('.files-table');
+    const sidebar = existingWindow.querySelector('.road-management-sidebar');
+
+    if (isSpecialSection) {
+        if (fileMgmt) fileMgmt.style.display = 'none';
+        if (folderSelector) folderSelector.style.display = 'none';
+        if (sectionTitle) sectionTitle.style.display = 'none';
+        if (filesTable) filesTable.style.display = 'none';
+        if (sidebar) sidebar.style.display = 'none';
+    } else {
+        if (fileMgmt) fileMgmt.style.display = '';
+        if (folderSelector) folderSelector.style.display = '';
+        if (sectionTitle) sectionTitle.style.display = '';
+        if (filesTable) filesTable.style.display = '';
+        if (sidebar) sidebar.style.display = '';
+    }
+
+    // B) Ishlab Chiqarish Section (Production)
+    if (isIshlab) {
+        renderProductionSection(existingWindow, bolinmaId);
+    } else {
+        existingWindow.querySelector('#production-journals-view')?.remove();
+    }
 
     // C) Iqtisod Section (Economy - PU-74)
     if (isIqtisod) {
@@ -4164,25 +4518,18 @@ function openBolinmaSectionWindow(bolinmaId, sectionId) {
 
     // G) Safety Section (Mehnat Muhofazasi)
     if (isMehnat) {
-        // Faqat safety ko'rinishi — fayl panellarini yashiramiz
-        const fileMgmt = existingWindow.querySelector('.file-management');
-        if (fileMgmt) fileMgmt.style.display = 'none';
-        existingWindow.querySelector('.files-table')?.style && (existingWindow.querySelector('.files-table').style.display = 'none');
-        existingWindow.querySelectorAll('.section-title').forEach(el => el.style.display = 'none');
         renderMehnatSection(existingWindow, bolinmaId);
     } else {
-        // Mehnat bo'limi yopilganda elementlarni tiklash
         existingWindow.querySelector('#safety-dashboard-view')?.remove();
-        const fileMgmt = existingWindow.querySelector('.file-management');
-        if (fileMgmt) fileMgmt.style.display = '';
     }
 
     // H) Mechanics Section
     if (isMexanika) {
-        if (window.injectMexanikaButtons) {
+        const _mRole = currentUser ? currentUser.role : 'guest';
+        if ((_mRole === 'department' || _mRole === 'admin') && window.injectMexanikaButtons) {
             window.injectMexanikaButtons(existingWindow, bolinmaId);
         }
-        renderMexanikaSection(existingWindow, bolinmaId);
+        renderMechanicsSection(existingWindow, bolinmaId);
     } else {
         existingWindow.querySelector('#mechanics-section-view')?.remove();
         existingWindow.querySelector('.mexanika-injected-buttons')?.remove();
@@ -4250,31 +4597,79 @@ function renderAccountingSection(winEl, bolinmaId) {
         }
     }
 
-    accView.innerHTML = `
-        <div style="padding:20px; background:rgba(26,188,152,0.12); border:1px solid rgba(26,188,152,0.4); border-radius:12px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border-left: 5px solid #1abc9c;">
-            <h3 style="color:#1abc9c; margin-top:0; margin-bottom:15px; display:flex; align-items:center; gap:10px; font-size:1.3rem;">
-                <i class="fas fa-calculator"></i> Bugalteriya — Tezkor Amallar va Jurnallar
-            </h3>
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:15px;">
+    // Count pending M-29 acts
+    const pendingActs = (JSON.parse(localStorage.getItem('materialActs')) || []).filter(a => a.status === 'pending');
+    const pendingCount = pendingActs.length;
+
+    // Rol tekshirish: bo'linma faqat ko'rish, department/admin boshqarish
+    const userRole = currentUser ? currentUser.role : 'guest';
+    const isDeptOrAdmin = (userRole === 'department' || userRole === 'admin');
+
+    // Bo'linma uchun kartalar (faqat M-29 va Materiallar ro'yxatini ko'rish, Birja)
+    let cardsHtml = `
                 <div class="acc-card" onclick="window.openMaterialsWindow && window.openMaterialsWindow('${bolinmaId}')" 
                     style="background:rgba(0,0,0,0.5); padding:15px; border-radius:10px; cursor:pointer; border:1px solid rgba(255,255,255,0.1); transition:all 0.3s; text-align:center;">
                     <i class="fas fa-file-signature" style="font-size:1.8rem; color:#f1c40f; margin-bottom:8px; display:block;"></i>
                     <div style="font-weight:bold; color:white; font-size:1rem;">M-29</div>
                     <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Materiallar Dalolatnomasi</div>
                 </div>
-                <div class="acc-card" onclick="window.openAccountingJournal \u0026\u0026 window.openAccountingJournal('MaterialReport','${bolinmaId}')" 
+                <div class="acc-card" onclick="window.openAccountingJournal && window.openAccountingJournal('MaterialReport','${bolinmaId}')" 
                     style="background:rgba(0,0,0,0.5); padding:15px; border-radius:10px; cursor:pointer; border:1px solid rgba(255,255,255,0.1); transition:all 0.3s; text-align:center;">
                     <i class="fas fa-boxes" style="font-size:1.8rem; color:#3498db; margin-bottom:8px; display:block;"></i>
                     <div style="font-weight:bold; color:white; font-size:1rem;">Materiallar</div>
-                    <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Materiallar qoldig'i va hisoboti</div>
+                    <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">${isDeptOrAdmin ? "Materiallar qoldig'i va hisoboti" : "Materiallar ro'yxatini ko'rish"}</div>
                 </div>
-                <div class="acc-card" onclick="alert('Arxiv bo\\'limi tez orada ishga tushadi!')" 
+                <div class="acc-card" onclick="if(window.openMarketplaceWindow) window.openMarketplaceWindow('${bolinmaId}')" 
+                    style="background:rgba(0,0,0,0.5); padding:15px; border-radius:10px; cursor:pointer; border:1px solid rgba(22,160,133,0.4); transition:all 0.3s; text-align:center;">
+                    <i class="fas fa-handshake" style="font-size:1.8rem; color:#1abc9c; margin-bottom:8px; display:block;"></i>
+                    <div style="font-weight:bold; color:white; font-size:1rem;">Birja</div>
+                    <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Materiallar birjasi</div>
+                </div>`;
+
+    // Faqat department/admin uchun qo'shimcha kartalar
+    if (isDeptOrAdmin) {
+        cardsHtml += `
+                <div class="acc-card" onclick="document.getElementById('import-excel-bugalteriya-${bolinmaId}').click()" 
+                    style="background:rgba(0,0,0,0.5); padding:15px; border-radius:10px; cursor:pointer; border:1px solid rgba(230,126,34,0.4); transition:all 0.3s; text-align:center;">
+                    <i class="fas fa-file-excel" style="font-size:1.8rem; color:#e67e22; margin-bottom:8px; display:block;"></i>
+                    <div style="font-weight:bold; color:white; font-size:1rem;">1C dan Import</div>
+                    <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Excel orqali materiallar yuklash</div>
+                    <input type="file" id="import-excel-bugalteriya-${bolinmaId}" accept=".xlsx,.xls,.csv" 
+                        onchange="window.importMaterialsFromExcel && window.importMaterialsFromExcel(this)" style="display:none;">
+                </div>
+                <div class="acc-card" onclick="window.openArchiveWindow && window.openArchiveWindow('${bolinmaId}')" 
                     style="background:rgba(0,0,0,0.5); padding:15px; border-radius:10px; cursor:pointer; border:1px solid rgba(255,255,255,0.1); transition:all 0.3s; text-align:center;">
                     <i class="fas fa-archive" style="font-size:1.8rem; color:#8e44ad; margin-bottom:8px; display:block;"></i>
                     <div style="font-weight:bold; color:white; font-size:1rem;">Arxiv</div>
                     <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">Hujjatlar Arxivi</div>
+                </div>`;
+    }
+
+    // Pending M-29 hujjatlar (faqat department/admin uchun)
+    let pendingHtml = '';
+    if (isDeptOrAdmin && pendingCount > 0) {
+        pendingHtml = `
+            <div style="margin-top:15px; padding:12px 15px; background: rgba(243, 156, 18, 0.15); border:1px solid rgba(243,156,18,0.4); border-radius:10px; display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fas fa-exclamation-triangle" style="color:#f39c12; font-size:1.2rem;"></i>
+                    <span style="color:#f39c12; font-weight:bold;">${pendingCount} ta M-29 dalolatnomasi tasdiqlashni kutmoqda</span>
                 </div>
+                <button onclick="window.openApprovalList && window.openApprovalList()" 
+                    style="background:#f39c12; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:bold; animation: pulse 2s infinite;">
+                    <i class="fas fa-check-double"></i> Tasdiqlash
+                </button>
+            </div>`;
+    }
+
+    accView.innerHTML = `
+        <div style="padding:20px; background:rgba(26,188,152,0.12); border:1px solid rgba(26,188,152,0.4); border-radius:12px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border-left: 5px solid #1abc9c;">
+            <h3 style="color:#1abc9c; margin-top:0; margin-bottom:15px; display:flex; align-items:center; gap:10px; font-size:1.3rem;">
+                <i class="fas fa-calculator"></i> Bugalteriya — ${isDeptOrAdmin ? 'Tezkor Amallar va Jurnallar' : "Materiallar ro'yxati"}
+            </h3>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:15px;">
+                ${cardsHtml}
             </div>
+            ${pendingHtml}
         </div>
         <style>
             .acc-card:hover { 
@@ -4291,45 +4686,59 @@ function renderSubdivisionReportSection(winEl, bolinmaId) {
     const contentDiv = winEl.querySelector('.window-content');
     if (!contentDiv) return;
 
-    // 1. Find or create container
+    // 1. Standart elementlarni butunlay yashiramiz
+    const fileMgmt = contentDiv.querySelector('.file-management');
+    const folderSelector = contentDiv.querySelector('.folder-selector');
+    const sectionTitle = contentDiv.querySelector('.section-title');
+    const filesTable = contentDiv.querySelector('.files-table');
+    const sidebar = contentDiv.querySelector('.road-management-sidebar');
+
+    if (fileMgmt) fileMgmt.style.display = 'none';
+    if (folderSelector) folderSelector.style.display = 'none';
+    if (sectionTitle) sectionTitle.style.display = 'none';
+    if (filesTable) filesTable.style.display = 'none';
+    if (sidebar) sidebar.style.display = 'none';
+
+    // 2. Hisobot konteynerini yaratish yoki tozalash
     let reportView = contentDiv.querySelector('#dispatcher-assignment-view');
     if (!reportView) {
         reportView = document.createElement('div');
         reportView.id = 'dispatcher-assignment-view';
-        reportView.style.display = 'none'; // Hidden by default
-        reportView.style.marginTop = '15px';
+        reportView.style.width = '100%';
+        reportView.style.minHeight = '400px';
+        contentDiv.insertBefore(reportView, contentDiv.firstChild);
+    }
 
-        // Insert after file controls
-        const fileControls = contentDiv.querySelector('.file-management');
-        if (fileControls && fileControls.nextElementSibling) {
-            contentDiv.insertBefore(reportView, fileControls.nextElementSibling);
-        } else {
-            contentDiv.appendChild(reportView);
-        }
+    reportView.style.display = 'block';
+    reportView.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px; color: #00c6ff;">
+            <i class="fas fa-circle-notch fa-spin" style="font-size: 3rem; margin-bottom: 20px;"></i>
+            <div style="font-size: 1.2rem; font-weight: 500;">Dispetcher moduli yuklanmoqda...</div>
+        </div>
+    `;
 
-        reportView.innerHTML = getReportSubmissionPanelHTML(bolinmaId);
+    // 3. Ma'lumotlarni yuklab yangi PU-74 formasini chiqarish
+    const initFunc = window.initDispatcherData || (typeof initDispatcherData === 'function' ? initDispatcherData : null);
+    const renderFunc = window.renderSubdivisionReportSendView || (typeof renderSubdivisionReportSendView === 'function' ? renderSubdivisionReportSendView : null);
 
-        // Add Toggle Button to File Controls
-        if (fileControls) {
-            if (!fileControls.querySelector('.toggle-assignment-btn')) {
-                const toggleBtn = document.createElement('button');
-                toggleBtn.className = 'control-btn toggle-assignment-btn';
-                toggleBtn.style.background = 'linear-gradient(45deg, #2ecc71, #27ae60)';
-                toggleBtn.innerHTML = '<i class="fas fa-file-export"></i> Kunlik ish rejasi';
-                toggleBtn.onclick = () => {
-                    // winEl ishlatiladi (global window emas!)
-                    const view = winEl.querySelector('#dispatcher-assignment-view');
-                    if (view.style.display === 'none') {
-                        view.style.display = 'block';
-                        toggleBtn.innerHTML = '<i class="fas fa-times"></i> Yopish';
-                    } else {
-                        view.style.display = 'none';
-                        toggleBtn.innerHTML = '<i class="fas fa-file-export"></i> Kunlik ish rejasi';
-                    }
-                };
-                fileControls.appendChild(toggleBtn);
+    if (initFunc) {
+        initFunc().then(() => {
+            if (renderFunc) {
+                reportView.innerHTML = renderFunc(bolinmaId);
+            } else {
+                reportView.innerHTML = '<div style="padding:20px; color:#ef4444; text-align:center;">Xatolik: renderSubdivisionReportSendView topilmadi.</div>';
             }
-        }
+        }).catch(err => {
+            console.error("Dispetcher yuklashda xato:", err);
+            reportView.innerHTML = `<div style="padding:20px; color:#ef4444; text-align:center;">Ma'lumotlarni yuklab bo'lmadi: ${err.message}</div>`;
+        });
+    } else {
+        reportView.innerHTML = `
+            <div style="padding:40px; text-align:center; background: rgba(239, 68, 68, 0.1); border: 2px dashed #ef4444; border-radius: 20px; color:#ef4444;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem; margin-bottom: 15px;"></i>
+                <div style="font-size: 1.1rem; font-weight: bold;">Xatolik: Dispetcher tizimi (dispatcher.js) orqali yuklanmagan.</div>
+                <p style="margin-top:10px; opacity:0.8; font-size:0.9rem;">Iltimos, sahifani yangilang yoki keshni tozalab ko'ring.</p>
+            </div>`;
     }
 }
 
@@ -4361,35 +4770,43 @@ function renderProductionSection(winEl, bolinmaId) {
         prodView.style.display = 'block';
     }
 
+    // Always update innerHTML to ensure latest buttons and handlers
     prodView.innerHTML = `
         <div style="padding:20px; background:rgba(52,152,219,0.12); border:1px solid rgba(52,152,219,0.4); border-radius:12px; box-shadow: 0 8px 25px rgba(0,0,0,0.4); border-left: 5px solid #3498db;">
             <h3 style="color:#3498db; margin-top:0; margin-bottom:15px; display:flex; align-items:center; gap:10px; font-size:1.4rem;">
                 <i class="fas fa-industry"></i> Ishlab Chiqarish — Elektron Jurnallar
             </h3>
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:20px;">
-                <div class="production-journal-card" onclick="openJournal('PU-28','${bolinmaId}')" 
+                <div class="production-journal-card" onclick="window.openJournal('PU-28','${bolinmaId}')" 
                     style="background:rgba(0,0,0,0.6); padding:20px; border-radius:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.15); transition:all 0.3s; text-align:center;">
                     <i class="fas fa-clipboard-check" style="font-size:2.2rem; color:#3498db; margin-bottom:12px; display:block;"></i>
                     <div style="font-weight:bold; color:white; font-size:1.1rem; margin-bottom:4px;">PU-28</div>
                     <div style="font-size:0.85rem; color:rgba(255,255,255,0.6);">Yo'l Ko'rik Kitobi</div>
                 </div>
-                <div class="production-journal-card" onclick="openJournal('PU-29','${bolinmaId}')" 
+                <div class="production-journal-card" onclick="window.openJournal('PU-29','${bolinmaId}')" 
                     style="background:rgba(0,0,0,0.6); padding:20px; border-radius:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.15); transition:all 0.3s; text-align:center;">
                     <i class="fas fa-ruler-combined" style="font-size:2.2rem; color:#2ecc71; margin-bottom:12px; display:block;"></i>
                     <div style="font-weight:bold; color:white; font-size:1.1rem; margin-bottom:4px;">PU-29</div>
                     <div style="font-size:0.85rem; color:rgba(255,255,255,0.6);">Yo'l O'lchash Kitobi</div>
                 </div>
-                <div class="production-journal-card" onclick="openPU74New('1','${bolinmaId}')" 
+                <div class="production-journal-card" onclick="window.openPU74New('1','${bolinmaId}')" 
                     style="background:rgba(0,0,0,0.6); padding:20px; border-radius:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.15); transition:all 0.3s; text-align:center;">
                     <i class="fas fa-file-invoice-dollar" style="font-size:2.2rem; color:#f1c40f; margin-bottom:12px; display:block;"></i>
                     <div style="font-weight:bold; color:white; font-size:1.1rem; margin-bottom:4px;">PU-74</div>
                     <div style="font-size:0.85rem; color:rgba(255,255,255,0.6);">Ish Dalolatnomasi</div>
                 </div>
-                <div class="production-journal-card" onclick="openJournal('PU-80','${bolinmaId}')" 
+                <div class="production-journal-card" onclick="window.openJournal('PU-80','${bolinmaId}')" 
                     style="background:rgba(0,0,0,0.6); padding:20px; border-radius:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.15); transition:all 0.3s; text-align:center;">
                     <i class="fas fa-wrench" style="font-size:2.2rem; color:#e67e22; margin-bottom:12px; display:block;"></i>
                     <div style="font-weight:bold; color:white; font-size:1.1rem; margin-bottom:4px;">PU-80</div>
                     <div style="font-size:0.85rem; color:rgba(255,255,255,0.6);">Ish Qurollari</div>
+                </div>
+
+                <div class="production-journal-card" onclick="window.openTrackDefectMonitor && window.openTrackDefectMonitor('${bolinmaId}')" 
+                    style="background: linear-gradient(135deg, rgba(231, 76, 60, 0.3), rgba(192, 57, 43, 0.6)); padding:20px; border-radius:12px; cursor:pointer; border:1px solid rgba(231, 76, 60, 0.6); transition:all 0.3s; text-align:center; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.2);">
+                    <i class="fas fa-search-location" style="font-size:2.4rem; color:#fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); margin-bottom:12px; display:block;"></i>
+                    <div style="font-weight:bold; color:white; font-size:1.15rem; margin-bottom:4px;">SMART TRACK-DEFECT</div>
+                    <div style="font-size:0.85rem; color:rgba(255,255,255,0.8); font-style: italic;">Vagon Nosozliklari Monitori</div>
                 </div>
             </div>
         </div>
@@ -4406,14 +4823,34 @@ function renderProductionSection(winEl, bolinmaId) {
 
 // --- DIGITAL JOURNAL LOGIC ---
 function openJournal(type, bolinmaId) {
+    if (window.SmartUtils) window.SmartUtils.showToast(`${type} jurnali ko'rsatilmoqda...`, 'info', 2000);
     console.log(`Opening Journal: ${type} for ${bolinmaId}`);
 
     if (type === 'PU-28') {
-        openPU28Modal(bolinmaId);
+        if (window.openPU28Window) window.openPU28Window(bolinmaId);
+        else console.error("PU-28 modul topilmadi!");
     } else if (type === 'PU-29') {
-        openPU29Modal(bolinmaId);
+        if (window.openPU29Window) window.openPU29Window(bolinmaId);
+        else console.error("PU-29 modul topilmadi!");
     } else if (type === 'PU-80') {
-        openPU80Window(bolinmaId);
+        console.log("PU-80: Triggered from dashboard for", bolinmaId);
+        if (typeof window.openPU80Window === 'function') {
+            window.openPU80Window(bolinmaId);
+        } else {
+            // Dinamik yuklash - keshni chetlab o'tish
+            console.warn("PU-80: Dinamik yuklanmoqda...");
+            const s = document.createElement('script');
+            s.src = 'js/pu80.js?t=' + Date.now();
+            s.onload = () => {
+                if (typeof window.openPU80Window === 'function') {
+                    window.openPU80Window(bolinmaId);
+                } else {
+                    alert("PU-80 moduli yuklanmadi. Ctrl+Shift+R bosib sahifani yangilang.");
+                }
+            };
+            s.onerror = () => alert("PU-80 faylini yuklab bo'lmadi!");
+            document.head.appendChild(s);
+        }
     } else if (type === 'M-29') {
         openMaterialsWindow(bolinmaId);
     } else {
@@ -4421,240 +4858,7 @@ function openJournal(type, bolinmaId) {
     }
 }
 
-// --- PU-28: Yo'l Ko'rik Kitobi ---
-function openPU28Modal(bolinmaId) {
-    // 1. Create Modal — har bo'linma uchun alohida ID
-    const modalId = `pu28 - modal - ${bolinmaId} `;
-    let modal = document.getElementById(modalId);
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = modalId;
-        modal.className = 'journal-modal';
-        modal.innerHTML = `
-    < div class="journal-window" >
-                                            <div class="journal-header">
-                                                <h3><i class="fas fa-clipboard-check"></i> PU-28: Yo'l Ko'rik Kitobi</h3>
-                                                <button class="close-btn" onclick="closeJournalModal('pu28-modal-${bolinmaId}')"><i class="fas fa-times"></i></button>
-                                            </div>
-                                            <div class="journal-body">
-                                                <div class="journal-controls">
-                                                    <button class="action-btn" onclick="addPU28Entry('${bolinmaId}')"><i class="fas fa-plus"></i> Yangi Kamchilik Qo'shish</button>
-                                                    <button class="action-btn export" onclick="exportPU28('${bolinmaId}')"><i class="fas fa-file-excel"></i> Excelga Yuklash</button>
-                                                </div>
-                                                <div class="journal-table-container">
-                                                    <table class="journal-table" id="pu28-table-${bolinmaId}">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Sana</th>
-                                                                <th>Joyi (km/pk)</th>
-                                                                <th>Aniqlangan Kamchilik</th>
-                                                                <th>Muddati</th>
-                                                                <th>Mas'ul</th>
-                                                                <th>Holati</th>
-                                                                <th>Amallar</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody id="pu28-tbody">
-                                                            <!-- JS renders rows here -->
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </div >
-    `;
-        document.body.appendChild(modal);
-    }
-
-    // 2. Load Data
-    renderPU28Table(bolinmaId);
-
-    // 3. Show Modal
-    modal.classList.add('active');
-}
-
-function closeJournalModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.classList.remove('active');
-}
-
-function renderPU28Table(bolinmaId) {
-    // tbody ID — har bo'linma uchun alohida
-    const tbody = document.getElementById(`pu28 - tbody - ${bolinmaId} `) || document.getElementById('pu28-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    const data = JSON.parse(localStorage.getItem(`pu28_data_${bolinmaId} `)) || [];
-
-    if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Hozircha yozuvlar yo\'q.</td></tr>';
-        return;
-    }
-
-    data.forEach((item, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${item.date}</td>
-            <td>${item.location}</td>
-            <td>${item.defect}</td>
-            <td>${item.deadline}</td>
-            <td>${item.responsible}</td>
-            <td>
-                <span class="status-badge ${item.status === 'done' ? 'done' : 'pending'}">
-                    ${item.status === 'done' ? 'Bajarildi' : 'Jarayonda'}
-                </span>
-            </td>
-            <td>
-                <button class="icon-btn delete" onclick="deletePU28Entry('${bolinmaId}', ${index})"><i class="fas fa-trash"></i></button>
-                <button class="icon-btn check" onclick="togglePU28Status('${bolinmaId}', ${index})" title="Holatni o'zgartirish">
-                    <i class="fas fa-check-circle"></i>
-                </button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-function addPU28Entry(bolinmaId) {
-    // Simple prompt-based add for MVP (can be upgraded to modal form later)
-    const date = new Date().toLocaleDateString();
-    const location = prompt("Joyi (km/pk):");
-    if (!location) return;
-    const defect = prompt("Aniqlangan kamchilik:");
-    const deadline = prompt("Muddati (sana):");
-    const responsible = prompt("Mas'ul shaxs:");
-
-    if (location && defect) {
-        const newItem = {
-            date, location, defect, deadline, responsible,
-            status: 'pending'
-        };
-
-        const data = JSON.parse(localStorage.getItem(`pu28_data_${bolinmaId} `)) || [];
-        data.push(newItem);
-        localStorage.setItem(`pu28_data_${bolinmaId} `, JSON.stringify(data));
-
-        renderPU28Table(bolinmaId);
-    }
-}
-
-function deletePU28Entry(bolinmaId, index) {
-    if (confirm("O'chirilsinmi?")) {
-        const data = JSON.parse(localStorage.getItem(`pu28_data_${bolinmaId} `)) || [];
-        data.splice(index, 1);
-        localStorage.setItem(`pu28_data_${bolinmaId} `, JSON.stringify(data));
-        renderPU28Table(bolinmaId);
-    }
-}
-
-function togglePU28Status(bolinmaId, index) {
-    const data = JSON.parse(localStorage.getItem(`pu28_data_${bolinmaId} `)) || [];
-    if (data[index]) {
-        data[index].status = data[index].status === 'done' ? 'pending' : 'done';
-        localStorage.setItem(`pu28_data_${bolinmaId} `, JSON.stringify(data));
-        renderPU28Table(bolinmaId);
-    }
-}
-
-// --- PU-29: Yo'l O'lchash Kitobi ---
-function openPU29Modal(bolinmaId) {
-    let modal = document.getElementById('pu29-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'pu29-modal';
-        modal.className = 'journal-modal';
-        modal.innerHTML = `
-        <div class="journal-window">
-                                            <div class="journal-header" style="background: rgba(46, 204, 113, 0.1);">
-                                                <h3><i class="fas fa-ruler-combined"></i> PU-29: Yo'l O'lchash Kitobi</h3>
-                                                <button class="close-btn" onclick="closeJournalModal('pu29-modal')"><i class="fas fa-times"></i></button>
-                                            </div>
-                                            <div class="journal-body">
-                                                <div class="journal-controls">
-                                                    <button class="action-btn" onclick="addPU29Entry('${bolinmaId}')"><i class="fas fa-plus"></i> Yangi O'lchov</button>
-                                                    <button class="action-btn export" onclick="exportPU28('${bolinmaId}')"><i class="fas fa-file-excel"></i> Excelga Yuklash</button>
-                                                </div>
-                                                <div class="journal-table-container">
-                                                    <table class="journal-table" id="pu29-table">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Sana</th>
-                                                                <th>Piket (PK)</th>
-                                                                <th>Sath (Uroven)</th>
-                                                                <th>Shablon (mm)</th>
-                                                                <th>Izoh</th>
-                                                                <th>Amallar</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody id="pu29-tbody">
-                                                            <!-- JS renders rows here -->
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </div >
-    `;
-        document.body.appendChild(modal);
-    }
-    renderPU29Table(bolinmaId);
-    modal.classList.add('active');
-}
-
-function renderPU29Table(bolinmaId) {
-    const tbody = document.getElementById('pu29-tbody');
-    tbody.innerHTML = '';
-    const data = JSON.parse(localStorage.getItem(`pu29_data_${bolinmaId}`)) || [];
-
-    if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">Hozircha yozuvlar yo\'q.</td></tr>';
-        return;
-    }
-
-    data.forEach((item, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${item.date}</td>
-            <td>${item.picket}</td>
-            <td>${item.level}</td>
-            <td>${item.width}</td>
-            <td>${item.note || '-'}</td>
-            <td>
-                <button class="icon-btn delete" onclick="deletePU29Entry('${bolinmaId}', ${index})"><i class="fas fa-trash"></i></button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-function addPU29Entry(bolinmaId) {
-    const date = new Date().toLocaleDateString();
-    const picket = prompt("Piket (PK):");
-    if (!picket) return;
-    const level = prompt("Sath (Uroven) (+/- mm):");
-    const width = prompt("Shablon (mm):");
-    const note = prompt("Izoh:");
-
-    if (width) {
-        const newItem = { date, picket, level, width, note };
-        const data = JSON.parse(localStorage.getItem(`pu29_data_${bolinmaId} `)) || [];
-        data.push(newItem);
-        localStorage.setItem(`pu29_data_${bolinmaId} `, JSON.stringify(data));
-        renderPU29Table(bolinmaId);
-    }
-}
-
-function deletePU29Entry(bolinmaId, index) {
-    if (confirm("O'chirilsinmi?")) {
-        const data = JSON.parse(localStorage.getItem(`pu29_data_${bolinmaId} `)) || [];
-        data.splice(index, 1);
-        localStorage.setItem(`pu29_data_${bolinmaId} `, JSON.stringify(data));
-        renderPU29Table(bolinmaId);
-    }
-}
-
-function exportPU28(bolinmaId) {
-    // Simple alert for now, real export requires XLSX logic similar to PU-74
-    alert("Excelga yuklash funksiyasi keyingi bosqichda qo'shiladi.");
-}
+// --- PU-28: Yo'l Ko'rik Kitobi --- (Yangi pu28.js moduliga o'tkazildi)
 
 // Redundant economy and accounting section old code removed.
 
@@ -4766,7 +4970,7 @@ function openPU74New(brigadaNum, bolinmaId) {
 
 function getPU74ModalHTML() {
     return `
-    < div class="journal-window" style = "max-width: 1200px; width: 95%;" >
+    <div class="journal-window" style="max-width: 1200px; width: 95%;">
             <div class="journal-header" style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.2), rgba(211, 84, 0, 0.2));">
                 <h3><i class="fas fa-file-invoice-dollar"></i> PU-74: Ish Bajarilganlik Dalolatnomasi</h3>
                 <button class="close-btn" onclick="closePU74Modal()"><i class="fas fa-times"></i></button>
@@ -5278,16 +5482,62 @@ function renderEmployeeManagement(window, bolinmaId) {
                     }
                 };
                 fileControls.appendChild(toggleBtn);
+
+                // Add Murojaat button for Subdivisions
+                const isSubdivisionRole = window.Auth?.currentUser && window.Auth.currentUser.role !== 'admin' && window.Auth.currentUser.role !== 'hr';
+                if (bolinmaId.startsWith('bolinma') && isSubdivisionRole) {
+                    const murojaatBtn = document.createElement('button');
+                    murojaatBtn.className = 'control-btn subdivision-murojaat-btn';
+                    murojaatBtn.style.cssText = `
+                        background: var(--gold-gradient);
+                        color: #000;
+                        margin-left: 10px;
+                        border: none;
+                        padding: 10px 24px;
+                        border-radius: 12px;
+                        font-weight: 800;
+                        font-size: 0.9rem;
+                        cursor: pointer;
+                        box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+                        transition: 0.3s;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    `;
+                    murojaatBtn.innerHTML = '<i class="fas fa-file-signature"></i> Murojaat yuborish';
+                    murojaatBtn.onclick = () => {
+                        const bNum = bolinmaId.replace('bolinma', '');
+                        const bName = `${bNum}-bo'linma`;
+                        if (window.openHRMurojaatWindow) window.openHRMurojaatWindow(bName);
+                        else SmartUtils.showToast("Murojaat moduli yuklanmagan!", "error");
+                    };
+                    fileControls.appendChild(murojaatBtn);
+                }
             }
         }
     }
 
     // 2. Filter workers
-    // Assuming bolinmaId is like 'bolinma1' and workersData has 'bolinma' property like "1-bo'linma"
+    // Try to get from HR module first (database), then fallback to legacy workersData
     const bolinmaNumber = bolinmaId.replace('bolinma', ''); // "1"
-    const bolinmaName = `${bolinmaNumber} -bo'linma`; // "1-bo'linma"
+    const bolinmaName = `${bolinmaNumber}-bo'linma`; // "1-bo'linma"
 
-    const workers = workersData.filter(w => w.bolinma === bolinmaName);
+    let workers = [];
+    if (window.hrData && window.hrData.employees && window.hrData.employees.length > 0) {
+        workers = window.hrData.employees.filter(e =>
+            e.bolinma === bolinmaName ||
+            e.bolinmaId === bolinmaName ||
+            e.department === bolinmaName ||
+            String(e.bolinmaId) === bolinmaNumber ||
+            String(e.department) === bolinmaNumber
+        );
+    }
+
+    if (workers.length === 0) {
+        workers = workersData.filter(w => w.bolinma === bolinmaName);
+    }
 
     // 3. Get Employee Stats (Attendance & Medical) from LocalStorage
     const statsKey = `employee_stats_${bolinmaId}`;
@@ -5298,8 +5548,15 @@ function renderEmployeeManagement(window, bolinmaId) {
                                     <div class="employee-management" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-bottom: 20px;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                             <h3 class="section-title" style="margin: 0;"><i class="fas fa-users-cog"></i> Xodimlar Jadvali (Elektron Tabel)</h3>
-                                            <div style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">
-                                                <i class="fas fa-info-circle"></i> Tahrirlash: "Xodimlar bo'limi"
+                                            <div style="display: flex; gap: 10px; align-items: center;">
+                                                ${(window.Auth?.currentUser && window.Auth.currentUser.role !== 'admin' && window.Auth.currentUser.role !== 'hr') ? `
+                                                <button onclick="const bn=this.closest('.employee-management').parentElement.getAttribute('data-id') || ''; const bNum=bn.replace('bolinma',''); window.openHRMurojaatWindow(bNum + '-bo\\'linma')" style="padding: 10px 20px; background: var(--gold-gradient); border: none; color: #000; border-radius: 12px; cursor: pointer; font-size: 0.85rem; font-weight: 800; box-shadow: 0 4px 15px rgba(212,175,55,0.2); transition: 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                                     <i class="fas fa-file-signature"></i> Murojaat yuborish
+                                                </button>
+                                                ` : ''}
+                                                <div style="color: rgba(255,255,255,0.6); font-size: 0.8rem;">
+                                                    <i class="fas fa-info-circle"></i> Tahrirlash: "Xodimlar bo'limi"
+                                                </div>
                                             </div>
                                         </div>
                                         
@@ -5508,24 +5765,35 @@ function saveEmployeeStats(bolinmaId, workerId) {
 }
 
 function openDepartmentWindow(departmentId) {
+    const _u = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : (window.Auth && window.Auth.currentUser);
+    if (_u.role !== 'admin' && _u.role !== 'department') {
+        if (window.showToast) window.showToast("Ushbu bo'lim faqat Boshqarma mutaxassislari uchun ochiq!", "warning");
+        return;
+    }
+
+    if (_u.role === 'department' && !(_u.departments || []).includes(departmentId)) {
+        if (window.showToast) window.showToast("Siz ushbu bo'limga mas'ul emassiz!", "error");
+        return;
+    }
+
     const department = functionalDepartments.find(d => d.id === departmentId);
     if (!department) return;
 
     // Mavjud oynani tekshirish
-    let window = document.getElementById(`${departmentId}-window`);
+    let win = document.getElementById(`${departmentId}-window`);
 
-    if (!window) {
+    if (!win) {
         // Yangi oyna yaratish
         const template = document.getElementById('departmentWindowTemplate');
         const clone = template.content.cloneNode(true);
-        window = clone.querySelector('.department-window');
-        window.id = `${departmentId}-window`;
+        win = clone.querySelector('.department-window');
+        win.id = `${departmentId}-window`;
 
         // Oynani sozlash
-        window.querySelector('.department-name').textContent = department.name;
+        win.querySelector('.department-name').textContent = department.name;
 
         // Integratsiya tugmasini sozlash
-        const integrateBtn = window.querySelector('.integrate-btn');
+        const integrateBtn = win.querySelector('.integrate-btn');
         if (department.integrations && department.integrations.length > 0) {
             integrateBtn.style.display = 'flex';
             integrateBtn.addEventListener('click', () => {
@@ -5535,15 +5803,15 @@ function openDepartmentWindow(departmentId) {
             integrateBtn.style.display = 'none';
         }
 
-        document.body.appendChild(window);
+        document.body.appendChild(win);
 
         // Yangi oyna uchun event listener'lar
-        setupDepartmentWindowEvents(window, departmentId);
+        setupDepartmentWindowEvents(win, departmentId);
     }
 
     // Fayl yuklash tugmasini boshqarish
     // Bo'linmalar va Admin yuklashi mumkin, Bo'limlar faqat ko'radi
-    const uploadBtn = window.querySelector('.upload-file-btn');
+    const uploadBtn = win.querySelector('.upload-file-btn');
     if (uploadBtn) {
         if (currentUser.role === 'bolinma' || currentUser.role === 'admin') {
             uploadBtn.style.display = 'inline-flex';
@@ -5554,8 +5822,8 @@ function openDepartmentWindow(departmentId) {
     }
 
     // Papka yaratish va muddat belgilash tugmalarini boshqarish
-    const createFolderBtn = window.querySelector('.create-folder-btn');
-    const setDeadlineBtn = window.querySelector('.set-deadline-btn');
+    const createFolderBtn = win.querySelector('.create-folder-btn');
+    const setDeadlineBtn = win.querySelector('.set-deadline-btn');
     if (currentUser.role === 'department') {
         // Bo'limlar papka yaratishi va muddat belgilashi mumkin
         if (createFolderBtn) createFolderBtn.style.display = 'inline-flex';
@@ -5563,11 +5831,11 @@ function openDepartmentWindow(departmentId) {
     }
 
     // PU-74 Button Logic
-    let pu74Btn = window.querySelector('.pu74-btn');
+    let pu74Btn = win.querySelector('.pu74-btn');
 
     // Auto-inject button if missing (Hotfix for no-refresh update)
     if (!pu74Btn) {
-        const controls = window.querySelector('.file-controls');
+        const controls = win.querySelector('.file-controls');
         if (controls) {
             pu74Btn = document.createElement('button');
             pu74Btn.className = 'control-btn pu74-btn';
@@ -5591,27 +5859,89 @@ function openDepartmentWindow(departmentId) {
         }
     }
 
-    // Mexanika Department Buttons Injection
-    if (departmentId === 'mexanika' || (department && department.departments && department.departments.includes('mexanika'))) {
-        // Use self.injectMexanikaButtons because 'window' variable is shadowed by local DOM element
-        if (self.injectMexanikaButtons) {
-            self.injectMexanikaButtons(window, departmentId);
+    // PU-29 Button Logic
+    let pu29Btn = win.querySelector('.pu29-btn');
+    if (pu29Btn) {
+        // Allow for Subdivisions, Admin, and Production (Ishlab-chiqarish) Department
+        if (currentUser.role === 'bolinma' || currentUser.role === 'admin' || departmentId === 'ishlab-chiqarish' || (currentUser.role === 'department' && currentUser.departments.includes('ishlab-chiqarish'))) {
+            pu29Btn.style.display = 'inline-flex';
+            pu29Btn.onclick = () => {
+                if (window.openPU29Window) window.openPU29Window(departmentId);
+                else alert("PU-29 moduli yuklanmagan!");
+            };
         } else {
-            console.warn("injectMexanikaButtons function not found. Ensure mexanika.js is loaded.");
+            pu29Btn.style.display = 'none';
         }
     }
 
-    const controls = window.querySelector('.file-controls');
+    // PU-80 Button Logic
+    let pu80Btn = win.querySelector('.pu80-btn');
+
+    // Auto-inject button if missing
+    if (!pu80Btn) {
+        console.log("PU-80: Injecting missing button for", departmentId);
+        const controls = win.querySelector('.file-controls');
+        if (controls) {
+            pu80Btn = document.createElement('button');
+            pu80Btn.className = 'control-btn pu80-btn';
+            pu80Btn.style.background = 'linear-gradient(135deg, #e67e22, #d35400)';
+            pu80Btn.style.marginLeft = '5px';
+            pu80Btn.style.display = 'none';
+            pu80Btn.innerHTML = '<i class="fas fa-wrench"></i> PU-80';
+            controls.appendChild(pu80Btn);
+        }
+    }
+
+    if (pu80Btn) {
+        // Condition for visibility: bolinma role, admin role, or specific department
+        const isProduction = (departmentId === 'ishlab-chiqarish' || departmentId.startsWith('bolinma'));
+        const hasAccess = (currentUser.role === 'bolinma' || currentUser.role === 'admin' || (currentUser.role === 'department' && currentUser.departments && currentUser.departments.includes('ishlab-chiqarish')));
+
+        if (isProduction || hasAccess) {
+            pu80Btn.style.display = 'inline-flex';
+            pu80Btn.onclick = (e) => {
+                e.preventDefault();
+                console.log("PU-80: Button clicked for", departmentId);
+                if (window.openPU80Window) {
+                    try {
+                        window.openPU80Window(departmentId);
+                    } catch (err) {
+                        console.error("PU-80: Error opening window:", err);
+                        alert("PU-80 oynasini ochishda xatolik yuz berdi!");
+                    }
+                } else {
+                    // Dinamik yuklash
+                    const s = document.createElement('script');
+                    s.src = 'js/pu80.js?t=' + Date.now();
+                    s.onload = () => {
+                        if (window.openPU80Window) window.openPU80Window(departmentId);
+                        else alert("PU-80 yuklanmadi. Ctrl+Shift+R bosing.");
+                    };
+                    document.head.appendChild(s);
+                }
+            };
+        } else {
+            pu80Btn.style.display = 'none';
+        }
+    }
+
+
+    const controls = win.querySelector('.file-controls');
 
     // --- KIRIM (INCOMING) BUTTON ---
     // Bo'linmalar va Bugalteriya uchun
     if (controls && (departmentId.startsWith('bolinma') || departmentId === 'bugalteriya' || departmentId === 'iqtisod')) {
-        let incomingBtn = window.querySelector('.incoming-btn');
+        let incomingBtn = win.querySelector('.incoming-btn');
         if (!incomingBtn) {
             incomingBtn = document.createElement('button');
             incomingBtn.className = 'control-btn incoming-btn';
-            incomingBtn.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
-            incomingBtn.style.marginLeft = '5px';
+            incomingBtn.style.background = 'linear-gradient(135deg, #1e40af, #3b82f6)';
+            incomingBtn.style.color = 'white';
+            incomingBtn.style.border = 'none';
+            incomingBtn.style.boxShadow = '0 4px 12px rgba(30, 64, 175, 0.2)';
+            incomingBtn.style.marginLeft = '10px';
+            incomingBtn.style.borderRadius = '12px';
+            incomingBtn.style.padding = '8px 16px';
             incomingBtn.innerHTML = '<i class="fas fa-truck-loading"></i> Kirim';
             incomingBtn.title = "Material Kirim Qilish (FMU-25)";
             incomingBtn.onclick = () => {
@@ -5625,12 +5955,17 @@ function openDepartmentWindow(departmentId) {
     // --- TABEL (TIMESHEET) BUTTON ---
     // Bo'linmalar va Xodimlar bo'limi uchun
     if (controls && (departmentId.startsWith('bolinma') || departmentId === 'xodimlar')) {
-        let timesheetBtn = window.querySelector('.timesheet-btn');
+        let timesheetBtn = win.querySelector('.timesheet-btn');
         if (!timesheetBtn) {
             timesheetBtn = document.createElement('button');
             timesheetBtn.className = 'control-btn timesheet-btn';
-            timesheetBtn.style.background = 'linear-gradient(135deg, #8e44ad, #9b59b6)';
-            timesheetBtn.style.marginLeft = '5px';
+            timesheetBtn.style.background = 'linear-gradient(135deg, #7c3aed, #a855f7)';
+            timesheetBtn.style.color = 'white';
+            timesheetBtn.style.border = 'none';
+            timesheetBtn.style.boxShadow = '0 4px 12px rgba(124, 58, 237, 0.2)';
+            timesheetBtn.style.marginLeft = '10px';
+            timesheetBtn.style.borderRadius = '12px';
+            timesheetBtn.style.padding = '8px 16px';
             timesheetBtn.innerHTML = '<i class="fas fa-calendar-alt"></i> Tabel';
             timesheetBtn.title = "Elektron Tabel (T-13)";
             timesheetBtn.onclick = () => {
@@ -5641,6 +5976,32 @@ function openDepartmentWindow(departmentId) {
         }
     }
 
+    // --- MUROJAAT (APPLICATION) BUTTON ---
+    // Faqat Bo'linmalar va Xodimlar bo'limi uchun - Xodimlar bo'limiga yuboriladi
+    const isSubRole = window.Auth?.currentUser && window.Auth.currentUser.role !== 'hr';
+    if (controls && (departmentId.startsWith('bolinma') || departmentId === 'xodimlar') && isSubRole) {
+        let murojaatBtn = win.querySelector('.hr-murojaat-btn');
+        if (!murojaatBtn) {
+            murojaatBtn = document.createElement('button');
+            murojaatBtn.className = 'control-btn hr-murojaat-btn';
+            murojaatBtn.style.background = 'linear-gradient(135deg, #d4af37, #b8860b)';
+            murojaatBtn.style.color = 'white';
+            murojaatBtn.style.border = 'none';
+            murojaatBtn.style.boxShadow = '0 4px 12px rgba(212, 175, 55, 0.3)';
+            murojaatBtn.style.marginLeft = '10px';
+            murojaatBtn.style.borderRadius = '12px';
+            murojaatBtn.style.padding = '8px 16px';
+            murojaatBtn.style.fontWeight = 'bold';
+            murojaatBtn.innerHTML = '<i class="fas fa-file-signature"></i> Murojaat';
+            murojaatBtn.title = "Xodimlar bo'limiga murojaat yuborish (Face ID & Imzo)";
+            murojaatBtn.onclick = () => {
+                if (window.openHRMurojaatWindow) window.openHRMurojaatWindow(departmentId);
+                else alert("Murojaat moduli yuklanmagan!");
+            };
+            controls.appendChild(murojaatBtn);
+        }
+    }
+
     // --- TEXNIK O'QISH (TECHNICAL TRAINING) ---
     // Barcha bo'linmalar, Xodimlar va Mexanika uchun
     if (controls && (departmentId.startsWith('bolinma') || departmentId === 'xodimlar' || departmentId === 'mexanika')) {
@@ -5648,13 +6009,18 @@ function openDepartmentWindow(departmentId) {
         if (!trainingBtn) {
             trainingBtn = document.createElement('button');
             trainingBtn.className = 'control-btn training-btn';
-            trainingBtn.style.background = 'linear-gradient(135deg, #e67e22, #d35400)';
             trainingBtn.style.marginLeft = '5px';
-            trainingBtn.innerHTML = '<i class="fas fa-chalkboard-teacher"></i> O\'qish';
-            trainingBtn.title = "Texnik O'quv Mashg'ulotlari";
+            trainingBtn.style.color = 'white';
+            trainingBtn.style.border = 'none';
+            trainingBtn.style.borderRadius = '12px';
+            trainingBtn.style.padding = '8px 16px';
+            trainingBtn.innerHTML = '<i class="fas fa-book-reader"></i> Texnik o\'quv';
+            trainingBtn.title = "Texnik o'qish va sinovlar";
             trainingBtn.onclick = () => {
-                if (window.openTechTrainingWindow) window.openTechTrainingWindow(departmentId);
-                else alert("Texnik o'qish moduli yuklanmagan!");
+                const subNum = departmentId.replace('bolinma', '');
+                const subName = departmentId.includes('bolinma') ? `${subNum}-bo'linma` : departmentId;
+                if (window.openTechnicalTrainingWindow) window.openTechnicalTrainingWindow(subName);
+                else alert("Texnik o'quv moduli yuklanmagan!");
             };
             controls.appendChild(trainingBtn);
         }
@@ -5667,8 +6033,14 @@ function openDepartmentWindow(departmentId) {
         if (!m29Btn) {
             m29Btn = document.createElement('button');
             m29Btn.className = 'control-btn m29-btn';
-            m29Btn.style.background = 'linear-gradient(135deg, #7f8c8d, #2c3e50)';
-            m29Btn.style.marginLeft = '5px';
+            m29Btn.style.background = 'linear-gradient(135deg, #d4af37, #b8860b)';
+            m29Btn.style.color = 'white';
+            m29Btn.style.border = 'none';
+            m29Btn.style.boxShadow = '0 4px 12px rgba(184, 134, 11, 0.3)';
+            m29Btn.style.marginLeft = '10px';
+            m29Btn.style.borderRadius = '12px';
+            m29Btn.style.padding = '8px 16px';
+            m29Btn.style.fontWeight = 'bold';
             m29Btn.innerHTML = '<i class="fas fa-file-signature"></i> M-29';
             m29Btn.title = "M-29 Dalolatnoma";
             m29Btn.onclick = () => {
@@ -5679,15 +6051,16 @@ function openDepartmentWindow(departmentId) {
         }
     }
 
+
     // Marketplace Button Logic (Bugalteriya)
     if (departmentId.includes('bugalteriya') || (department && department.departments && department.departments.includes('bugalteriya'))) {
         // Try to find the button first
-        let mpBtn = window.querySelector('.marketplace-btn');
+        let mpBtn = win.querySelector('.marketplace-btn');
 
         // Strategy 1: Add to file-controls (top row)
-        const controls = window.querySelector('.file-controls');
+        const controls = win.querySelector('.file-controls');
         // Strategy 2: Add below inputs (folder-selector) - This matches the user's "Bugalteriya Jurnallari" placement description
-        const folderSelector = window.querySelector('.folder-selector');
+        const folderSelector = win.querySelector('.folder-selector');
 
         if (!mpBtn) {
             mpBtn = document.createElement('button');
@@ -5721,49 +6094,56 @@ function openDepartmentWindow(departmentId) {
     }
 
     // Fayllar ro'yxatini yangilash
-    updateFilesTable(window, departmentId);
+    updateFilesTable(win, departmentId);
 
-    // Mexanika Department - Inject Special Buttons
-    // Check if ID is 'mexanika' OR if it has 'mexanika-monitor' integration (for Subdivisions)
-    const isMexanika = departmentId === 'mexanika' || (department && department.integrations && department.integrations.includes('mexanika-monitor'));
+    // Mexanika Department - Inject Special Buttons and Dashboard
+    const isMexanika = departmentId === 'mexanika' || (department && department.integrations && department.integrations.includes('mexanika-monitor')) || (department && department.departments && department.departments.includes('mexanika'));
 
     if (isMexanika) {
+        // Standart fayl boshqaruvi elementlarini yashirish — Mexanika o'z dashboardini ko'rsatadi
+        const body = win.querySelector('.department-body') || win.querySelector('.window-content') || win;
+        const fileMgmt = body.querySelector('.file-management');
+        const folderSelector = body.querySelector('.folder-selector');
+        const filesTable = body.querySelector('.files-table');
+        const folderMgmt = body.querySelector('.folder-management');
+        const filesArea = body.querySelector('.files-area-wrapper');
+        if (fileMgmt) fileMgmt.style.display = 'none';
+        if (folderSelector) folderSelector.style.display = 'none';
+        if (filesTable) filesTable.style.display = 'none';
+        if (folderMgmt) folderMgmt.style.display = 'none';
+        if (filesArea) filesArea.style.display = 'none';
+
         if (typeof renderMechanicsSection === 'function') {
             // Dashboardni chizish
-            renderMechanicsSection(window, departmentId);
+            renderMechanicsSection(win, departmentId);
         }
         if (typeof injectMexanikaButtons === 'function') {
-            injectMexanikaButtons(window);
+            injectMexanikaButtons(win, departmentId);
         }
     }
 
     // Oynani ko'rsatish
-    window.classList.add('active');
+    win.classList.add('active');
     document.getElementById('department-overlay').classList.add('active');
-
-    // Dispatcher Dashboard (Receiving side ONLY)
+    // Dispatcher Dashboard
     if (departmentId === 'dispetcher') {
-        const body = window.querySelector('.department-body') || window.querySelector('.window-content');
+        const body = win.querySelector('.department-body') || win.querySelector('.window-content');
         if (body) {
-            // Hide file management purely for dispatcher dashboard
-            const fileManagement = body.querySelector('.file-management');
-            if (fileManagement) fileManagement.style.display = 'none';
-
-            const folderManagement = body.querySelector('.folder-management');
-            if (folderManagement) folderManagement.style.display = 'none';
-
-            // Set content to ONLY the dashboard
-            let dashboard = body.querySelector('.dispatcher-dashboard-container');
-            if (!dashboard) {
-                dashboard = document.createElement('div');
-                dashboard.className = 'dispatcher-dashboard-container';
-                body.insertBefore(dashboard, body.firstChild);
+            body.innerHTML = '<div class="dispatcher-dashboard-container" style="padding:40px; text-align:center; color:white;"><i class="fas fa-spinner fa-spin"></i> Yuklanmoqda...</div>';
+            const dashboard = body.querySelector('.dispatcher-dashboard-container');
+            const initFunc = self.initDispatcherData;
+            const getHtmlFunc = self.getDispatcherDashboardHTML;
+            if (typeof initFunc === 'function') {
+                initFunc().then(() => {
+                    dashboard.innerHTML = typeof getHtmlFunc === 'function' ? getHtmlFunc() : 'Dispetcher xatosi';
+                });
+            } else {
+                dashboard.innerHTML = typeof getDispatcherDashboardHTML === 'function' ? getDispatcherDashboardHTML() : 'Topilmadi';
             }
-            dashboard.innerHTML = getDispatcherDashboardHTML();
         }
     } else if (departmentId === 'metrologiya') {
         // Metrology Dashboard
-        const body = window.querySelector('.department-body') || window.querySelector('.window-content');
+        const body = win.querySelector('.department-body') || win.querySelector('.window-content');
         if (body) {
             // Hide file management
             const fileManagement = body.querySelector('.file-management');
@@ -5791,12 +6171,12 @@ function openDepartmentWindow(departmentId) {
                 contextBolinma = currentUser.bolinmalar[0];
             }
 
-            // Render the dashboard which replaces window content
-            renderSafetyDashboard(window, contextBolinma);
+            // Render the dashboard which replaces win content
+            renderSafetyDashboard(win, contextBolinma);
         }
     } else {
         // STANDARD SUBDIVISION VIEW - Add Road Management Sidebar
-        const body = window.querySelector('.window-content');
+        const body = win.querySelector('.window-content');
         if (body) {
             // Check if already restructured to avoid duplicates
             if (!body.querySelector('.files-area-wrapper')) {
@@ -5823,6 +6203,10 @@ function openDepartmentWindow(departmentId) {
             }
         }
     }
+
+    // Oynani ko'rsatish
+    win.classList.add('active');
+    document.getElementById('department-overlay').classList.add('active');
 }
 
 function setupDepartmentWindowEvents(window, departmentId) {
@@ -5973,6 +6357,78 @@ function setupDepartmentWindowEvents(window, departmentId) {
     }); // End of window.addEventListener
 } // End of setupDepartmentWindowEvents
 
+// --- ARTIFICIAL STRUCTURES VIEWER (Sun'iy inshootlar) ---
+window.openArtificialStructures = function (bolinmaId) {
+    const structures = window.artificialStructuresData.filter(s => !bolinmaId || s.bolinma === bolinmaId || s.bolinma.includes(bolinmaId));
+
+    let html = `
+        <div class="structures-list" style="padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="color: #ffd700; margin: 0; font-family: 'Outfit', sans-serif;"><i class="fas fa-bridge"></i> Sun'iy Inshootlar</h2>
+                <div style="background: rgba(37, 99, 235, 0.1); padding: 5px 15px; border-radius: 10px; color: #60a5fa; font-size: 0.8rem; font-weight: bold;">
+                    Jami: ${structures.length} ta
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+                ${structures.length === 0 ? '<div style="color: rgba(255,255,255,0.4); text-align: center; grid-column: 1/-1; padding: 40px;">Ushbu hududda sun\'iy inshootlar topilmadi.</div>' : ''}
+                ${structures.map(s => `
+                    <div class="structure-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 20px; transition: 0.3s; cursor: pointer; position: relative; overflow: hidden;" 
+                         onmouseover="this.style.background='rgba(255, 255, 255, 0.08)'; this.style.borderColor='rgba(212, 175, 55, 0.4)'" 
+                         onmouseout="this.style.background='rgba(255, 255, 255, 0.03)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'">
+                        
+                        <div style="display: flex; gap: 20px; align-items: flex-start;">
+                            <div style="width: 50px; height: 50px; background: rgba(37, 99, 235, 0.1); border-radius: 15px; display: flex; align-items: center; justify-content: center; color: #60a5fa; font-size: 1.4rem; border: 1px solid rgba(37, 99, 235, 0.2);">
+                                <i class="fas ${s.type === 'bridge' ? 'fa-bridge' : (s.type === 'tunnel' ? 'fa-archway' : 'fa-water')}"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 800; color: white; margin-bottom: 6px; font-size: 1.05rem;">${s.name}</div>
+                                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.5); display: flex; flex-direction: column; gap: 4px;">
+                                    <span><i class="fas fa-location-dot" style="width: 15px; color: #ffd700;"></i> KM: <strong>${s.km}</strong></span>
+                                    <span><i class="fas fa-ruler-horizontal" style="width: 15px; color: #60a5fa;"></i> Uzunligi: <strong>${s.length}</strong></span>
+                                    <span><i class="fas fa-shield-halved" style="width: 15px; color: #10b981;"></i> Bo'linma: <strong>${s.bolinma}</strong></span>
+                                </div>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size: 0.75rem; color: ${s.status === 'good' ? '#10b981' : (s.status === 'repair' ? '#ef4444' : '#f59e0b')}; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <i class="fas fa-circle" style="font-size: 0.5rem; vertical-align: middle; margin-right: 6px;"></i>
+                                        ${s.status === 'good' ? 'Xolati: SOZ' : (s.status === 'repair' ? 'Xolati: TA\'MIRDA' : 'Xolati: NAZORATDA')}
+                                    </span>
+                                    <button class="control-btn" style="padding: 5px 12px; font-size: 0.75rem; background: rgba(37, 99, 235, 0.2); border-color: rgba(37, 99, 235, 0.3);">PASPORT</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    const modalId = 'structures-modal';
+    let modal = document.getElementById(modalId);
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'integration-window active';
+    modal.style.zIndex = "10001";
+    modal.style.display = "flex";
+    modal.style.background = 'rgba(15, 23, 42, 0.95)';
+    modal.style.backdropFilter = 'blur(25px)';
+
+    modal.innerHTML = `
+        <div class="window-header">
+            <h2 style="color: #ffd700; font-family: 'Outfit', sans-serif;"><i class="fas fa-bridge"></i> Sun'iy Inshootlar Monitoringi</h2>
+            <button class="close-window" onclick="document.getElementById('${modalId}').remove()">&times;</button>
+        </div>
+        <div class="integration-content" style="max-height: 85vh; overflow-y: auto; padding-bottom: 40px;">
+            ${html}
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    if (document.getElementById('department-overlay')) document.getElementById('department-overlay').classList.add('active');
+};
+
 function uploadFile(file, departmentId, window) {
     const reader = new FileReader();
     const selectedFolder = window.querySelector('.folder-select').value || 'umumiy';
@@ -5983,7 +6439,6 @@ function uploadFile(file, departmentId, window) {
             name: file.name,
             size: file.size,
             type: file.type,
-            path: file.path || null, // Capture Electron path
             content: e.target.result,
             department: departmentId,
             uploadDate: new Date().toISOString(),
@@ -6014,18 +6469,6 @@ function editFile(file) {
     currentEditingFile = file;
     const fileName = file.name.toLowerCase();
 
-    // ELECTRON MODE: Open with default OS app (WPS / Office)
-    if (window.electron && file.path) {
-        window.electron.openExternal(file.path)
-            .then(result => {
-                if (result.success) {
-                    console.log("Fayl tashqi dasturda ochildi:", file.path);
-                } else {
-                    alert("Faylni ochishda xatolik: " + result.error);
-                }
-            });
-        return;
-    }
 
     // BROWSER MODE: Fallback to local editors
     if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
@@ -6224,6 +6667,7 @@ function deleteFileById(id) {
 
 function updateFilesTable(window, departmentId) {
     const tableBody = window.querySelector('.files-table-body');
+    if (!tableBody) return;
     tableBody.innerHTML = '';
 
     const departmentFiles = uploadedFiles.filter(f => f.department === departmentId);
@@ -6232,6 +6676,7 @@ function updateFilesTable(window, departmentId) {
         const sizeInKB = (file.size / 1024).toFixed(2);
         const fileType = file.name.split('.').pop().toUpperCase();
         const uploadDate = new Date(file.uploadDate).toLocaleDateString('uz-UZ');
+        const isM29Virtual = file.isVirtual && file.virtualType === 'm29';
 
         // Status Badge Logic
         let statusHtml = '';
@@ -6241,17 +6686,12 @@ function updateFilesTable(window, departmentId) {
             statusHtml = '<span class="status-badge status-approved"><i class="fas fa-check-circle"></i> Tasdiqlandi</span>';
         } else if (file.status === 'rejected') {
             statusTitle = file.feedback ? `Sabab: ${file.feedback}` : 'Sabab ko\'rsatilmagan';
-            // Make badge clickable to see reason calling helper function
             statusHtml = `<span class="status-badge status-rejected" onclick="viewRejectionReason('${file.id}')" title="Sababni ko'rish uchun bosing" style="cursor: pointer;"><i class="fas fa-times-circle"></i> Rad etildi <i class="fas fa-info-circle" style="font-size: 0.8em; margin-left: 5px;"></i></span>`;
         } else {
             statusHtml = '<span class="status-badge status-pending"><i class="fas fa-hourglass-half"></i> Kutilmoqda</span>';
         }
 
         // ===== ROL ASOSIDA RUXSATLAR =====
-        // Rollar:
-        //   'bolinma'    -> Fayl yuklash, tahrirlash, o'chirish (o'znikini). Tasdiqlash YO'Q.
-        //   'department' -> Fayllarni ko'rish, tasdiqlash, rad etish. Tahrirlash/O'chirish YO'Q.
-        //   'admin'      -> Hammasi mumkin.
         const userRole = currentUser ? currentUser.role : 'guest';
         const isAdmin = userRole === 'admin';
         const isBolinma = userRole === 'bolinma';
@@ -6259,36 +6699,61 @@ function updateFilesTable(window, departmentId) {
         const isOwner = currentUser && currentUser.username === file.uploader;
 
         // Action Buttons Logic
-        let actionsHtml = `
-            <button class="action-btn view" onclick="downloadFileById('${file.id}')" title="Yuklab olish"><i class="fas fa-download"></i></button>
-        `;
+        let actionsHtml = '';
 
-        // --- TAHRIRLASH: Faqat bo'linma (o'z faylini) yoki admin ---
-        if (isAdmin || (isBolinma && isOwner)) {
-            actionsHtml += `<button class="action-btn edit" onclick="editFileById('${file.id}')" title="Tahrirlash" style="margin-left: 5px;"><i class="fas fa-edit"></i></button>`;
+        if (isM29Virtual) {
+            // M-29 virtual PDF — ko'rish va chop etish
+            actionsHtml += `<button class="action-btn view" onclick="viewM29VirtualFile('${file.id}')" title="Ko'rish" style="background: #3498db;"><i class="fas fa-eye"></i></button>`;
+            actionsHtml += `<button class="action-btn" onclick="printM29VirtualFile('${file.id}')" title="Chop etish" style="background: #8e44ad; color: white; margin-left: 5px;"><i class="fas fa-print"></i></button>`;
+
+            // Bugalteriya tasdiqlash — M-29 uchun maxsus
+            if ((isDepartment || isAdmin) && file.status === 'pending') {
+                actionsHtml += `<button class="action-btn check" onclick="approveM29File('${file.id}')" title="Tasdiqlash va chiqim qilish" style="background-color: #27ae60; color: white; margin-left: 5px;"><i class="fas fa-check-double"></i> Tasdiqlash</button>`;
+                actionsHtml += `<button class="action-btn reject" onclick="rejectM29File('${file.id}')" title="Rad etish" style="background-color: #e74c3c; color: white; margin-left: 5px;"><i class="fas fa-times"></i></button>`;
+            }
+        } else {
+            // Oddiy fayllar
+            actionsHtml += `<button class="action-btn view" onclick="downloadFileById('${file.id}')" title="Yuklab olish"><i class="fas fa-download"></i></button>`;
+
+            if (isAdmin || (isBolinma && isOwner)) {
+                actionsHtml += `<button class="action-btn edit" onclick="editFileById('${file.id}')" title="Tahrirlash" style="margin-left: 5px;"><i class="fas fa-edit"></i></button>`;
+            }
+
+            if (isDepartment || isAdmin) {
+                const showApprove = !file.status || file.status === 'pending' || file.status === 'rejected';
+                const showReject = !file.status || file.status === 'pending' || file.status === 'approved';
+
+                if (showApprove) {
+                    actionsHtml += `<button class="action-btn check" onclick="approveFileById('${file.id}')" title="Tasdiqlash" style="background-color: #2ecc71; color: white; margin-left: 5px;"><i class="fas fa-check"></i></button>`;
+                }
+                if (showReject) {
+                    actionsHtml += `<button class="action-btn reject" onclick="rejectFileById('${file.id}')" title="Rad etish" style="background-color: #e74c3c; color: white; margin-left: 5px;"><i class="fas fa-times"></i></button>`;
+                }
+            }
+
+            if (isAdmin || (isBolinma && isOwner)) {
+                actionsHtml += `<button class="action-btn delete" onclick="deleteFileById('${file.id}')" title="O'chirish" style="background-color: #95a5a6; color: white; margin-left: 5px;"><i class="fas fa-trash"></i></button>`;
+            }
         }
 
-        // --- TASDIQLASH / RAD ETISH: Faqat bo'limlar (department) yoki admin ---
-        if (isDepartment || isAdmin) {
-            const showApprove = !file.status || file.status === 'pending' || file.status === 'rejected';
-            const showReject = !file.status || file.status === 'pending' || file.status === 'approved';
-
-            if (showApprove) {
-                actionsHtml += `<button class="action-btn check" onclick="approveFileById('${file.id}')" title="Tasdiqlash" style="background-color: #2ecc71; color: white; margin-left: 5px;"><i class="fas fa-check"></i></button>`;
-            }
-            if (showReject) {
-                actionsHtml += `<button class="action-btn reject" onclick="rejectFileById('${file.id}')" title="Rad etish" style="background-color: #e74c3c; color: white; margin-left: 5px;"><i class="fas fa-times"></i></button>`;
-            }
-        }
-
-        // --- O'CHIRISH: Faqat bo'linma (o'z faylini) yoki admin ---
-        if (isAdmin || (isBolinma && isOwner)) {
-            actionsHtml += `<button class="action-btn delete" onclick="deleteFileById('${file.id}')" title="O'chirish" style="background-color: #95a5a6; color: white; margin-left: 5px;"><i class="fas fa-trash"></i></button>`;
+        // Fayl nomi formati
+        let fileNameHtml = file.name;
+        if (isM29Virtual) {
+            fileNameHtml = `<span style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-file-pdf" style="color: #e74c3c; font-size: 1.2em;"></i>
+                <span>${file.name}</span>
+                <span style="background: ${file.status === 'approved' ? '#27ae60' : '#f39c12'}; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; color: white;">${file.status === 'approved' ? 'TASDIQLANGAN' : 'M-29'}</span>
+            </span>`;
         }
 
         const row = document.createElement('tr');
+        if (isM29Virtual) {
+            row.style.background = file.status === 'approved'
+                ? 'rgba(39, 174, 96, 0.1)'
+                : 'rgba(243, 156, 18, 0.1)';
+        }
         row.innerHTML = `
-                    <td>${file.name}</td>
+                    <td>${fileNameHtml}</td>
                     <td>${sizeInKB} KB</td>
                     <td>${fileType}</td>
                     <td>${uploadDate}</td>
@@ -6302,6 +6767,88 @@ function updateFilesTable(window, departmentId) {
     });
 }
 
+// ===== M-29 Virtual File Actions =====
+function viewM29VirtualFile(fileId) {
+    const file = uploadedFiles.find(f => f.id == fileId);
+    if (!file || !file.actData) {
+        alert("M-29 ma'lumotlari topilmadi!");
+        return;
+    }
+    if (typeof printDocumentAct === 'function') {
+        printDocumentAct(file.actData);
+    }
+}
+
+function printM29VirtualFile(fileId) {
+    viewM29VirtualFile(fileId); // Same as view - opens print window
+}
+
+function approveM29File(fileId) {
+    const file = uploadedFiles.find(f => f.id == fileId);
+    if (!file) return;
+
+    if (!confirm("M-29 dalolatnomani tasdiqlaysizmi?\nOmbordan materiallar chiqim qilinadi.")) return;
+
+    // Use accounting.js approveAct function
+    if (file.actData && typeof approveAct === 'function') {
+        approveAct(file.actData.id);
+    } else {
+        // Manual approval
+        file.status = 'approved';
+        file.approvedDate = new Date().toISOString();
+
+        // Deduct materials
+        if (file.actData && file.actData.items && typeof deductMaterialStock === 'function') {
+            file.actData.items.forEach(item => {
+                deductMaterialStock(item.name, item.qty);
+            });
+        }
+
+        saveDatabase();
+
+        // Find bugalteriya window and refresh
+        const bugWin = document.getElementById(file.department + '-window');
+        if (bugWin) updateFilesTable(bugWin, file.department);
+
+        alert("M-29 tasdiqlandi va materiallar chiqim qilindi!");
+    }
+}
+
+function rejectM29File(fileId) {
+    const file = uploadedFiles.find(f => f.id == fileId);
+    if (!file) return;
+
+    const reason = prompt("Rad etish sababini kiriting:");
+    if (reason === null) return;
+
+    file.status = 'rejected';
+    file.feedback = reason;
+    file.rejectedDate = new Date().toISOString();
+
+    // Also update in materialActs localStorage
+    if (file.actData) {
+        const allActs = JSON.parse(localStorage.getItem('materialActs')) || [];
+        const actIdx = allActs.findIndex(a => a.id == file.actData.id);
+        if (actIdx !== -1) {
+            allActs[actIdx].status = 'rejected';
+            allActs[actIdx].feedback = reason;
+            localStorage.setItem('materialActs', JSON.stringify(allActs));
+        }
+    }
+
+    saveDatabase();
+
+    const bugWin = document.getElementById(file.department + '-window');
+    if (bugWin) updateFilesTable(bugWin, file.department);
+
+    alert("M-29 rad etildi.");
+}
+
+window.viewM29VirtualFile = viewM29VirtualFile;
+window.printM29VirtualFile = printM29VirtualFile;
+window.approveM29File = approveM29File;
+window.rejectM29File = rejectM29File;
+
 
 function updateSmartMonitoring(section, departmentId) {
     if (!section) return;
@@ -6313,7 +6860,10 @@ function updateSmartMonitoring(section, departmentId) {
         // Initialize default random data for this department if not exists
         data = {
             temp: Math.floor(Math.random() * (55 - 20) + 20),
-            defects: Math.floor(Math.random() * 4)
+            defects: Math.floor(Math.random() * 4),
+            wearV: 0.0,
+            wearH: 0.0,
+            bruto: 12.5
         };
         monitoringData[departmentId] = data;
         saveDatabase(); // Save immediately so it persists
@@ -6384,7 +6934,8 @@ function openSmartMonitoringEdit(deptId) {
                 temp: Math.floor(Math.random() * (55 - 20) + 20),
                 defects: 0,
                 wearV: 0.0,
-                wearH: 0.0
+                wearH: 0.0,
+                bruto: 12.5
             };
             monitoringData[deptId] = data;
         }
@@ -6394,6 +6945,9 @@ function openSmartMonitoringEdit(deptId) {
         document.getElementById('edit-defect-count').value = data.defects;
         document.getElementById('edit-wear-v').value = data.wearV;
         document.getElementById('edit-wear-h').value = data.wearH;
+        if (document.getElementById('edit-bruto')) {
+            document.getElementById('edit-bruto').value = data.bruto || 0;
+        }
 
         modal.classList.add('active');
         modal.style.display = 'flex'; // FORCE VISIBILITY
@@ -6416,7 +6970,8 @@ function saveSmartMonitoringData(e) {
         temp: parseInt(document.getElementById('edit-rail-temp').value),
         defects: parseInt(document.getElementById('edit-defect-count').value),
         wearV: parseFloat(parseFloat(document.getElementById('edit-wear-v').value).toFixed(1)),
-        wearH: parseFloat(parseFloat(document.getElementById('edit-wear-h').value).toFixed(1))
+        wearH: parseFloat(parseFloat(document.getElementById('edit-wear-h').value).toFixed(1)),
+        bruto: document.getElementById('edit-bruto') ? parseFloat(document.getElementById('edit-bruto').value) : 0
     };
 
     monitoringData[deptId] = newData;
@@ -6842,18 +7397,6 @@ function editFile(file) {
     currentEditingFile = file;
     const fileName = file.name.toLowerCase();
 
-    // ELECTRON MODE: Open with default OS app (WPS / Office)
-    if (window.electron && file.path) {
-        window.electron.openExternal(file.path)
-            .then(result => {
-                if (result.success) {
-                    console.log("Fayl tashqi dasturda ochildi:", file.path);
-                } else {
-                    alert("Faylni ochishda xatolik: " + result.error);
-                }
-            });
-        return;
-    }
 
     // BROWSER MODE: Fallback to local editors
     if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
@@ -7065,69 +7608,6 @@ function saveExcelContent(fileId) {
     }
 }
 
-function saveExcelContent(fileId) {
-    if (!xSpreadsheet) return;
-
-    const data = xSpreadsheet.getData()[0]; // Get the first sheet
-    const rows = data.rows;
-
-    // Convert x-spreadsheet -> SheetJS AOA
-    const aoa = [];
-
-    // Find max row/col
-    const rowKeys = Object.keys(rows).map(k => parseInt(k)).filter(k => !isNaN(k));
-    if (rowKeys.length === 0) {
-        alert("Fayl bo'sh!");
-        return;
-    }
-
-    const maxRow = Math.max(...rowKeys);
-
-    for (let r = 0; r <= maxRow; r++) {
-        const row = [];
-        const rowData = rows[r];
-        if (rowData && rowData.cells) {
-            const colKeys = Object.keys(rowData.cells).map(k => parseInt(k)).filter(k => !isNaN(k));
-            if (colKeys.length > 0) {
-                const maxCol = Math.max(...colKeys);
-                for (let c = 0; c <= maxCol; c++) {
-                    const cell = rowData.cells[c];
-                    row.push(cell ? cell.text : "");
-                }
-            }
-        }
-        aoa.push(row);
-    }
-
-    // Create new Workbook
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, data.name || "Sheet1");
-
-    // Write to ArrayBuffer
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-
-    // Update global file storage
-    const fileIndex = uploadedFiles.findIndex(f => f.id == fileId);
-    if (fileIndex > -1) {
-        uploadedFiles[fileIndex].content = wbout;
-        uploadedFiles[fileIndex].lastModified = new Date().toISOString();
-        saveDatabase();
-
-        alert("Fayl muvaffaqiyatli saqlandi!");
-        closeExcelEditor();
-
-        // Refresh valid active window if open
-        const activeDeptId = uploadedFiles[fileIndex].department;
-        const activeWindow = document.getElementById(`${activeDeptId}-window`);
-        if (activeWindow) {
-            updateFilesTable(activeWindow, activeDeptId);
-        }
-    } else {
-        alert("Xatolik: Fayl topilmadi!");
-    }
-}
-
 function closeExcelEditor() {
     const editorWindow = document.getElementById('excel-editor-window');
     const container = document.getElementById('x-spreadsheet-demo');
@@ -7212,66 +7692,6 @@ async function saveTextFile() {
     if (deptWindows.length === 0) {
         document.getElementById('department-overlay').classList.remove('active');
     }
-}
-
-function saveExcelFile() {
-    if (!currentEditingFile) return;
-    if (!xSpreadsheet) return;
-
-    try {
-        const sdata = xSpreadsheet.getData();
-        const rows = [];
-
-        // Convert x-spreadsheet -> AOA (SheetJS)
-        if (sdata.length > 0) {
-            const sheetData = sdata[0];
-            const xRows = sheetData.rows;
-            // Simple logic: find max row/col
-            let maxRow = -1;
-            Object.keys(xRows).forEach(k => {
-                if (!isNaN(k)) maxRow = Math.max(maxRow, parseInt(k));
-            });
-
-            for (let ri = 0; ri <= maxRow; ri++) {
-                const row = [];
-                if (xRows[ri] && xRows[ri].cells) {
-                    const cells = xRows[ri].cells;
-                    let maxCol = -1;
-                    Object.keys(cells).forEach(k => {
-                        if (!isNaN(k)) maxCol = Math.max(maxCol, parseInt(k));
-                    });
-
-                    for (let ci = 0; ci <= maxCol; ci++) {
-                        row[ci] = cells[ci] ? cells[ci].text : "";
-                    }
-                }
-                rows.push(row);
-            }
-        }
-
-        // Create Workbook
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.aoa_to_sheet(rows);
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-
-        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-
-        currentEditingFile.content = excelBuffer;
-        currentEditingFile.status = 'approved';
-        saveDatabase();
-
-        alert('Excel fayl muvaffaqiyatli saqlandi!');
-        document.getElementById('excel-editor-window').classList.remove('active');
-        document.getElementById('department-overlay').classList.remove('active');
-        updateAllDepartmentWindows();
-
-    } catch (e) {
-        alert('Excel faylni saqlashda xatolik: ' + e.message);
-    }
-}
-
-function createExcelTable(data) {
-    // Deprecated for x-spreadsheet, but kept empty/minimal if referenced elsewhere
 }
 
 function editCurrentFile() {
@@ -7413,181 +7833,14 @@ let isCameraOn = false;
 let isMicOn = false;
 let isScreenSharing = false;
 
-// Navbar video chat tugmasi - panelni ochish/yopish
-document.getElementById('openVideoChatBtn').addEventListener('click', function () {
-    const panel = document.getElementById('videoChatPanel');
-    const content = document.getElementById('mainContent');
-    const navBtn = this;
 
-    panel.classList.toggle('hidden');
-    navBtn.classList.toggle('active');
-
-    if (!panel.classList.contains('hidden')) {
-        content.classList.add('with-video-chat');
-    } else {
-        content.classList.remove('with-video-chat');
-    }
-});
-
-// Video chat panelini yashirish/ko'rsatish (ichki tugma)
-document.getElementById('videoChatToggle').addEventListener('click', function () {
-    const panel = document.getElementById('videoChatPanel');
-    const content = document.getElementById('mainContent');
-    const navBtn = document.getElementById('openVideoChatBtn');
-
-    panel.classList.add('hidden');
-    content.classList.remove('with-video-chat');
-    navBtn.classList.remove('active');
-});
 
 // Defektaskop Tracker tugmasi
 document.getElementById('openDefectoscopeBtn').addEventListener('click', function () {
     openDefectoscopeTracker();
 });
 
-// Kamerani yoqish/o'chirish
-document.getElementById('toggleCameraBtn').addEventListener('click', async function () {
-    const videoEl = document.getElementById('localVideo');
-    const placeholder = document.getElementById('videoPlaceholder');
-    const icon = this.querySelector('i');
 
-    if (!isCameraOn) {
-        try {
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: isMicOn });
-            videoEl.srcObject = localStream;
-            videoEl.style.display = 'block';
-            placeholder.style.display = 'none';
-            icon.classList.remove('fa-video-slash');
-            icon.classList.add('fa-video');
-            this.classList.add('active');
-            isCameraOn = true;
-        } catch (err) {
-            alert('Kameraga kirish imkoni yo\'q: ' + err.message);
-        }
-    } else {
-        if (localStream) {
-            localStream.getVideoTracks().forEach(track => track.stop());
-        }
-        videoEl.style.display = 'none';
-        placeholder.style.display = 'flex';
-        icon.classList.remove('fa-video');
-        icon.classList.add('fa-video-slash');
-        this.classList.remove('active');
-        isCameraOn = false;
-    }
-});
-
-// Mikrofonni yoqish/o'chirish
-document.getElementById('toggleMicBtn').addEventListener('click', async function () {
-    const icon = this.querySelector('i');
-
-    if (!isMicOn) {
-        try {
-            if (!localStream) {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            }
-            icon.classList.remove('fa-microphone-slash');
-            icon.classList.add('fa-microphone');
-            this.classList.add('active');
-            isMicOn = true;
-        } catch (err) {
-            alert('Mikrofonga kirish imkoni yo\'q: ' + err.message);
-        }
-    } else {
-        if (localStream) {
-            localStream.getAudioTracks().forEach(track => track.stop());
-        }
-        icon.classList.remove('fa-microphone');
-        icon.classList.add('fa-microphone-slash');
-        this.classList.remove('active');
-        isMicOn = false;
-    }
-});
-
-// Ekranni ulashish
-document.getElementById('shareScreenBtn').addEventListener('click', async function () {
-    const videoEl = document.getElementById('localVideo');
-    const placeholder = document.getElementById('videoPlaceholder');
-    const icon = this.querySelector('i');
-
-    if (!isScreenSharing) {
-        try {
-            const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-            videoEl.srcObject = screenStream;
-            videoEl.style.display = 'block';
-            placeholder.style.display = 'none';
-            this.classList.add('active');
-            isScreenSharing = true;
-
-            screenStream.getVideoTracks()[0].onended = () => {
-                videoEl.style.display = 'none';
-                placeholder.style.display = 'flex';
-                this.classList.remove('active');
-                isScreenSharing = false;
-            };
-        } catch (err) {
-            console.log('Ekran ulashish bekor qilindi');
-        }
-    } else {
-        if (videoEl.srcObject) {
-            videoEl.srcObject.getTracks().forEach(track => track.stop());
-        }
-        videoEl.style.display = 'none';
-        placeholder.style.display = 'flex';
-        this.classList.remove('active');
-        isScreenSharing = false;
-    }
-});
-
-// Qo'ng'iroqni tugatish
-document.getElementById('endCallBtn').addEventListener('click', function () {
-    const videoEl = document.getElementById('localVideo');
-    const placeholder = document.getElementById('videoPlaceholder');
-
-    if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-        localStream = null;
-    }
-
-    if (videoEl.srcObject) {
-        videoEl.srcObject.getTracks().forEach(track => track.stop());
-        videoEl.srcObject = null;
-    }
-
-    videoEl.style.display = 'none';
-    placeholder.style.display = 'flex';
-
-    // Barcha tugmalarni boshlang'ich holatga qaytarish
-    document.getElementById('toggleCameraBtn').classList.remove('active');
-    document.getElementById('toggleCameraBtn').querySelector('i').classList.replace('fa-video', 'fa-video-slash');
-    document.getElementById('toggleMicBtn').classList.remove('active');
-    document.getElementById('toggleMicBtn').querySelector('i').classList.replace('fa-microphone', 'fa-microphone-slash');
-    document.getElementById('shareScreenBtn').classList.remove('active');
-
-    isCameraOn = false;
-    isMicOn = false;
-    isScreenSharing = false;
-
-    alert('Qo\'ng\'iroq tugadi!');
-});
-
-// Qo'ng'iroq boshlash
-document.getElementById('startCallBtn').addEventListener('click', function () {
-    alert('Video qo\'ng\'iroq boshlanmoqda...\n\nKamera va mikrofonni yoqing!');
-    document.getElementById('toggleCameraBtn').click();
-});
-
-// Taklif qilish
-document.getElementById('inviteBtn').addEventListener('click', function () {
-    const link = window.location.href;
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(link).then(() => {
-            alert('Taklif havolasi nusxalandi!\n\n' + link);
-        });
-    } else {
-        prompt('Taklif havolasini nusxalang:', link);
-    }
-});
 
 // ============ ADMIN PANEL FUNKSIYALARI ============
 
@@ -7595,26 +7848,36 @@ document.getElementById('inviteBtn').addEventListener('click', function () {
 function showAdminButton() {
     if (currentUser && currentUser.role === 'admin') {
         // Admin panel tugmasi
-        document.getElementById('openAdminPanelBtn').style.display = 'flex';
+        document.getElementById('openAdminPanelBtn').style.setProperty('display', 'flex', 'important');
+        const adminVisaBtn = document.getElementById('openAdminVisaBtn');
+        if (adminVisaBtn) adminVisaBtn.style.setProperty('display', 'flex', 'important');
         // Xarita tugmasi
-        document.getElementById('openTrainMapBtn').style.display = 'flex';
+        document.getElementById('openTrainMapBtn').style.setProperty('display', 'flex', 'important');
     } else {
         // Boshqalar uchun yashirish
-        document.getElementById('openAdminPanelBtn').style.display = 'none';
-        document.getElementById('openTrainMapBtn').style.display = 'none';
+        document.getElementById('openAdminPanelBtn').style.setProperty('display', 'none', 'important');
+        const adminVisaBtn = document.getElementById('openAdminVisaBtn');
+        if (adminVisaBtn) adminVisaBtn.style.setProperty('display', 'none', 'important');
+        document.getElementById('openTrainMapBtn').style.setProperty('display', 'none', 'important');
     }
 }
 
 // Admin panelini ochish
-document.getElementById('openAdminPanelBtn').addEventListener('click', function () {
-    document.getElementById('adminPanelModal').classList.add('active');
-    loadAdminPanelData();
-});
+const openAdminBtn = document.getElementById('openAdminPanelBtn');
+if (openAdminBtn) {
+    openAdminBtn.addEventListener('click', function () {
+        document.getElementById('adminPanelModal').classList.add('active');
+        loadAdminPanelData();
+    });
+}
 
 // Admin panelini yopish
-document.getElementById('closeAdminPanel').addEventListener('click', function () {
-    document.getElementById('adminPanelModal').classList.remove('active');
-});
+const closeAdminBtn = document.getElementById('closeAdminPanel');
+if (closeAdminBtn) {
+    closeAdminBtn.addEventListener('click', function () {
+        document.getElementById('adminPanelModal').classList.remove('active');
+    });
+}
 
 // Admin panel tablarini almashtirish
 document.querySelectorAll('.admin-tab-btn').forEach(btn => {
@@ -7637,52 +7900,126 @@ function loadAdminPanelData() {
     loadAdminTrainsList();
     loadAdminWorkersList();
     loadAdminStationsList();
-    loadAdminBolinmalarList();
+    // loadAdminBolinmalarList(); // Temporarily removed
     loadAdminUsersList();
+    loadAuditLogs();
 }
 
 async function loadAdminUsersList() {
-    const container = document.getElementById('adminUsersList');
-    if (!container) return;
+    const listBody = document.getElementById('admin-users-list');
+    if (!listBody) return;
 
-    container.innerHTML = '<div style="text-align:center; padding:20px; color:rgba(255,255,255,0.5);"><i class="fas fa-spinner fa-spin"></i> Yuklanmoqda...</div>';
+    listBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Yuklanmoqda...</td></tr>';
 
     try {
-        const users = await SmartUtils.api('/auth/users');
-        container.innerHTML = '';
+        const users = await SmartUtils.fetchAPI('/auth/users');
+        listBody.innerHTML = '';
+
+        if (!users || users.length === 0) {
+            listBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:rgba(255,255,255,0.5);">Foydalanuvchilar topilmadi</td></tr>';
+            return;
+        }
 
         users.forEach(user => {
-            const roleIcons = {
-                admin: 'fa-user-shield',
-                department: 'fa-building',
-                bolinma: 'fa-map-pin'
-            };
-
-            container.innerHTML += `
-                <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 1rem; border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-                    <div style="width: 45px; height: 45px; border-radius: 12px; background: rgba(0, 198, 255, 0.15); display: flex; align-items: center; justify-content: center; color: #00c6ff; font-size: 1.2rem;">
-                        <i class="fas ${roleIcons[user.role] || 'fa-user'}"></i>
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div style="font-weight:bold; color:white;">${user.full_name || 'Ismsiz'}</div>
+                </td>
+                <td><code style="background:rgba(0,198,255,0.1); color:#00c6ff; padding:2px 6px; border-radius:4px;">${user.username}</code></td>
+                <td>
+                    <span class="role-badge role-${user.role}" style="padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:bold; background:${user.role === 'admin' ? '#e74c3c' : (user.role === 'department' ? '#3498db' : '#2ecc71')}; color:white;">
+                        ${user.role.toUpperCase()}
+                    </span>
+                </td>
+                <td>
+                    <div style="font-size:0.8rem; color:rgba(255,255,255,0.6); max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${user.departments.join(', ')}">
+                        ${user.departments.length > 0 ? user.departments.join(', ') : '-'}
                     </div>
-                    <div style="flex: 1;">
-                        <div style="color: white; font-weight: 600;">${user.full_name || user.username}</div>
-                        <div style="display: flex; gap: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 4px;">
-                            <span><i class="fas fa-user"></i> @${user.username}</span>
-                            <span><i class="fas fa-tag"></i> ${user.role}</span>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="editUserProfile(${user.id})" style="background: rgba(0, 198, 255, 0.1); border: 1px solid rgba(0, 198, 255, 0.3); color: #00c6ff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;">
-                            <i class="fas fa-edit"></i>
+                </td>
+                <td>
+                    <div style="display:flex; gap:8px;">
+                        <button class="action-btn" onclick="resetUserPassword(${user.id}, '${user.username}')" title="Parolni tiklash" style="background:#f39c12; color:white; border:none; width:30px; height:30px; border-radius:5px; cursor:pointer;">
+                            <i class="fas fa-key"></i>
                         </button>
-                        <button onclick="deleteUserProfile(${user.id})" style="background: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231, 76, 60, 0.3); color: #e74c3c; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;">
+                        <button class="action-btn" onclick="deleteUser(${user.id}, '${user.username}')" title="O'chirish" style="background:#e74c3c; color:white; border:none; width:30px; height:30px; border-radius:5px; cursor:pointer;">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
-                </div>
+                </td>
             `;
+            listBody.appendChild(tr);
         });
-    } catch (error) {
-        container.innerHTML = '<div style="color:#e74c3c; padding:20px; text-align:center;">Yuklashda xatolik yuz berdi</div>';
+    } catch (err) {
+        listBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#e74c3c;">Xatolik: ${err.message}</td></tr>`;
+    }
+}
+
+async function loadAuditLogs() {
+    const listBody = document.getElementById('admin-audit-list');
+    if (!listBody) return;
+
+    listBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Yuklanmoqda...</td></tr>';
+
+    try {
+        const logs = await SmartUtils.fetchAPI('/audit/logs?limit=50');
+        listBody.innerHTML = '';
+
+        if (!logs || logs.length === 0) {
+            listBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:rgba(255,255,255,0.5);">Jurnal bo\'sh</td></tr>';
+            return;
+        }
+
+        logs.forEach(log => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-size:0.85rem; color:rgba(255,255,255,0.7);">${new Date(log.created_at).toLocaleString()}</td>
+                <td style="font-weight:bold; color:#00c6ff;">@${log.username}</td>
+                <td><span style="color:#2ecc71;">${log.action}</span></td>
+                <td style="font-size:0.85rem;">${log.entity}</td>
+                <td style="font-size:0.8rem; color:rgba(255,255,255,0.6); max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title='${log.details}'>
+                    ${log.details}
+                </td>
+                <td style="font-size:0.85rem; font-family:monospace;">${log.ip_address}</td>
+            `;
+            listBody.appendChild(tr);
+        });
+    } catch (err) {
+        listBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#e74c3c;">Xatolik: ${err.message}</td></tr>`;
+    }
+}
+
+async function deleteUser(userId, username) {
+    if (username === 'admin') {
+        showToast("Asosiy adminni o'chirib bo'lmaydi!", "error");
+        return;
+    }
+
+    if (!confirm(`Foydalanuvchi @${username} ni o'chirishni tasdiqlaysizmi?`)) return;
+
+    try {
+        await SmartUtils.fetchAPI(`/auth/users/${userId}`, { method: 'DELETE' });
+        showToast("Foydalanuvchi o'chirildi", "success");
+        loadAdminUsersList();
+    } catch (err) {
+        showToast(err.message, "error");
+    }
+}
+
+async function resetUserPassword(userId, username) {
+    const newPass = prompt(`@${username} uchun yangi parol kiriting:`, "123456");
+    if (!newPass) return;
+
+    // Eslatma: Backendda /api/auth/users/:id/password-reset kabi route kerak bo'lishi mumkin
+    // Hozircha bu funksiya API mavjud bo'lsa ishlaydi, aks holda xato beradi
+    try {
+        await SmartUtils.fetchAPI(`/auth/users/${userId}/reset-password`, {
+            method: 'POST',
+            body: JSON.stringify({ password: newPass })
+        });
+        showToast("Parol muvaffaqiyatli tiklandi", "success");
+    } catch (err) {
+        showToast("Xatolik: API hali tayyor emas yoki ruxsat yo'q", "error");
     }
 }
 
@@ -8224,6 +8561,48 @@ function showNotification(msg, type = 'info') {
 }
 
 // Chat Bot
+let globalSmartRecognition = null;
+window.startSmartAssistantVoice = function () {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        SmartUtils.showToast("Kechirasiz, brauzeringiz ovozli kiritishni qo'llab-quvvatlamaydi.", "error");
+        return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!globalSmartRecognition) {
+        globalSmartRecognition = new SpeechRecognition();
+        globalSmartRecognition.lang = 'uz-UZ';
+        globalSmartRecognition.interimResults = false;
+
+        globalSmartRecognition.onstart = function () {
+            const btn = document.getElementById('smart-mic-btn');
+            if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        };
+
+        globalSmartRecognition.onresult = function (event) {
+            const text = event.results[0][0].transcript;
+            const input = document.getElementById('chat-input');
+            if (input) {
+                input.value = text;
+                sendChat();
+            }
+        };
+
+        globalSmartRecognition.onerror = function (event) {
+            SmartUtils.showToast("Ovozni aniqlashda xatolik: " + event.error, "error");
+            const btn = document.getElementById('smart-mic-btn');
+            if (btn) btn.innerHTML = '<i class="fas fa-microphone"></i>';
+        };
+
+        globalSmartRecognition.onend = function () {
+            const btn = document.getElementById('smart-mic-btn');
+            if (btn) btn.innerHTML = '<i class="fas fa-microphone"></i>';
+        }
+    }
+
+    try { globalSmartRecognition.start(); } catch (e) { globalSmartRecognition.stop(); setTimeout(() => globalSmartRecognition.start(), 200); }
+}
+
 function toggleChat() {
     document.getElementById('chat-window').classList.toggle('active');
 }
@@ -8248,6 +8627,60 @@ function sendChat() {
         document.getElementById('typing-indicator').remove();
         let reply = "Kechirasiz, men hali o'rganish jarayonidaman.";
         const low = text.toLowerCase();
+
+        // PU-29 Ovozli buyruq interkepsiyasi
+        if (low.includes('strelka') || low.includes('shablon') || low.includes('ustriq') || low.includes('o\'lchov') || low.includes('pu-29') || low.includes('pu 29')) {
+            reply = "O'lchov ma'lumotlari aniqlandi! Tahlil qilib PU-29 jurnaliga yo'naltirmoqdaman...";
+            addChatMsg(reply, 'bot');
+
+            setTimeout(() => {
+                if (typeof window.openPU29Window === 'function') {
+                    window.openPU29Window('ishlab-chiqarish');
+                    setTimeout(() => {
+                        if (typeof window.createNewPU29Record === 'function') {
+                            window.createNewPU29Record();
+                            setTimeout(() => {
+                                if (typeof window.parseVoiceToForm === 'function') {
+                                    window.parseVoiceToForm(low);
+                                    let logEl = document.getElementById('pu29-voice-log');
+                                    if (logEl) {
+                                        logEl.innerHTML = `<b style="color:#f1c40f;">Smart Assistant yuborgan ma'lumot:</b><br/>"${text}"<br/><br/><span style="color:#2ecc71;"><i class="fas fa-check"></i> AI avtomatik tahlil qildi. Iltimos 'Saqlash' tugmasini bosib tasdiqlang!</span>`;
+                                    }
+                                }
+                            }, 500);
+                        }
+                    }, 300);
+                }
+            }, 1000);
+            return;
+        }
+
+        // PU-28 Ovozli buyruq interkepsiyasi
+        if (low.includes('nuqson') || low.includes('kamchilik') || low.includes('piyoda') || low.includes('defektoskop') || low.includes('pu-28') || low.includes('pu 28') || low.includes('zveno')) {
+            reply = "Yo'lda aniqlangan kamchilik qayd etildi! Tahlil qilib PU-28 jurnaliga yo'naltirmoqdaman...";
+            addChatMsg(reply, 'bot');
+
+            setTimeout(() => {
+                if (typeof window.openPU28Window === 'function') {
+                    window.openPU28Window('ishlab-chiqarish');
+                    setTimeout(() => {
+                        if (typeof window.createNewPU28RecordVoice === 'function') {
+                            window.createNewPU28RecordVoice();
+                            setTimeout(() => {
+                                if (typeof window.parsePU28VoiceToForm === 'function') {
+                                    window.parsePU28VoiceToForm(low);
+                                    let logEl = document.getElementById('pu28-voice-log');
+                                    if (logEl) {
+                                        logEl.innerHTML = `<b style="color:#f1c40f;">Smart Assistant yuborgan ma'lumot:</b><br/>"${text}"<br/><br/><span style="color:#2ecc71;"><i class="fas fa-check"></i> AI tahlil qildi. Iltimos tekshirib 'Saqlash' tugmasini bosing!</span>`;
+                                    }
+                                }
+                            }, 500);
+                        }
+                    }, 300);
+                }
+            }, 1000);
+            return;
+        }
 
         if (low.includes('salom') || low.includes('assalom')) reply = "Vaalaykum assalom! PCh-Qorlitog' tizimiga xush kelibsiz.";
         else if (low.includes('qanday') && low.includes('ishlar')) reply = "Rahmat, tizim barqaror ishlamoqda.";
@@ -8654,7 +9087,8 @@ function getRoadSidebarHTML(bolinmaId) {
             temp: Math.floor(Math.random() * (55 - 20) + 20),
             defects: 0,
             wearV: 0.0,
-            wearH: 0.0
+            wearH: 0.0,
+            bruto: 12.5
         };
         window.monitoringData[bolinmaId] = monitorData;
     }
@@ -8688,6 +9122,12 @@ function getRoadSidebarHTML(bolinmaId) {
                 <span class="mini-stat-label">Nuqsonlar:</span>
                 <span class="mini-stat-value" style="color: ${monitorData.defects > 0 ? '#e74c3c' : '#2ecc71'}">
                     ${monitorData.defects} ta
+                </span>
+            </div>
+            <div class="mini-stat-row">
+                <span class="mini-stat-label">Yillik tonna bruto:</span>
+                <span class="mini-stat-value" style="color: #ffd700">
+                    ${monitorData.bruto || 0} mln t.km
                 </span>
             </div>
         </div>
@@ -8735,7 +9175,7 @@ function editRoadManagement(bolinmaId) {
     };
 
     let monitorData = window.monitoringData[bolinmaId] || {
-        temp: 25, defects: 0, wearV: 0, wearH: 0
+        temp: 25, defects: 0, wearV: 0, wearH: 0, bruto: 0
     };
 
     let modal = document.getElementById('road-edit-modal');
@@ -8774,6 +9214,10 @@ function editRoadManagement(bolinmaId) {
                 <label class="road-form-label">Yeyilish G (mm)</label>
                 <input type="number" step="0.1" id="input-wear-h" class="road-input" value="${monitorData.wearH}">
              </div>
+        </div>
+        <div style="margin-bottom:15px;">
+            <label class="road-form-label">Yillik tonna bruto (mln t.km)</label>
+            <input type="number" step="0.1" id="input-bruto" class="road-input" value="${monitorData.bruto || 0}">
         </div>
 
         <!-- Road Inputs -->
@@ -8827,6 +9271,7 @@ function saveRoadManagement(bolinmaId) {
     const defects = document.getElementById('input-defects').value;
     const wearV = document.getElementById('input-wear-v').value;
     const wearH = document.getElementById('input-wear-h').value;
+    const bruto = document.getElementById('input-bruto').value;
 
     if (sw11 === '' || t1 === '' || temp === '') { // Basic validation
         alert("Iltimos, asosiy maydonlarni to'ldiring!");
@@ -8851,7 +9296,8 @@ function saveRoadManagement(bolinmaId) {
         temp: parseInt(temp) || 0,
         defects: parseInt(defects) || 0,
         wearV: parseFloat(wearV) || 0,
-        wearH: parseFloat(wearH) || 0
+        wearH: parseFloat(wearH) || 0,
+        bruto: parseFloat(bruto) || 0
     };
 
     // Commit to LocalStorage
@@ -9142,10 +9588,14 @@ function initSmartSystem() {
         const win = document.getElementById('dispatcher-integration-window');
         const closeBtn = document.getElementById('closeDispatcherIntegrationBtn');
 
-        if (btn && win && closeBtn) {
+        if (btn && closeBtn) {
             btn.addEventListener('click', function () {
-                win.classList.add('active');
-                win.style.display = 'flex';
+                if (typeof self.openDepartmentWindow === 'function') {
+                    self.openDepartmentWindow('dispetcher');
+                } else {
+                    win.classList.add('active');
+                    win.style.display = 'flex';
+                }
             });
 
             closeBtn.addEventListener('click', function () {
@@ -9256,7 +9706,7 @@ function initSmartSystem() {
     }, 1000);
 }
 
-// Global DOM Initialization
+// Global DOM Initialization - initSmartSystem moved to index.html
 document.addEventListener('DOMContentLoaded', function () {
     // Nav Clock Update
     setInterval(() => {
@@ -9266,8 +9716,6 @@ document.addEventListener('DOMContentLoaded', function () {
             clockEl.textContent = now.toLocaleTimeString('uz-UZ', { hour12: false });
         }
     }, 1000);
-
-    initSmartSystem();
 });
 
 
@@ -9365,14 +9813,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 // --- MECHANICS SECTION FUNCTIONS (Mexanika Bo'limi) ---
-function renderMexanikaSection(windowElement, bolinmaId) {
-    // Call the mechanics section renderer
-    if (typeof renderMechanicsSection === 'function') {
-        renderMechanicsSection(windowElement, bolinmaId);
-    } else {
-        console.error('renderMechanicsSection function not found');
-    }
-}
+// Redundant stubs removed
 
 
 // --- TRAIN SCHEDULE & RADAR LOGIC ---
@@ -9678,26 +10119,11 @@ function renderEconomySection(windowElement, bolinmaId) {
 
 
 // D) Dispatcher Section - Stub
-function renderSubdivisionReportSection(windowElement, bolinmaId) {
-    console.log('Rendering Dispatcher Report Section for', bolinmaId);
-    const existingView = windowElement.querySelector('#dispatcher-assignment-view');
-    if (existingView) existingView.remove();
+// (Redundant stub removed, using definition at line 4371)
 
-    const view = document.createElement('div');
-    view.id = 'dispatcher-assignment-view';
-    view.className = 'department-section-view';
-    view.innerHTML = `<div style="padding:20px; background:rgba(255,255,255,0.05);"><h3>Dispetcher Topshiriqlari</h3><p>Topshiriqlar ro'yxati...</p></div>`;
-
-    let body = windowElement.querySelector('.department-body') || windowElement.querySelector('.window-content') || windowElement;
-    const fileList = body.querySelector('.files-area-wrapper') || body.querySelector('.file-management');
-    if (fileList) body.insertBefore(view, fileList);
-    else body.appendChild(view);
-}
 
 // E) Metrology Section - Stub
-function renderMetrologySection(windowElement, bolinmaId) {
-    console.log('Rendering Metrology Section for', bolinmaId);
-}
+// Redundant stubs removed as they are defined in their respective module files
 
 // F) Mechanics Section - Dashboard
 function renderMechanicsSection(windowElement, bolinmaId) {
@@ -9706,178 +10132,237 @@ function renderMechanicsSection(windowElement, bolinmaId) {
     const existingView = windowElement.querySelector('#mechanics-section-view');
     if (existingView) existingView.remove();
 
+    // Rolni aniqlash
+    const _curUser = (typeof currentUser !== 'undefined') ? currentUser : null;
+    const _userRole = _curUser ? _curUser.role : 'guest';
+    const isDeptOrAdmin = (_userRole === 'department' || _userRole === 'admin' || _userRole === 'subdivision' || !!bolinmaId);
+
     // Get Data from Global Store
     const data = window.waybillData || { vehicles: [], orders: [] };
 
+    // Shu bo'linmaga tegishli texnikalar
+    const deptVehicles = isDeptOrAdmin ? data.vehicles : data.vehicles.filter(v =>
+        !v.departmentId || v.departmentId === bolinmaId
+    );
+    const deptOrders = isDeptOrAdmin ? data.orders : data.orders.filter(o =>
+        o.deptName && o.deptName.includes(bolinmaId)
+    );
+
     // Calculate Stats
-    const totalVehicles = data.vehicles.length;
-    const activeVehicles = data.vehicles.filter(v => v.status === 'busy').length;
-    const repairVehicles = data.vehicles.filter(v => v.status === 'repair').length;
-    const freeVehicles = data.vehicles.filter(v => v.status === 'free').length;
+    const totalVehicles = deptVehicles.length;
+    const activeVehicles = deptVehicles.filter(v => v.status === 'busy').length;
+    const repairVehicles = deptVehicles.filter(v => v.status === 'repair').length;
+    const freeVehicles = deptVehicles.filter(v => v.status === 'free').length;
 
     const view = document.createElement('div');
     view.id = 'mechanics-section-view';
     view.className = 'department-section-view';
+
+    // ===== Texnikalar kartalari =====
+    let vehicleCardsHtml = '';
+    if (deptVehicles.length === 0) {
+        vehicleCardsHtml = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #64748b;">
+            <i class="fas fa-truck" style="font-size: 3rem; opacity: 0.3; margin-bottom: 15px; display: block;"></i>
+            <p>Texnikalar mavjud emas</p>
+        </div>`;
+    } else {
+        vehicleCardsHtml = deptVehicles.map(v => {
+            let statusColor = v.status === 'free' ? '#2ecc71' : (v.status === 'busy' ? '#e74c3c' : '#f1c40f');
+            let statusText = v.status === 'free' ? "Bo'sh" : (v.status === 'busy' ? "Ishda" : "Ta'mirda");
+            return `
+                <div style="background: #1e293b; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; transition: all 0.3s;" 
+                     onmouseover="this.style.borderColor='${statusColor}40'; this.style.transform='translateY(-3px)'" 
+                     onmouseout="this.style.borderColor='rgba(255,255,255,0.05)'; this.style.transform='translateY(0)'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                        <div style="background: rgba(255,255,255,0.05); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-truck" style="color: white; font-size: 1.2rem;"></i>
+                        </div>
+                        ${isDeptOrAdmin ? `
+                        <button onclick="if(window.deleteVehicle) window.deleteVehicle('${v.id}')" style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;" title="O'chirish">
+                            <i class="fas fa-trash-alt" style="font-size: 0.8rem;"></i>
+                        </button>` : ''}
+                    </div>
+                    <h5 style="margin: 0; color: white; font-size: 1.05rem;">${v.name}</h5>
+                    <p style="margin: 3px 0 10px 0; color: #94a3b8; font-family: monospace; font-size: 0.85rem;">${v.number}</p>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span>Garaj:</span> <span style="color: #cbd5e1;">${v.garage || '---'}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Yoqilg'i:</span> <span style="color: #cbd5e1;">${v.fuelNorm} L/100km</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 8px;">
+                        <span style="color: ${statusColor}; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                            <span style="width: 8px; height: 8px; background: ${statusColor}; border-radius: 50%;"></span>
+                            ${statusText}
+                        </span>
+                        ${v.status === 'busy' && v.currentTask ? `<span style="font-size: 0.7rem; color: #94a3b8;">${v.currentTask}</span>` : ''}
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    // ===== Buyurtmalar jadvali (faqat department/admin uchun tasdiqlash tugmalari) =====
+    let ordersHtml = '';
+    if (deptOrders.length === 0) {
+        ordersHtml = `<tr><td colspan="6" style="padding: 30px; text-align: center; color: #64748b; font-style: italic;">Hali buyurtmalar yo'q</td></tr>`;
+    } else {
+        ordersHtml = deptOrders.map(o => `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                <td style="padding: 15px 12px; color: #94a3b8;">${o.date}</td>
+                <td style="padding: 15px 12px; color: #38bdf8; font-weight: bold;">${o.deptName || "Noma'lum"}</td>
+                <td style="padding: 15px 12px; color: white;">${o.vehicleName}</td>
+                <td style="padding: 15px 12px; color: #94a3b8;">${o.task}</td>
+                <td style="padding: 15px 12px;">
+                    <span style="color: ${o.status === 'approved' ? '#2ecc71' : '#f39c12'}; display: flex; align-items: center; gap: 5px;">
+                        <i class="fas ${o.status === 'approved' ? 'fa-check' : 'fa-spinner fa-spin'}"></i>
+                        ${o.status === 'approved' ? 'Tasdiqlandi' : 'Kutilmoqda'}
+                    </span>
+                </td>
+                <td style="padding: 15px 12px; text-align: right;">
+                    ${isDeptOrAdmin ? `<div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        ${o.status !== 'approved' ? `<button onclick="approveOrder(${o.id})" style="background: #2ecc71; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;"><i class="fas fa-check"></i> Tasdiqlash</button>` : ''}
+                        <button onclick="rejectOrder(${o.id})" style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;"><i class="fas fa-times"></i></button>
+                    </div>` : `<span style="font-size: 0.8rem; color: #64748b;">${o.status === 'approved' ? '✅' : '⏳'}</span>`}
+                </td>
+            </tr>`).join('');
+    }
+
+    // ===== Tezkor harakatlar tugmalari =====
+    let quickActionsHtml = `
+        <button onclick="event.stopPropagation(); openWaybillWindow('${bolinmaId}')" 
+            style="background: linear-gradient(135deg, #8e44ad, #9b59b6); border: none; padding: 20px; color: white; border-radius: 15px; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(142, 68, 173, 0.3);">
+            <div style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-file-invoice" style="font-size: 1.5rem;"></i>
+            </div>
+            <span style="font-size: 1rem; font-weight: bold;">Yo'l Varaqasi</span>
+        </button>
+        <button onclick="event.stopPropagation(); openOrderWindow()" 
+            style="background: linear-gradient(135deg, #f39c12, #e67e22); border: none; padding: 20px; color: white; border-radius: 15px; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);">
+            <div style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-shipping-fast" style="font-size: 1.5rem;"></i>
+            </div>
+            <span style="font-size: 1rem; font-weight: bold;">Transport Buyurtma</span>
+        </button>`;
+
+    if (isDeptOrAdmin) {
+        quickActionsHtml += `
+        <button onclick="event.stopPropagation(); openTechnicalMaintenanceWindow('${bolinmaId}')" 
+            style="background: linear-gradient(135deg, #3498db, #2980b9); border: none; padding: 20px; color: white; border-radius: 15px; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);">
+            <div style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-wrench" style="font-size: 1.5rem;"></i>
+            </div>
+            <span style="font-size: 1rem; font-weight: bold;">Texnik Xizmat (TO)</span>
+        </button>
+        <button onclick="event.stopPropagation(); openRepairJournal('${bolinmaId}')" 
+            style="background: linear-gradient(135deg, #e67e22, #d35400); border: none; padding: 20px; color: white; border-radius: 15px; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);">
+            <div style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-tools" style="font-size: 1.5rem;"></i>
+            </div>
+            <span style="font-size: 1rem; font-weight: bold;">Ta'mir Jurnali</span>
+        </button>
+        <button onclick="event.stopPropagation(); openSpareParts('${bolinmaId}')" 
+            style="background: linear-gradient(135deg, #16a085, #1abc9c); border: none; padding: 20px; color: white; border-radius: 15px; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(22, 160, 133, 0.3);">
+            <div style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-boxes" style="font-size: 1.5rem;"></i>
+            </div>
+            <span style="font-size: 1rem; font-weight: bold;">Ehtiyot Qismlar</span>
+        </button>
+        <button onclick="event.stopPropagation(); openFuelReport()" 
+            style="background: linear-gradient(135deg, #ef4444, #b91c1c); border: none; padding: 20px; color: white; border-radius: 15px; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
+            <div style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-gas-pump" style="font-size: 1.5rem;"></i>
+            </div>
+            <span style="font-size: 1rem; font-weight: bold;">Yoqilg'i Hisoboti</span>
+        </button>
+        <button onclick="event.stopPropagation(); showTechnicalList('${bolinmaId}')" 
+            style="background: linear-gradient(135deg, #2c3e50, #34495e); border: none; padding: 20px; color: white; border-radius: 15px; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(44, 62, 80, 0.3);">
+            <div style="background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-list-alt" style="font-size: 1.5rem;"></i>
+            </div>
+            <span style="font-size: 1rem; font-weight: bold;">Texnikalar Ro'yxati</span>
+        </button>`;
+    }
+
     view.innerHTML = `
-        <div style="padding: 25px; background: rgba(0,0,0,0.2); border-radius: 15px; margin-bottom: 20px;">
+        <div style="padding: 20px; background: rgba(52,152,219,0.08); border: 1px solid rgba(52,152,219,0.3); border-radius: 15px; margin-bottom: 20px; border-left: 5px solid #3498db;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; color: white; display: flex; align-items: center; gap: 12px; font-size: 1.5rem;">
-                    <i class="fas fa-cogs" style="color: #3498db;"></i>
-                    Mexanika Bo'limi Boshqaruvi
+                <h3 style="margin: 0; color: #3498db; display: flex; align-items: center; gap: 12px; font-size: 1.3rem;">
+                    <i class="fas fa-cogs"></i>
+                    Mexanika Bo'limi ${isDeptOrAdmin ? '— Boshqaruv' : "— Texnikalar"}
                 </h3>
-                <div style="background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; color: #ccc; font-size: 0.9rem;">
-                    <i class="fas fa-calendar-alt"></i> ${new Date().toLocaleDateString()}
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    ${isDeptOrAdmin ? `
+                    <button onclick="if(window.openAddVehicleModal) window.openAddVehicleModal()" 
+                        style="background: #2ecc71; border: none; color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 6px; font-size: 0.85rem;">
+                        <i class="fas fa-plus"></i> Yangi Texnika
+                    </button>` : ''}
+                    <span style="background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; color: #94a3b8; font-size: 0.85rem;">
+                        <i class="fas fa-calendar-alt"></i> ${new Date().toLocaleDateString()}
+                    </span>
                 </div>
             </div>
 
-            <!-- KPI Dashboard -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <div style="background: linear-gradient(135deg, #2c3e50, #34495e); padding: 20px; border-radius: 12px; position: relative; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                    <div style="font-size: 2.5rem; font-weight: bold; color: white;">${totalVehicles}</div>
-                    <div style="color: #bdc3c7; font-size: 0.9rem;">Jami Texnika</div>
-                    <i class="fas fa-truck-monster" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; color: rgba(255,255,255,0.05);"></i>
+            <!-- KPI -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+                <div style="background: linear-gradient(135deg, #2c3e50, #34495e); padding: 15px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: white;">${totalVehicles}</div>
+                    <div style="color: #94a3b8; font-size: 0.8rem;">Jami</div>
                 </div>
-                <div style="background: linear-gradient(135deg, #e74c3c, #c0392b); padding: 20px; border-radius: 12px; position: relative; overflow: hidden; box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3);">
-                    <div style="font-size: 2.5rem; font-weight: bold; color: white;">${activeVehicles}</div>
-                    <div style="color: #ecf0f1; font-size: 0.9rem;">Ishda (Band)</div>
-                    <i class="fas fa-clock" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; color: rgba(255,255,255,0.1);"></i>
+                <div style="background: linear-gradient(135deg, #27ae60, #2ecc71); padding: 15px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: white;">${freeVehicles}</div>
+                    <div style="color: #ecf0f1; font-size: 0.8rem;">Bo'sh</div>
                 </div>
-                <div style="background: linear-gradient(135deg, #2ecc71, #27ae60); padding: 20px; border-radius: 12px; position: relative; overflow: hidden; box-shadow: 0 4px 6px rgba(46, 204, 113, 0.3);">
-                    <div style="font-size: 2.5rem; font-weight: bold; color: white;">${freeVehicles}</div>
-                    <div style="color: #ecf0f1; font-size: 0.9rem;">Bo'sh (Tayyor)</div>
-                    <i class="fas fa-check-circle" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; color: rgba(255,255,255,0.1);"></i>
+                <div style="background: linear-gradient(135deg, #c0392b, #e74c3c); padding: 15px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: white;">${activeVehicles}</div>
+                    <div style="color: #ecf0f1; font-size: 0.8rem;">Ishda</div>
                 </div>
-                <div style="background: linear-gradient(135deg, #f1c40f, #f39c12); padding: 20px; border-radius: 12px; position: relative; overflow: hidden; box-shadow: 0 4px 6px rgba(241, 196, 15, 0.3);">
-                    <div style="font-size: 2.5rem; font-weight: bold; color: white;">${repairVehicles}</div>
-                    <div style="color: #fff; font-size: 0.9rem;">Ta'mirda</div>
-                    <i class="fas fa-tools" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; color: rgba(255,255,255,0.1);"></i>
+                <div style="background: linear-gradient(135deg, #d35400, #f39c12); padding: 15px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: white;">${repairVehicles}</div>
+                    <div style="color: #fff; font-size: 0.8rem;">Ta'mirda</div>
                 </div>
             </div>
 
-            <!-- Main Sections: Dynamic Tabs -->
-            <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; margin-bottom: 30px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
-                    <div style="display: flex; gap: 20px;">
-                        <h4 onclick="window.refreshMechanicsDashboard()" style="margin: 0; color: #3498db; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-truck-pickup"></i> Texnikalar Boshqaruvi
-                        </h4>
-                        <h4 style="margin: 0; color: #94a3b8; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; gap: 10px; opacity: 0.6;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6" onclick="showToast('Haydovchilar ro\'yxati yaqin vaqtda qo\'shiladi', 'info')">
-                            <i class="fas fa-users-cog"></i> Haydovchilar
-                        </h4>
-                    </div>
-                     <div style="display: flex; gap: 10px;">
-                        <button onclick="if(window.openAddVehicleModal) window.openAddVehicleModal()" style="background: #2ecc71; border: none; color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
-                            <i class="fas fa-plus"></i> Yangi Texnika
-                        </button>
-                    </div>
-                </div>
+            <!-- Tezkor harakatlar -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                ${quickActionsHtml}
+            </div>
 
-                <!-- NEW: Visual Card View (Transport Buyurtma Tizimi Style) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px;" id="mechanics-cards-container">
-                    ${data.vehicles.map(v => {
-        let statusColor = v.status === 'free' ? '#2ecc71' : (v.status === 'busy' ? '#e74c3c' : '#f1c40f');
-        return `
-                            <div style="background: #1e293b; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; position: relative; transition: all 0.3s;" onmouseover="this.style.borderColor='${statusColor}40'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.05)'; this.style.transform='translateY(0)'">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                                    <div style="background: rgba(255,255,255,0.05); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-truck" style="color: white; font-size: 1.2rem;"></i>
-                                    </div>
-                                    <div style="display: flex; gap: 5px;">
-                                        <button onclick="if(window.deleteVehicle) window.deleteVehicle('${v.id}')" style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; width: 30px; height: 30px; border-radius: 6px; cursor: pointer;" title="O'chirish">
-                                            <i class="fas fa-trash-alt" style="font-size: 0.8rem;"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <h5 style="margin: 0; color: white; font-size: 1.05rem;">${v.name}</h5>
-                                <p style="margin: 3px 0 10px 0; color: #94a3b8; font-family: monospace; font-size: 0.85rem;">${v.number}</p>
-                                
-                                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 15px;">
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                        <span>Garaj:</span> <span style="color: #cbd5e1;">${v.garage || '---'}</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <span>Yoqilg'i:</span> <span style="color: #cbd5e1;">${v.fuelNorm} L/100km</span>
-                                    </div>
-                                </div>
-
-                                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 8px;">
-                                     <span style="color: ${statusColor}; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 5px;">
-                                        <span style="width: 8px; height: 8px; background: ${statusColor}; border-radius: 50%;"></span>
-                                        ${v.status === 'free' ? "Bo'sh" : (v.status === 'busy' ? "Ishda" : "Ta'mir")}
-                                    </span>
-                                    ${v.status === 'busy' ? `<span style="font-size: 0.7rem; color: #94a3b8;">${v.currentTask || ''}</span>` : ''}
-                                </div>
-                            </div>
-                        `;
-    }).join('')}
-                </div>
-
-                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 25px;">
-                    <h4 style="margin: 0 0 20px 0; color: #f39c12; font-size: 1.1rem; display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-clock"></i> Kelgan Buyurtmalar
-                        <span style="background: #f39c1220; color: #f39c12; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem;">${data.orders.length} ta</span>
-                    </h4>
-                    <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 600px;">
-                            <thead>
-                                <tr style="color: #64748b; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                    <th style="padding: 12px;">Sana</th>
-                                    <th style="padding: 12px;">Bo'linma</th>
-                                    <th style="padding: 12px;">Texnika</th>
-                                    <th style="padding: 12px;">Vazifa</th>
-                                    <th style="padding: 12px;">Holat</th>
-                                    <th style="padding: 12px; text-align: right;">Amallar</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.orders.length === 0 ? `
-                                    <tr><td colspan="6" style="padding: 30px; text-align: center; color: #64748b; font-style: italic;">Hali buyurtmalar yo'q</td></tr>
-                                ` : data.orders.map(o => `
-                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
-                                        <td style="padding: 15px 12px; color: #94a3b8;">${o.date}</td>
-                                        <td style="padding: 15px 12px; color: #38bdf8; font-weight: bold;">${o.deptName || 'Noma\'lum'}</td>
-                                        <td style="padding: 15px 12px; color: white;">${o.vehicleName}</td>
-                                        <td style="padding: 15px 12px; color: #94a3b8;">${o.task}</td>
-                                        <td style="padding: 15px 12px;">
-                                            <span style="color: ${o.status === 'approved' ? '#2ecc71' : '#f39c12'}; display: flex; align-items: center; gap: 5px;">
-                                                <i class="fas ${o.status === 'approved' ? 'fa-check' : 'fa-spinner fa-spin'}"></i>
-                                                ${o.status === 'approved' ? 'Tasdiqlandi' : 'Kutilmoqda'}
-                                            </span>
-                                        </td>
-                                        <td style="padding: 15px 12px; text-align: right;">
-                                            <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                                                ${o.status !== 'approved' ? `
-                                                    <button onclick="if(window.approveOrder) window.approveOrder(${o.id})" style="background: #2ecc71; border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;"><i class="fas fa-check"></i> Tasdiqlash</button>
-                                                ` : ''}
-                                                <button onclick="if(window.rejectOrder) window.rejectOrder(${o.id})" style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;"><i class="fas fa-times"></i></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
+            <!-- Texnikalar kartalari -->
+            <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 15px 0; color: white; font-size: 1.1rem; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-truck-pickup" style="color: #3498db;"></i> Texnikalar
+                    <span style="background: rgba(52,152,219,0.2); padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; color: #3498db;">${totalVehicles} ta</span>
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;" id="mechanics-cards-container">
+                    ${vehicleCardsHtml}
                 </div>
             </div>
 
-            <!-- Global Quick Actions -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                <button onclick="if(window.openTechnicalMaintenanceWindow) window.openTechnicalMaintenanceWindow('${bolinmaId}')" 
-                    style="background: linear-gradient(135deg, #3498db, #2980b9); border: none; padding: 25px; color: white; border-radius: 15px; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);">
-                    <div style="background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-wrench" style="font-size: 1.8rem;"></i>
-                    </div>
-                    <div><span style="font-size: 1.1rem; font-weight: bold;">Texnik Xizmat (TO-1, TO-2)</span></div>
-                </button>
-
-                <button onclick="if(window.openWaybillWindow) window.openWaybillWindow('${bolinmaId}')" 
-                    style="background: linear-gradient(135deg, #8e44ad, #9b59b6); border: none; padding: 25px; color: white; border-radius: 15px; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(142, 68, 173, 0.3);">
-                    <div style="background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-file-invoice" style="font-size: 1.8rem;"></i>
-                    </div>
-                    <div><span style="font-size: 1.1rem; font-weight: bold;">Yo'l Varaqalari Hisoboti</span></div>
-                </button>
-            </div>
+            <!-- Buyurtmalar jadvali -->
+            ${deptOrders.length > 0 || isDeptOrAdmin ? `
+            <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px;">
+                <h4 style="margin: 0 0 15px 0; color: #f39c12; font-size: 1.1rem; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-clipboard-list"></i> ${isDeptOrAdmin ? 'Kelgan Buyurtmalar' : "Mening Buyurtmalarim"}
+                    <span style="background: rgba(243,156,18,0.2); padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; color: #f39c12;">${deptOrders.length} ta</span>
+                </h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 500px;">
+                        <thead>
+                            <tr style="color: #64748b; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <th style="padding: 10px;">Sana</th>
+                                <th style="padding: 10px;">Bo'linma</th>
+                                <th style="padding: 10px;">Texnika</th>
+                                <th style="padding: 10px;">Vazifa</th>
+                                <th style="padding: 10px;">Holat</th>
+                                <th style="padding: 10px; text-align: right;">Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody>${ordersHtml}</tbody>
+                    </table>
+                </div>
+            </div>` : ''}
         </div>
     `;
 
@@ -9890,50 +10375,72 @@ function renderMechanicsSection(windowElement, bolinmaId) {
 
 // Make functions globally accessible
 window.renderMechanicsSection = renderMechanicsSection;
-window.renderMexanikaSection = renderMexanikaSection;
+window.renderMexanikaSection = renderMechanicsSection;
 
 // --- MEHNAT SECTION ---
 function renderMehnatSection(windowElement, bolinmaId) {
-    const contentDiv = windowElement.querySelector('.window-content');
+    const contentDiv = windowElement.querySelector('.window-content') || windowElement.querySelector('.department-body');
     if (!contentDiv) return;
 
-    // Avvalgi safety view mavjud bo'lsa, yangilaymiz (tozalamaymiz — safetyDashboard o'zi boshqaradi)
+    // Fayl boshqaruv panellarini yashirish (safety o'z UI'sini ko'rsatadi)
+    const fileMgmt = contentDiv.querySelector('.file-management');
+    if (fileMgmt) fileMgmt.style.display = 'none';
+    const filesTable = contentDiv.querySelector('.files-table');
+    if (filesTable) filesTable.style.display = 'none';
+    const folderMgmt = contentDiv.querySelector('.folder-management');
+    if (folderMgmt) folderMgmt.style.display = 'none';
+
+    // Agar renderSafetyDashboard mavjud bo'lsa — uni chaqirish
     const fn = typeof renderSafetyDashboard === 'function' ? renderSafetyDashboard
         : (window.renderSafetyDashboard || null);
 
     if (fn) {
-        // Faqat safety ko'rinishini tozalaymiz, contentDiv emas
+        // Avvalgi safety view ni tozalash
         const old = contentDiv.querySelector('#safety-dashboard-view');
-        if (old) old.innerHTML = '';
+        if (old) old.remove();
         fn(windowElement, bolinmaId);
     } else {
-        // safety.js yuklanmagan — fallback UI
-        let fallback = contentDiv.querySelector('#safety-fallback-view');
+        // safety.js yuklanmagan — oldingi ko'rinishdagi fallback UI
+        let fallback = contentDiv.querySelector('#safety-dashboard-view');
         if (!fallback) {
             fallback = document.createElement('div');
-            fallback.id = 'safety-fallback-view';
-            contentDiv.appendChild(fallback);
+            fallback.id = 'safety-dashboard-view';
+            contentDiv.insertBefore(fallback, contentDiv.firstChild);
         }
         fallback.innerHTML = `
-            <div style="padding:30px;text-align:center;color:white;">
-                <i class="fas fa-shield-alt" style="font-size:3rem;color:#f39c12;margin-bottom:15px;display:block;"></i>
-                <h3 style="color:#f39c12;">Mehnat Muhofazasi Moduli</h3>
-                <p style="color:rgba(255,255,255,0.7);margin:10px 0;">Xavfsizlik moduli yuklanmoqda yoki mavjud emas.</p>
-                <div style="display:flex;gap:10px;justify-content:center;margin-top:15px;flex-wrap:wrap;">
-                    <button onclick="window.openTNU19Window && window.openTNU19Window('${bolinmaId}')"
-                        style="background:linear-gradient(45deg,#f39c12,#e67e22);border:none;color:white;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;">
-                        <i class="fas fa-file-contract"></i> TNU-19 Jurnali
-                    </button>
-                    <button onclick="window.openTNU20Window && window.openTNU20Window('${bolinmaId}')"
-                        style="background:linear-gradient(45deg,#8e44ad,#9b59b6);border:none;color:white;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;">
-                        <i class="fas fa-graduation-cap"></i> TNU-20 Jurnali
-                    </button>
-                    <button onclick="window.openTechnicalMaintenanceWindow && window.openTechnicalMaintenanceWindow('${bolinmaId}')"
-                        style="background:linear-gradient(45deg,#16a085,#1abc9c);border:none;color:white;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;">
-                        <i class="fas fa-tools"></i> TO Jurnali
-                    </button>
+            <div style="padding: 30px; color: white; height: 100%; display: flex; flex-direction: column; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                <!-- Header Section -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 50px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <img src="img/logo.png" alt="Logo" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'">
+                        <h2 style="margin: 0; font-size: 22px; font-weight: 700; color: white;">Mehnat Muhofazasi (Safety)</h2>
+                    </div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; z-index: 100;">
+                        <button onclick="window.openSafetyWorkerList && window.openSafetyWorkerList('${bolinmaId}')" 
+                            style="background-color: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                            <i class="fas fa-users"></i> Xodimlar Ro'yxati
+                        </button>
+                        <button onclick="window.openSafetyTNU19 && window.openSafetyTNU19('${bolinmaId}')" 
+                            style="background-color: #2c3e50; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                            <i class="fas fa-file-alt"></i> TNU-19 Jurnal
+                        </button>
+                        <button onclick="window.openSafetyTNU20 && window.openSafetyTNU20('${bolinmaId}')" 
+                            style="background-color: #9b59b6; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                            <i class="fas fa-graduation-cap"></i> TNU-20 Jurnal
+                        </button>
+                    </div>
                 </div>
-            `;
+                <!-- Stats -->
+                <div id="safety-stats"></div>
+                <!-- Main Content -->
+                <div id="safety-main-view" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px;">
+                    <div style="text-align: center; color: rgba(255,255,255,0.4);">
+                        <i class="fas fa-shield-alt" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+                        <p>Xavfsizlik moduli yuklanmagan</p>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }
 
@@ -9988,11 +10495,14 @@ function searchEverything(query) {
 
     // 3. Search Sections/Departments
     const allSections = [
-        { name: 'Ishlab chiqarish', icon: 'fa-industry' },
-        { name: 'Mexanika', icon: 'fa-cog' },
+        { name: 'Xodimlar', icon: 'fa-users-gear' },
         { name: 'Bugalteriya', icon: 'fa-calculator' },
-        { name: 'Xodimlar', icon: 'fa-users' },
-        { name: 'Mehnat muhofazasi', icon: 'fa-hard-hat' }
+        { name: 'Ishlab chiqarish', icon: 'fa-industry' },
+        { name: 'Mexanika', icon: 'fa-gears' },
+        { name: 'Iqtisodiy tahlil', icon: 'fa-chart-line' },
+        { name: 'Metrologiya', icon: 'fa-scale-balanced' },
+        { name: 'Mehnat muhofazasi', icon: 'fa-shield-halved' },
+        { name: 'Dispetcher', icon: 'fa-tower-broadcast' }
     ];
     allSections.forEach(section => {
         if (section.name.toLowerCase().includes(query)) {
@@ -10068,7 +10578,10 @@ function initMobileMenu() {
     function updateSidebarOverlay() {
         const overlay = document.querySelector('.sidebar-overlay');
         const isActive = sidebar.classList.contains('mobile-active');
-        if (overlay) overlay.style.display = isActive ? 'block' : 'none';
+        if (overlay) {
+            if (isActive) overlay.classList.add('active');
+            else overlay.classList.remove('active');
+        }
     }
 
     // Close menu on clicks outside or on menu items
@@ -10090,13 +10603,113 @@ function initMobileMenu() {
     });
 }
 
+function openAddUserModal() {
+    document.getElementById('addUserModal').classList.add('active');
+}
+
+async function submitAddUser() {
+    const full_name = document.getElementById('new_full_name').value;
+    const username = document.getElementById('new_username').value;
+    const password = document.getElementById('new_password').value;
+    const role = document.getElementById('new_role').value;
+
+    let depts = [];
+    let bolinmalar = [];
+
+    if (role === 'admin') {
+        depts = ['ishlab-chiqarish', 'xodimlar', 'bugalteriya', 'iqtisod', 'mexanika', 'mehnat-muhofazasi', 'dispetcher', 'metrologiya'];
+    } else if (role === 'bolinma') {
+        const selectedBol = document.getElementById('new_bolinmalar').value;
+        if (selectedBol) bolinmalar.push(selectedBol);
+    } else if (role === 'department') {
+        const checkBoxes = document.querySelectorAll('input[name="new_depts"]:checked');
+        checkBoxes.forEach(cb => depts.push(cb.value));
+        if (depts.length === 0) {
+            showToast("Kamida bitta bo'limni tanlang!", "warning");
+            return;
+        }
+    }
+
+    try {
+        await SmartUtils.fetchAPI('/auth/users', {
+            method: 'POST',
+            body: JSON.stringify({
+                full_name,
+                username,
+                password,
+                role,
+                departments: depts,
+                bolinmalar,
+                status: 'active'
+            })
+        });
+
+        showToast("Foydalanuvchi muvaffaqiyatli qo'shildi", "success");
+        document.getElementById('addUserModal').classList.remove('active');
+        document.getElementById('addUserForm').reset();
+
+        // Reset the selects display just in case
+        document.getElementById('bolinma_group').style.display = 'block';
+        document.getElementById('dept_group').style.display = 'none';
+
+        loadAdminUsersList();
+    } catch (err) {
+        showToast("Xatolik: " + err.message, "error");
+    }
+}
+
 // Initializing settings
 document.addEventListener('DOMContentLoaded', () => {
     initGlobalSearch();
     initMobileMenu();
+    initNavTools();
 });
+
+// Navbar Tools Toggle Logic
+function initNavTools() {
+    const toggleBtn = document.getElementById('navToolsToggle');
+    const container = document.getElementById('navToolsContainer');
+
+    if (!toggleBtn || !container || toggleBtn.dataset.initialized) return;
+    toggleBtn.dataset.initialized = "true";
+
+    // Use a reusable toggle function
+    const toggleMenu = (e) => {
+        if (e) e.stopPropagation();
+        toggleBtn.classList.toggle('active');
+        container.classList.toggle('active');
+    };
+
+    // Export to window for inline onclick fallback
+    window.toggleNavTools = toggleMenu;
+
+    toggleBtn.addEventListener('click', toggleMenu);
+
+    // Close on external click
+    document.addEventListener('click', (e) => {
+        if (!container.contains(e.target) && !toggleBtn.contains(e.target)) {
+            toggleBtn.classList.remove('active');
+            container.classList.remove('active');
+        }
+    });
+
+    // Close on ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            toggleBtn.classList.remove('active');
+            container.classList.remove('active');
+        }
+    });
+}
 
 // Final exports
 window.renderMehnatSection = renderMehnatSection;
-
-
+window.openAddUserModal = openAddUserModal;
+window.submitAddUser = submitAddUser;
+window.deleteUser = deleteUser;
+window.resetUserPassword = resetUserPassword;
+window.loadAuditLogs = loadAuditLogs;
+window.openDepartmentWindow = openDepartmentWindow;
+window.openBolinmaSectionWindow = openBolinmaSectionWindow;
+window.openJournal = openJournal;
+window.openPU74New = openPU74New;

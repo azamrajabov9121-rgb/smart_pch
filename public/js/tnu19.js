@@ -7,6 +7,7 @@ let tnu19SignatureStep = 'worker'; // 'worker' or 'instructor'
 
 // Load records from server
 async function loadTNU19Records() {
+    await initHRData();
     try {
         const records = await SmartUtils.fetchAPI('/safety/tnu19');
         if (records) {
@@ -116,13 +117,16 @@ function getTNU19Workers(bolinmaId) {
     if (bolinmaId && bolinmaId !== 'all') {
         const bolinmaNumMatch = String(bolinmaId).match(/\d+/);
         const bolinmaNum = bolinmaNumMatch ? bolinmaNumMatch[0] : bolinmaId;
-        const format1 = `bolinma${bolinmaNum}`;
-        const format2 = `${bolinmaNum}`;
-        const format3 = `${bolinmaNum}-bo'linma`;
 
         return allWorkers.filter(w => {
             const wBolinma = String(w.bolinma || w.bolinmaId || w.department || '').toLowerCase();
-            return wBolinma.includes(format1) || wBolinma.includes(format2) || wBolinma.includes(format3) || wBolinma === String(bolinmaId).toLowerCase();
+            const wNumMatch = wBolinma.match(/\d+/);
+            const wNum = wNumMatch ? wNumMatch[0] : '';
+
+            // Match by number or by exact string
+            return wNum === bolinmaNum ||
+                wBolinma.includes(String(bolinmaId).toLowerCase()) ||
+                String(bolinmaId).toLowerCase().includes(wBolinma);
         });
     }
 
@@ -131,13 +135,8 @@ function getTNU19Workers(bolinmaId) {
 
 // Open TNU-19 Journal Window with Face ID Protection
 async function openTNU19Window(bolinmaId) {
-    // 1. Face ID check before opening (optional enhancement)
-    const needsAuth = bolinmaId !== 'all'; // Example: only for specific departments
-
-    if (needsAuth) {
-        const confirmed = await requestTNU19Access(bolinmaId);
-        if (!confirmed) return;
-    }
+    // Face ID autentifikatsiya o'chirildi — to'g'ridan jurnal ochiladi
+    // ID qo'shishda Face ID talab qilinadi (openTNU19SignatureModal ichida)
 
     await loadTNU19Records();
     window.currentTNU19BolinmaId = bolinmaId;
@@ -150,39 +149,39 @@ async function openTNU19Window(bolinmaId) {
     // ... (rest of the modal creation code remains the same as before)
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(13, 17, 23, 0.95); z-index: 10030; display: flex;
+        background: rgba(240, 247, 255, 0.8); z-index: 10030; display: flex;
         justify-content: center; align-items: center; overflow-y: auto;
-        font-family: 'Segoe UI', sans-serif;
+        font-family: 'Inter', sans-serif; backdrop-filter: blur(10px);
     `;
 
     modal.innerHTML = `
-        <div style="background: #1e293b; width: 95%; max-width: 1500px; height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(0,0,0,0.6); border: 1px solid #30363d; overflow: hidden;">
+        <div style="background: #ffffff; width: 95%; max-width: 1500px; height: 90vh; border-radius: 24px; display: flex; flex-direction: column; box-shadow: 0 40px 100px rgba(31, 38, 135, 0.15); border: 1px solid rgba(212, 175, 55, 0.2); overflow: hidden;">
             
             <!-- Header -->
-            <div style="padding: 15px 25px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; background: #15202b;">
+            <div style="padding: 20px 30px; border-bottom: 2px solid #d4af37; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(90deg, #f8fafc 0%, #e0e7ff 100%);">
                 <div>
-                    <h2 style="margin: 0; color: #f0f6fc; display: flex; align-items: center; gap: 12px; font-size: 1.25rem;">
-                        <span style="background: rgba(243, 156, 18, 0.2); padding: 5px; border-radius: 6px;"><i class="fas fa-file-contract" style="color: #f39c12;"></i></span>
+                    <h2 style="margin: 0; color: #1e293b; display: flex; align-items: center; gap: 15px; font-size: 1.4rem; font-weight: 800;">
+                        <span style="background: rgba(212, 175, 55, 0.1); padding: 8px; border-radius: 12px;"><i class="fas fa-file-contract" style="color: #d4af37;"></i></span>
                         TNU-19: Xavfsizlik Yo'riqnomasi Jurnali
                     </h2>
-                    <p style="margin: 3px 0 0 0; color: #8b949e; font-size: 0.85rem; padding-left: 45px;">
+                    <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9rem; padding-left: 55px; font-weight: 500;">
                         Texnika xavfsizligi bo'yicha yo'riqnomalar va imzolar
                     </p>
                 </div>
-                <button onclick="closeTNU19Window()" style="background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.4); color: #f85149; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                <button onclick="closeTNU19Window()" style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); color: #ef4444; width: 42px; height: 42px; border-radius: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
             <!-- Toolbar -->
-            <div style="padding: 15px 25px; background: #0d1117; display: flex; gap: 15px; border-bottom: 1px solid #30363d; align-items: center;">
-                <button class="tnu19-tab active" data-tab="table" onclick="switchTNU19Tab('table')" style="background: #1f6feb; border: none; color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+            <div style="padding: 15px 30px; background: #f8fafc; display: flex; gap: 15px; border-bottom: 1px solid rgba(31, 38, 135, 0.08); align-items: center;">
+                <button class="tnu19-tab active" data-tab="table" onclick="switchTNU19Tab('table')" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); border: none; color: white; padding: 12px 24px; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">
                     <i class="fas fa-table"></i> Jurnal
                 </button>
-                <button class="tnu19-tab" data-tab="new" onclick="switchTNU19Tab('new')" style="background: transparent; border: 1px solid #30363d; color: #c9d1d9; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 500; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                <button class="tnu19-tab" data-tab="new" onclick="switchTNU19Tab('new')" style="background: #fff; border: 1px solid rgba(31, 38, 135, 0.12); color: #475569; padding: 12px 24px; border-radius: 14px; cursor: pointer; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; transition: 0.2s;">
                     <i class="fas fa-plus"></i> Yangi Yozuv
                 </button>
-                <button class="tnu19-tab" data-tab="stats" onclick="switchTNU19Tab('stats')" style="background: transparent; border: 1px solid #30363d; color: #c9d1d9; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 500; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                <button class="tnu19-tab" data-tab="stats" onclick="switchTNU19Tab('stats')" style="background: #fff; border: 1px solid rgba(31, 38, 135, 0.12); color: #475569; padding: 12px 24px; border-radius: 14px; cursor: pointer; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; transition: 0.2s;">
                     <i class="fas fa-chart-pie"></i> Statistika
                 </button>
             </div>
@@ -206,13 +205,15 @@ async function closeTNU19Window() {
 function switchTNU19Tab(tab) {
     document.querySelectorAll('.tnu19-tab').forEach(btn => {
         if (btn.getAttribute('data-tab') === tab) {
-            btn.style.background = '#1f6feb';
+            btn.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
             btn.style.color = 'white';
-            btn.style.borderColor = '#1f6feb';
+            btn.style.borderColor = 'transparent';
+            btn.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.2)';
         } else {
-            btn.style.background = 'rgba(255,255,255,0.05)';
-            btn.style.color = '#c9d1d9';
-            btn.style.borderColor = '#30363d';
+            btn.style.background = '#fff';
+            btn.style.color = '#475569';
+            btn.style.borderColor = 'rgba(31, 38, 135, 0.12)';
+            btn.style.boxShadow = 'none';
         }
     });
 
@@ -254,15 +255,15 @@ function renderTNU19Table() {
     filteredRecords.sort((a, b) => b.id.localeCompare(a.id));
 
     let html = `
-        <div style="padding: 20px; font-family: 'Inter', system-ui, -apple-system, sans-serif;">
-            <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap;">
-                <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <label style="font-size: 0.85rem; color: #94a3b8; font-weight: 500;">Sana:</label>
-                    <input type="date" id="tnu19-filter-date" value="${filterDate}" onchange="renderTNU19Table()" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; padding: 10px 12px; border-radius: 8px; font-size: 0.9rem; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+        <div style="padding: 30px; font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #ffffff;">
+            <div style="display: flex; gap: 20px; margin-bottom: 30px; align-items: flex-end; flex-wrap: wrap; background: #f8fafc; padding: 25px; border-radius: 20px; border: 1px solid rgba(31,38,135,0.08);">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-size: 0.8rem; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Sana:</label>
+                    <input type="date" id="tnu19-filter-date" value="${filterDate}" onchange="renderTNU19Table()" style="background: #ffffff; border: 1px solid rgba(31,38,135,0.12); color: #1e293b; padding: 12px 15px; border-radius: 12px; font-size: 0.95rem; outline: none; font-weight: 600; transition: 0.2s;">
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 5px;">
-                     <label style="font-size: 0.85rem; color: #94a3b8; font-weight: 500;">Tur:</label>
-                    <select id="tnu19-filter-type" onchange="renderTNU19Table()" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; padding: 10px 12px; border-radius: 8px; min-width: 180px; font-size: 0.9rem; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                     <label style="font-size: 0.8rem; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Tur:</label>
+                    <select id="tnu19-filter-type" onchange="renderTNU19Table()" style="background: #ffffff; border: 1px solid rgba(31,38,135,0.12); color: #1e293b; padding: 12px 15px; border-radius: 12px; min-width: 200px; font-size: 0.95rem; outline: none; font-weight: 600; cursor: pointer; transition: 0.2s;">
                         <option value="">Barcha turlar</option>
                         <option value="kirish" ${filterType === 'kirish' ? 'selected' : ''}>Kirish</option>
                         <option value="takroriy" ${filterType === 'takroriy' ? 'selected' : ''}>Takroriy</option>
@@ -270,32 +271,32 @@ function renderTNU19Table() {
                         <option value="maqsadli" ${filterType === 'maqsadli' ? 'selected' : ''}>Maqsadli</option>
                     </select>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 5px; flex-grow: 1;">
-                     <label style="font-size: 0.85rem; color: #94a3b8; font-weight: 500;">Qidiruv:</label>
-                    <input type="text" id="tnu19-search" value="${filterName}" placeholder="Xodim ismi..." onkeyup="renderTNU19Table()" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; padding: 10px 12px; border-radius: 8px; width: 100%; font-size: 0.9rem; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                <div style="display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+                     <label style="font-size: 0.8rem; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Qidiruv:</label>
+                    <input type="text" id="tnu19-search" value="${filterName}" placeholder="Xodim ismi..." onkeyup="renderTNU19Table()" style="background: #ffffff; border: 1px solid rgba(31,38,135,0.12); color: #1e293b; padding: 12px 15px; border-radius: 12px; width: 100%; font-size: 0.95rem; outline: none; font-weight: 600; transition: 0.2s;">
                 </div>
-                <button style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; height: 42px; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3); transition: all 0.2s;">
-                    <i class="fas fa-file-pdf"></i> PDF Chiqarish
+                <button style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px; height: 48px; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.2); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <i class="fas fa-file-pdf"></i> PDF
                 </button>
             </div>
 
-            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <div style="background: #ffffff; border: 1px solid rgba(31,38,135,0.1); border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(31,38,135,0.05);">
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
-                        <tr style="background: #0f172a; border-bottom: 1px solid #334155; text-align: left;">
-                            <th style="padding: 15px 20px; color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Sana</th>
-                            <th style="padding: 15px 20px; color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Xodim F.I.O</th>
-                            <th style="padding: 15px 20px; color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Bo'linma</th>
-                            <th style="padding: 15px 20px; color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Lavozimi</th>
-                            <th style="padding: 15px 20px; color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Turi</th>
-                            <th style="padding: 15px 20px; color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Mavzu</th>
-                            <th style="padding: 15px 20px; color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Yo'riqchi</th>
-                            <th style="padding: 15px 20px; color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Xodim imzosi</th>
-                            <th style="padding: 15px 20px; color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Yo'riqchi imzosi</th>
-                            <th style="padding: 15px 20px; color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Amal</th>
+                        <tr style="background: #1e293b; border-bottom: 2px solid #d4af37; text-align: left;">
+                            <th style="padding: 18px 20px; color: #ffffff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Sana</th>
+                            <th style="padding: 18px 20px; color: #ffffff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em;">Xodim F.I.O</th>
+                            <th style="padding: 18px 20px; color: #ffffff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em;">Bo'linma</th>
+                            <th style="padding: 18px 20px; color: #ffffff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em;">Lavozimi</th>
+                            <th style="padding: 18px 20px; color: #ffffff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Turi</th>
+                            <th style="padding: 18px 20px; color: #ffffff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em;">Mavzu</th>
+                            <th style="padding: 18px 20px; color: #ffffff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em;">Yo'riqchi</th>
+                            <th style="padding: 18px 20px; color: #ffffff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Xodim imzosi</th>
+                            <th style="padding: 18px 20px; color: #ffffff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Yo'riqchi imzosi</th>
+                            <th style="padding: 18px 20px; color: #ffffff; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; text-align: center;">Amal</th>
                         </tr>
                     </thead>
-                    <tbody style="color: #e2e8f0;">
+                    <tbody style="color: #1e293b;">
     `;
 
     if (filteredRecords.length === 0) {
@@ -316,36 +317,36 @@ function renderTNU19Table() {
             const initials = r.workerName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
             html += `
-                <tr style="border-bottom: 1px solid #334155; background: ${bgClass}; transition: background 0.2s;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='${bgClass}'">
-                    <td style="padding: 15px 20px; text-align: center; font-family: 'JetBrains Mono', monospace; color: #94a3b8; font-size: 0.9rem;">
-                        ${r.date}<br><span style="font-size: 0.8em; opacity: 0.8;">${r.time}</span>
+                <tr style="border-bottom: 1px solid rgba(31,38,135,0.06); background: ${bgClass}; transition: 0.2s;" onmouseover="this.style.background='#f0f7ff'" onmouseout="this.style.background='${bgClass}'">
+                    <td style="padding: 15px 20px; text-align: center; font-family: 'Inter', sans-serif; color: #64748b; font-size: 0.85rem; font-weight: 600;">
+                        ${r.date}<br><span style="color: #ffd700; font-weight: 800;">${r.time}</span>
                     </td>
                     <td style="padding: 15px 20px;">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 36px; height: 36px; background: #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; color: #f8fafc; border: 2px solid #475569;">${initials}</div>
-                            <span style="font-weight: 600; font-size: 0.95rem;">${r.workerName.toUpperCase()}</span>
+                            <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #e0e7ff, #f8fafc); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; color: #ffd700; border: 1.5px solid rgba(212,175,55,0.3);">${initials}</div>
+                            <span style="font-weight: 700; font-size: 0.95rem; color: #1e293b;">${r.workerName.toUpperCase()}</span>
                         </div>
                     </td>
-                    <td style="padding: 15px 20px; color: #f59e0b; font-weight: 600; font-size: 0.9rem;">${r.bolinmaId.replace('bolinma', '')}-bo'linma</td>
-                    <td style="padding: 15px 20px; color: #94a3b8; text-transform: uppercase; font-size: 0.8rem; font-weight: 500;">${r.workerPosition}</td>
+                    <td style="padding: 15px 20px; color: #b8860b; font-weight: 800; font-size: 0.9rem;">${r.bolinmaId.replace('bolinma', '')}-bo'linma</td>
+                    <td style="padding: 15px 20px; color: #64748b; text-transform: uppercase; font-size: 0.75rem; font-weight: 700;">${r.workerPosition}</td>
                     <td style="padding: 15px 20px; text-align: center;">
-                        <span style="background: ${typeBadgeClass}20; color: ${typeBadgeClass}; border: 1px solid ${typeBadgeClass}40; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">${r.instructionType}</span>
+                        <span style="background: ${typeBadgeClass}15; color: ${typeBadgeClass}; border: 1px solid ${typeBadgeClass}30; padding: 5px 12px; border-radius: 20px; font-size: 0.7rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">${r.instructionType}</span>
                     </td>
-                    <td style="padding: 15px 20px; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #cbd5e1;" title="${r.instructionContent}">${r.instructionContent}</td>
-                    <td style="padding: 15px 20px; font-size: 0.9rem; color: #cbd5e1;">${r.instructorName}</td>
+                    <td style="padding: 15px 20px; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #334155; font-weight: 500;" title="${r.instructionContent}">${r.instructionContent}</td>
+                    <td style="padding: 15px 20px; font-size: 0.9rem; color: #475569; font-weight: 600;">${r.instructorName}</td>
                     <td style="padding: 15px 20px; text-align: center;">
                          ${r.workerSignature
-                    ? `<img src="${r.workerSignature}" style="height: 35px; cursor: pointer; filter: invert(1); opacity: 0.9; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" onclick="viewTNU19Passport('${r.id}')" title="Pasport shaklida ko'rish">`
-                    : '<span style="color:#ef4444; font-size:0.8rem; font-weight: 500;">Imzolanmagan</span>'}
+                    ? `<img src="${r.workerSignature}" style="height: 38px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" onclick="viewTNU19Passport('${r.id}')" title="Pasport shaklida ko'rish">`
+                    : '<span style="color:#ef4444; font-size:0.75rem; font-weight: 700; background: rgba(239, 68, 68, 0.05); padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.1);">IMZOLANMAGAN</span>'}
                     </td>
                     <td style="padding: 15px 20px; text-align: center;">
                         ${r.instructorSignature
-                    ? `<img src="${r.instructorSignature}" style="height: 35px; cursor: pointer; filter: invert(1); opacity: 0.9; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" onclick="viewTNU19Passport('${r.id}')">`
-                    : '<span style="color:#ef4444; font-size:0.8rem; font-weight: 500;">Imzolanmagan</span>'}
+                    ? `<img src="${r.instructorSignature}" style="height: 38px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" onclick="viewTNU19Passport('${r.id}')">`
+                    : '<span style="color:#ef4444; font-size:0.75rem; font-weight: 700; background: rgba(239, 68, 68, 0.05); padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.1);">IMZOLANMAGAN</span>'}
                     </td>
                     <td style="padding: 15px 20px; text-align: center;">
-                         <button onclick="deleteTNU19Record('${r.id}')" style="background: transparent; border: none; color: #ef4444; cursor: pointer; opacity: 0.7; transition: all 0.2s; padding: 8px; border-radius: 4px;" onmouseover="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.opacity='1'" onmouseout="this.style.background='transparent'; this.style.opacity='0.7'">
-                            <i class="fas fa-trash-alt"></i>
+                         <button onclick="deleteTNU19Record('${r.id}')" style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); color: #ef4444; cursor: pointer; transition: all 0.2s; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#ef4444'; this.style.color='#fff'" onmouseout="this.style.background='rgba(239, 68, 68, 0.05)'; this.style.color='#ef4444'">
+                            <i class="fas fa-trash-alt" style="font-size: 0.85rem;"></i>
                          </button>
                     </td>
                 </tr>
@@ -448,45 +449,49 @@ function renderTNU19Form() {
     const workers = getTNU19Workers(window.currentTNU19BolinmaId);
 
     content.innerHTML = `
-        <div style="max-width: 800px; margin: 30px auto; color: #c9d1d9;">
-            <div style="background: #161b22; padding: 30px; border-radius: 12px; border: 1px solid #30363d; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-                <h3 style="margin-top: 0; color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-file-signature"></i> Yangi Yo'riqnoma
+        <div style="max-width: 850px; margin: 40px auto; color: #1e293b;">
+            <div style="background: #ffffff; padding: 40px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.2); box-shadow: 0 30px 60px rgba(31, 38, 135, 0.08);">
+                <h3 style="margin-top: 0; color: #1e293b; border-bottom: 2px solid #d4af37; padding-bottom: 20px; display: flex; align-items: center; gap: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
+                    <i class="fas fa-file-signature" style="color: #d4af37;"></i> Yangi Yo'riqnoma Yozuvi
                 </h3>
 
-                <div style="display: grid; gap: 20px; margin-top: 20px;">
-                    <div>
-                        <label style="display: block; margin-bottom: 8px; color: #8b949e; font-weight: 600;">Yo'riqnoma Turi</label>
-                        <select id="tnu19-type" style="width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px;">
-                            <option value="takroriy">Takroriy</option>
-                            <option value="kirish">Kirish</option>
-                            <option value="rejalashtirilmagan">Rejalashtirilmagan</option>
-                            <option value="maqsadli">Maqsadli</option>
-                        </select>
+                <div style="display: grid; gap: 25px; margin-top: 30px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 10px; color: #64748b; font-weight: 800; font-size: 0.8rem; text-transform: uppercase;">Yo'riqnoma Turi</label>
+                            <select id="tnu19-type" style="width: 100%; padding: 14px; background: #f8fafc; border: 1px solid rgba(31,38,135,0.1); color: #1e293b; border-radius: 12px; font-weight: 700; outline: none; transition: 0.3s; cursor: pointer;">
+                                <option value="takroriy">Takroriy</option>
+                                <option value="kirish">Kirish</option>
+                                <option value="rejalashtirilmagan">Rejalashtirilmagan</option>
+                                <option value="maqsadli">Maqsadli</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 10px; color: #64748b; font-weight: 800; font-size: 0.8rem; text-transform: uppercase;">Xodimni Tanlang</label>
+                            <select id="tnu19-worker" onchange="updateWorkerDetails(this)" style="width: 100%; padding: 14px; background: #f8fafc; border: 1px solid rgba(31,38,135,0.1); color: #1e293b; border-radius: 12px; font-weight: 700; outline: none; transition: 0.3s; cursor: pointer;">
+                                <option value="">-- Tanlang --</option>
+                                ${workers.map(w => `<option value="${w.id}" data-name="${w.name}" data-pos="${w.position}">${w.name} - ${w.position}</option>`).join('')}
+                            </select>
+                        </div>
                     </div>
 
                     <div>
-                        <label style="display: block; margin-bottom: 8px; color: #8b949e; font-weight: 600;">Xodimni Tanlang</label>
-                        <select id="tnu19-worker" onchange="updateWorkerDetails(this)" style="width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px;">
-                            <option value="">-- Tanlang --</option>
-                            ${workers.map(w => `<option value="${w.id}" data-name="${w.name}" data-pos="${w.position}">${w.name} - ${w.position}</option>`).join('')}
-                        </select>
+                        <label style="display: block; margin-bottom: 10px; color: #64748b; font-weight: 800; font-size: 0.8rem; text-transform: uppercase;">Yo'riqnoma Mavzusi</label>
+                        <textarea id="tnu19-content-textarea" rows="4" placeholder="Mavzuni kiriting..." style="width: 100%; padding: 15px; background: #f8fafc; border: 1px solid rgba(31,38,135,0.1); color: #1e293b; border-radius: 12px; resize: vertical; font-size: 1rem; font-weight: 500; outline: none; transition: 0.3s;">Navbatdagi xavfsizlik texnikasi bo'yicha yo'riqnoma</textarea>
                     </div>
 
                     <div>
-                        <label style="display: block; margin-bottom: 8px; color: #8b949e; font-weight: 600;">Yo'riqnoma Mavzusi</label>
-                        <textarea id="tnu19-content-textarea" rows="3" placeholder="Mavzuni kiriting..." style="width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px; resize: vertical;">Navbatdagi xavfsizlik texnikasi bo'yicha yo'riqnoma</textarea>
-                    </div>
-
-                    <div>
-                        <label style="display: block; margin-bottom: 8px; color: #8b949e; font-weight: 600;">Yo'riqchi (Siz)</label>
-                        <input type="text" id="tnu19-instructor-name" value="Mahmudov M.U." style="width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px;">
+                        <label style="display: block; margin-bottom: 10px; color: #64748b; font-weight: 800; font-size: 0.8rem; text-transform: uppercase;">Yo'riqchi (Siz)</label>
+                        <div style="position: relative;">
+                            <input type="text" id="tnu19-instructor-name" value="Mahmudov M.U." style="width: 100%; padding: 14px 14px 14px 45px; background: #f8fafc; border: 1px solid rgba(31,38,135,0.1); color: #1e293b; border-radius: 12px; font-weight: 700; outline: none;">
+                            <i class="fas fa-user-tie" style="position: absolute; left: 18px; top: 16px; color: #d4af37;"></i>
+                        </div>
                         <input type="hidden" id="tnu19-instructor-pos" value="Bosh muhandis">
                     </div>
 
-                    <div style="text-align: right; margin-top: 10px;">
-                        <button onclick="startTNU19Signing()" style="background: #238636; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-left: auto;">
-                            Imzo Bosqichiga O'tish <i class="fas fa-arrow-right"></i>
+                    <div style="text-align: right; margin-top: 20px; border-top: 1px solid rgba(31,38,135,0.05); padding-top: 25px;">
+                        <button onclick="startTNU19Signing()" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 16px 40px; border-radius: 16px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 12px; margin-left: auto; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='none'">
+                            Imzo bosishga o'tish <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
@@ -552,43 +557,43 @@ function openTNU19SignatureModal() {
     `;
 
     modal.innerHTML = `
-        <div style="background: #161b22; width: 700px; border-radius: 16px; border: 1px solid #30363d; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); font-family: 'Segoe UI', sans-serif;">
-            <div style="padding: 20px; background: ${isWorker ? '#1f6feb' : '#e67e22'}; color: white; display: flex; align-items: center; gap: 20px;">
-                <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">${initials}</div>
+        <div style="background: #ffffff; width: 700px; border-radius: 24px; border: 1px solid rgba(31, 38, 135, 0.1); overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,0.2); font-family: 'Inter', sans-serif;">
+            <div style="padding: 25px 35px; background: ${isWorker ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'linear-gradient(135deg, #d4af37, #b8860b)'}; color: white; display: flex; align-items: center; gap: 20px;">
+                <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.4rem; border: 2px solid rgba(255,255,255,0.4);">${initials}</div>
                 <div>
-                    <h2 style="margin: 0; font-size: 1.2rem;">${title}</h2>
-                    <p style="margin: 0; opacity: 0.9;">${signerName}</p>
+                    <h2 style="margin: 0; font-size: 1.4rem; font-weight: 800;">${title}</h2>
+                    <p style="margin: 0; opacity: 0.9; font-weight: 600; font-size: 1rem;">${signerName}</p>
                 </div>
             </div>
             
-            <div style="padding: 30px; display: flex; flex-direction: column; align-items: center;">
-                <p style="color: #8b949e; margin-bottom: 20px;">Tasdiqlash usulini tanlang:</p>
+            <div style="padding: 40px; display: flex; flex-direction: column; align-items: center; background: #ffffff;">
+                <p style="color: #64748b; margin-bottom: 30px; font-weight: 600; font-size: 1.1rem;">Tasdiqlash usulini tanlang:</p>
                 
-                <div style="display: flex; gap: 20px; width: 100%; margin-bottom: 30px;">
-                    <button id="use-signature-btn" onclick="showSignatureInput()" style="flex: 1; padding: 25px; background: rgba(31, 111, 235, 0.1); border: 1px solid #1f6feb; border-radius: 12px; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 15px; transition: all 0.2s;">
-                        <i class="fas fa-pen-nib" style="font-size: 2rem; color: #1f6feb;"></i>
-                        <span style="font-weight: 600;">Qo'lda Imzo</span>
+                <div style="display: flex; gap: 25px; width: 100%; margin-bottom: 40px;">
+                    <button id="use-signature-btn" onclick="showSignatureInput()" style="flex: 1; padding: 30px; background: rgba(37, 99, 235, 0.05); border: 2px solid rgba(37, 99, 235, 0.1); border-radius: 20px; color: #ffd700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 15px; transition: all 0.3s;" onmouseover="this.style.background='rgba(37, 99, 235, 0.1)'; this.style.transform='translateY(-5px)'" onmouseout="this.style.background='rgba(37, 99, 235, 0.05)'; this.style.transform='none'">
+                        <i class="fas fa-pen-nib" style="font-size: 2.5rem; color: #ffd700;"></i>
+                        <span style="font-weight: 800; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px;">Qo'lda Imzo</span>
                     </button>
                     
-                    <button id="use-faceid-btn" onclick="openTNU19FaceIDModal()" style="flex: 1; padding: 25px; background: rgba(35, 134, 54, 0.1); border: 2px solid #238636; border-radius: 12px; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 15px; transition: all 0.2s; position: relative; overflow: hidden;">
-                        <div style="position: absolute; top: 10px; right: 10px; background: #238636; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">Tavsiya etiladi</div>
-                        <i class="fas fa-user-shield" style="font-size: 2rem; color: #238636;"></i>
-                        <span style="font-weight: 600;">Face ID (Biometrik)</span>
+                    <button id="use-faceid-btn" onclick="openTNU19FaceIDModal()" style="flex: 1; padding: 30px; background: rgba(212, 175, 55, 0.05); border: 2px solid rgba(212, 175, 55, 0.2); border-radius: 20px; color: #b8860b; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 15px; transition: all 0.3s; position: relative; overflow: hidden;" onmouseover="this.style.background='rgba(212, 175, 55, 0.1)'; this.style.transform='translateY(-5px)'" onmouseout="this.style.background='rgba(212, 175, 55, 0.05)'; this.style.transform='none'">
+                        <div style="position: absolute; top: 12px; right: 12px; background: #d4af37; color: white; font-size: 0.65rem; padding: 3px 10px; border-radius: 8px; font-weight: 800; text-transform: uppercase;">Tavsiya etiladi</div>
+                        <i class="fas fa-user-shield" style="font-size: 2.5rem; color: #d4af37;"></i>
+                        <span style="font-weight: 800; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px;">Face ID (Biometrik)</span>
                     </button>
                 </div>
 
                 <div id="signature-input-container" style="display: none; width: 100%;">
-                    <p style="color: #8b949e; margin-bottom: 15px; text-align: center;">Ekran yuzasiga imzo qo'ying:</p>
-                    <div style="background: white; border-radius: 8px; padding: 2px; width: 100%;">
+                    <p style="color: #64748b; margin-bottom: 20px; text-align: center; font-weight: 600;">Ekran yuzasiga imzo qo'ying:</p>
+                    <div style="background: #f8fafc; border: 2px solid rgba(212, 175, 55, 0.2); border-radius: 16px; padding: 5px; width: 100%; box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);">
                          <canvas id="tnu19-sig-canvas" width="600" height="250" style="width: 100%; height: 250px; display: block; cursor: crosshair; touch-action: none;"></canvas>
                     </div>
 
-                    <div style="display: flex; gap: 15px; margin-top: 25px; width: 100%;">
-                        <button onclick="clearTNU19Signature()" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #30363d; background: transparent; color: #8b949e; cursor: pointer;">
-                            <i class="fas fa-eraser"></i> Tozalash
+                    <div style="display: flex; gap: 20px; margin-top: 35px; width: 100%;">
+                        <button onclick="clearTNU19Signature()" style="flex: 1; padding: 15px; border-radius: 14px; border: 1.5px solid rgba(148, 163, 184, 0.3); background: transparent; color: #64748b; cursor: pointer; font-weight: 700; transition: 0.2s;">
+                            <i class="fas fa-eraser"></i> TOZALASH
                         </button>
-                        <button onclick="saveTNU19Signature()" style="flex: 2; padding: 12px; border-radius: 8px; border: none; background: #238636; color: white; font-weight: bold; cursor: pointer;">
-                            <i class="fas fa-check"></i> Tasdiqlash
+                        <button onclick="saveTNU19Signature()" style="flex: 2; padding: 15px; border-radius: 14px; border: none; background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: 900; cursor: pointer; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2); transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;">
+                            <i class="fas fa-check"></i> TASDIQLASH
                         </button>
                     </div>
                 </div>
@@ -668,76 +673,76 @@ function openTNU19FaceIDModal() {
     modal.id = 'tnu19-faceid-modal';
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: #0d1117; z-index: 10060; display: flex;
+        background: rgba(240, 247, 255, 0.95); z-index: 10060; display: flex;
         flex-direction: column; align-items: center; justify-content: center;
-        font-family: 'Inter', sans-serif; overflow: hidden;
+        font-family: 'Inter', sans-serif; overflow: hidden; backdrop-filter: blur(20px);
     `;
 
     modal.innerHTML = `
-        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(35, 134, 54, 0.1) 0%, transparent 70%); pointer-events: none;"></div>
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(37, 99, 235, 0.05) 0%, transparent 70%); pointer-events: none;"></div>
         
         <!-- Scanner HUD -->
-        <div style="position: relative; width: 400px; height: 500px; display: flex; flex-direction: column; align-items: center; gap: 30px; z-index: 5;">
+        <div style="position: relative; width: 450px; height: 600px; display: flex; flex-direction: column; align-items: center; gap: 40px; z-index: 5; background: rgba(255, 255, 255, 0.4); border-radius: 40px; border: 1px solid rgba(212, 175, 55, 0.2); padding: 40px; box-shadow: 0 40px 100px rgba(31, 38, 135, 0.1);">
             
             <div style="text-align: center;">
-                <h2 style="color: #238636; margin: 0; font-size: 1.5rem; letter-spacing: 2px;">FACE ID SCAN</h2>
-                <div id="faceid-status" style="color: #8b949e; font-size: 0.9rem; margin-top: 10px;">Biometrik ma'lumotlar kutilmoqda...</div>
+                <h2 style="color: #1e293b; margin: 0; font-size: 1.6rem; letter-spacing: 4px; font-weight: 900; text-transform: uppercase;">FACE ID <span style="color: #d4af37;">SCAN</span></h2>
+                <div id="faceid-status" style="color: #64748b; font-size: 0.95rem; margin-top: 12px; font-weight: 600;">Biometrik ma'lumotlar kutilmoqda...</div>
             </div>
 
             <!-- Camera Viewport -->
-            <div id="faceid-viewport" style="position: relative; width: 320px; height: 320px; border-radius: 50%; border: 4px solid #30363d; overflow: hidden; background: #000; box-shadow: 0 0 50px rgba(35, 134, 54, 0.2);">
-                <video id="faceid-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); filter: grayscale(100%) brightness(1.2);"></video>
+            <div id="faceid-viewport" style="position: relative; width: 340px; height: 340px; border-radius: 50%; border: 8px solid #ffffff; overflow: hidden; background: #000; box-shadow: 0 0 60px rgba(37, 99, 235, 0.15); border: 2px solid rgba(212, 175, 55, 0.3);">
+                <video id="faceid-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); border-radius: 50%;"></video>
                 
                 <!-- Overlay Elements -->
-                <div id="faceid-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; border: 20px solid rgba(13, 17, 23, 0.8); box-sizing: border-box; pointer-events: none;"></div>
+                <div id="faceid-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; border: 30px solid rgba(240, 247, 255, 0.8); box-sizing: border-box; pointer-events: none;"></div>
                 
-                <div id="faceid-scanner-line" style="position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: #238636; box-shadow: 0 0 15px #238636; display: none; z-index: 10;"></div>
+                <div id="faceid-scanner-line" style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, transparent, #d4af37, transparent); box-shadow: 0 0 20px #d4af37; display: none; z-index: 10;"></div>
                 
                 <!-- Grid SVG overlay -->
-                <svg width="100%" height="100%" style="position: absolute; top: 0; left: 0; opacity: 0.3; pointer-events: none;">
+                <svg width="100%" height="100%" style="position: absolute; top: 0; left: 0; opacity: 0.2; pointer-events: none;">
                     <defs>
                         <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#238636" stroke-width="0.5"/>
+                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#2563eb" stroke-width="0.5"/>
                         </pattern>
                     </defs>
                     <rect width="100%" height="100%" fill="url(#grid)" />
                 </svg>
 
-                <div id="faceid-corner-tl" style="position: absolute; top: 60px; left: 60px; width: 30px; height: 30px; border-top: 2px solid #238636; border-left: 2px solid #238636; transition: all 0.5s;"></div>
-                <div id="faceid-corner-tr" style="position: absolute; top: 60px; right: 60px; width: 30px; height: 30px; border-top: 2px solid #238636; border-right: 2px solid #238636; transition: all 0.5s;"></div>
-                <div id="faceid-corner-bl" style="position: absolute; bottom: 60px; left: 60px; width: 30px; height: 30px; border-bottom: 2px solid #238636; border-left: 2px solid #238636; transition: all 0.5s;"></div>
-                <div id="faceid-corner-br" style="position: absolute; bottom: 60px; right: 60px; width: 30px; height: 30px; border-bottom: 2px solid #238636; border-right: 2px solid #238636; transition: all 0.5s;"></div>
+                <div id="faceid-corner-tl" style="position: absolute; top: 70px; left: 70px; width: 40px; height: 40px; border-top: 3px solid #d4af37; border-left: 3px solid #d4af37; transition: all 0.5s; border-radius: 10px 0 0 0;"></div>
+                <div id="faceid-corner-tr" style="position: absolute; top: 70px; right: 70px; width: 40px; height: 40px; border-top: 3px solid #d4af37; border-right: 3px solid #d4af37; transition: all 0.5s; border-radius: 0 10px 0 0;"></div>
+                <div id="faceid-corner-bl" style="position: absolute; bottom: 70px; left: 70px; width: 40px; height: 40px; border-bottom: 3px solid #d4af37; border-left: 3px solid #d4af37; transition: all 0.5s; border-radius: 0 0 0 10px;"></div>
+                <div id="faceid-corner-br" style="position: absolute; bottom: 70px; right: 70px; width: 40px; height: 40px; border-bottom: 3px solid #d4af37; border-right: 3px solid #d4af37; transition: all 0.5s; border-radius: 0 0 10px 0;"></div>
 
-                <div id="faceid-success-icon" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); color: #238636; font-size: 80px; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 20;">
+                <div id="faceid-success-icon" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); color: #10b981; font-size: 100px; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 20;">
                     <i class="fas fa-check-circle"></i>
                 </div>
             </div>
 
             <div style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                 <div style="font-size: 0.75rem; color: #58a6ff; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Identifikatsiya qilinmoqda:</div>
-                 <div style="font-size: 1.1rem; color: #f0f6fc; font-weight: 700;">${signerName.toUpperCase()}</div>
+                 <div style="font-size: 0.8rem; color: #ffd700; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">Identifikatsiya:</div>
+                 <div style="font-size: 1.4rem; color: #1e293b; font-weight: 800; letter-spacing: 0.5px;">${signerName.toUpperCase()}</div>
                  
-                 <div id="faceid-process-bar" style="width: 200px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-top: 10px;">
-                    <div id="faceid-progress" style="width: 0%; height: 100%; background: #238636; transition: width 0.1s linear;"></div>
+                 <div id="faceid-process-bar" style="width: 250px; height: 6px; background: rgba(31, 38, 135, 0.05); border-radius: 10px; overflow: hidden; margin-top: 15px; border: 1px solid rgba(212, 175, 55, 0.1);">
+                    <div id="faceid-progress" style="width: 0%; height: 100%; background: linear-gradient(90deg, #2563eb, #d4af37); transition: width 0.1s linear;"></div>
                  </div>
             </div>
 
-            <button onclick="stopTNU19FaceID()" style="position: absolute; bottom: -80px; background: rgba(248, 81, 73, 0.1); border: 1px solid #f85149; color: #f85149; padding: 10px 20px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <button onclick="stopTNU19FaceID()" style="position: absolute; bottom: -100px; background: #ffffff; border: 1.5px solid rgba(239, 68, 68, 0.2); color: #ef4444; padding: 14px 30px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); transition: 0.3s;" onmouseover="this.style.background='#ef4444'; this.style.color='#fff'" onmouseout="this.style.background='#ffffff'; this.style.color='#ef4444'">
                 <i class="fas fa-times"></i> Bekor qilish
             </button>
         </div>
 
         <!-- Hud Details -->
-        <div style="position: absolute; top: 40px; right: 40px; color: #238636; font-family: monospace; font-size: 0.7rem; pointer-events: none;">
-            [ ENCRYPTION: AES-256 ]<br>
-            [ LATENCY: ${Math.floor(Math.random() * 40 + 10)}ms ]<br>
-            [ BIOMETRIC SEED: 0x${Math.random().toString(16).substr(2, 8).toUpperCase()} ]
+        <div style="position: absolute; top: 40px; right: 40px; color: #ffd700; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; pointer-events: none; opacity: 0.6; text-align: right;">
+            [ ENCRYPTION: <span style="color: #d4af37;">RSA-4096</span> ]<br>
+            [ LATENCY: <span style="color: #d4af37;">${Math.floor(Math.random() * 20 + 5)}ms</span> ]<br>
+            [ BIOMETRIC SEED: <span style="color: #d4af37;">0x${Math.random().toString(16).substr(2, 8).toUpperCase()}</span> ]
         </div>
 
-        <div style="position: absolute; bottom: 40px; left: 40px; color: #238636; font-family: monospace; font-size: 0.7rem; pointer-events: none;">
-            SYSTEM: ONLINE<br>
-            CORE: STABLE<br>
-            DB_CONN: CONNECTED
+        <div style="position: absolute; bottom: 40px; left: 40px; color: #ffd700; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; pointer-events: none; opacity: 0.6;">
+            SYSTEM: <span style="color: #10b981;">SECURE</span><br>
+            CORE: <span style="color: #10b981;">STABLE</span><br>
+            SIGNATURE: <span style="color: #d4af37;">PENDING</span>
         </div>
     `;
 
@@ -982,46 +987,59 @@ function renderTNU19Stats() {
     });
 
     content.innerHTML = `
-        <div style="padding: 20px; color: #c9d1d9;">
-            <!-- Top Cards -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <div style="background: linear-gradient(135deg, #1f6feb, #1a4f8b); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                    <div style="font-size: 0.9rem; margin-bottom: 10px; opacity: 0.9;">Jami Xodimlar</div>
-                    <div style="font-size: 2.5rem; font-weight: bold;">${totalWorkers}</div>
-                    <div style="margin-top: 10px; font-size: 0.8rem;">Bo'linma bo'yicha</div>
-                </div>
-                
-                <div style="background: linear-gradient(135deg, #238636, #1a5c28); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                    <div style="font-size: 0.9rem; margin-bottom: 10px; opacity: 0.9;">Yo'riqnoma O'tganlar</div>
-                    <div style="font-size: 2.5rem; font-weight: bold;">${instructedWorkers}</div>
-                    <div style="margin-top: 10px; font-size: 0.8rem; background: rgba(255,255,255,0.2); display: inline-block; padding: 2px 8px; border-radius: 4px;">${coveragePercent}% qamrov</div>
+        <div style="padding: 30px; font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #ffffff;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 40px;">
+                <div style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 30px; border-radius: 20px; color: white; box-shadow: 0 15px 30px rgba(37, 99, 235, 0.2); position: relative; overflow: hidden;">
+                    <i class="fas fa-users" style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.1;"></i>
+                    <div style="font-size: 0.85rem; margin-bottom: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;">Jami Xodimlar</div>
+                    <div style="font-size: 2.8rem; font-weight: 900;">${totalWorkers}</div>
+                    <div style="margin-top: 15px; font-size: 0.85rem; background: rgba(255,255,255,0.2); display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 12px; font-weight: 700;">
+                        <i class="fas fa-check-circle"></i> Bazada faol
+                    </div>
                 </div>
 
-                <div style="background: linear-gradient(135deg, #9e6a03, #694402); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                   <div style="font-size: 0.9rem; margin-bottom: 10px; opacity: 0.9;">Jami Yo'riqnomalar</div>
-                   <div style="font-size: 2.5rem; font-weight: bold;">${records.length}</div>
-                   <div style="margin-top: 10px; font-size: 0.8rem;">Barcha turlar bo'yicha</div>
+                <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 30px; border-radius: 20px; color: white; box-shadow: 0 15px 30px rgba(16, 185, 129, 0.2); position: relative; overflow: hidden;">
+                    <i class="fas fa-user-check" style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.1;"></i>
+                    <div style="font-size: 0.85rem; margin-bottom: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;">Yo'riqnoma O'tganlar</div>
+                    <div style="font-size: 2.8rem; font-weight: 900;">${instructedWorkers}</div>
+                    <div style="margin-top: 15px; font-size: 0.85rem; background: rgba(255,255,255,0.2); display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 12px; font-weight: 700;">
+                        <i class="fas fa-percentage"></i> ${coveragePercent}% qamrov
+                    </div>
+                </div>
+
+                <div style="background: linear-gradient(135deg, #d4af37, #b8860b); padding: 30px; border-radius: 20px; color: white; box-shadow: 0 15px 30px rgba(212, 175, 55, 0.2); position: relative; overflow: hidden;">
+                    <i class="fas fa-file-contract" style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.1;"></i>
+                   <div style="font-size: 0.85rem; margin-bottom: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;">Jami Yozuvlar</div>
+                   <div style="font-size: 2.8rem; font-weight: 900;">${records.length}</div>
+                   <div style="margin-top: 15px; font-size: 0.85rem; background: rgba(255,255,255,0.2); display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 12px; font-weight: 700;">
+                       <i class="fas fa-history"></i> Barcha turlar
+                   </div>
                 </div>
             </div>
 
             <!-- Detailed Worker Status List -->
-            <div style="background: #161b22; border: 1px solid #30363d; border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
-                <div style="padding: 15px 20px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; background: #0d1117;">
-                    <h3 style="margin: 0; font-size: 1.1rem; color: #f0f6fc;">Xodimlar & Yo'riqnoma Holati</h3>
-                    <input type="text" id="tnu19-stats-search" placeholder="Xodimni qidirish..." onkeyup="filterTNU19StatsTable()" style="background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 12px; border-radius: 6px; font-size: 0.9rem;">
+            <div style="background: #ffffff; border: 1px solid rgba(31, 38, 135, 0.1); border-radius: 24px; overflow: hidden; box-shadow: 0 15px 40px rgba(31, 38, 135, 0.05);">
+                <div style="padding: 25px 35px; border-bottom: 1px solid rgba(31, 38, 135, 0.08); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                    <h3 style="margin: 0; font-size: 1.25rem; color: #1e293b; font-weight: 800; display: flex; align-items: center; gap: 15px;">
+                        <i class="fas fa-list-check" style="color: #ffd700;"></i> Xodimlar & Yo'riqnoma Holati
+                    </h3>
+                    <div style="position: relative; width: 350px;">
+                        <input type="text" id="tnu19-stats-search" placeholder="Xodimni qidirish..." onkeyup="filterTNU19StatsTable()" style="width: 100%; background: #ffffff; border: 1px solid rgba(31, 38, 135, 0.15); color: #1e293b; padding: 12px 15px 12px 45px; border-radius: 14px; font-size: 0.95rem; font-weight: 600; outline: none; transition: 0.3s;">
+                        <i class="fas fa-search" style="position: absolute; left: 18px; top: 15px; color: #64748b;"></i>
+                    </div>
                 </div>
-                <div style="max-height: 500px; overflow-y: auto;">
+                <div style="max-height: 550px; overflow-y: auto;">
                     <table style="width: 100%; border-collapse: collapse;">
-                        <thead style="position: sticky; top: 0; background: #161b22; z-index: 10;">
-                            <tr style="text-align: left; color: #8b949e; font-size: 0.85rem;">
-                                <th style="padding: 12px 20px;">Xodim</th>
-                                <th style="padding: 12px 20px;">Lavozim</th>
-                                <th style="padding: 12px 20px;">Oxirgi Yo'riqnoma</th>
-                                <th style="padding: 12px 20px;">Sana</th>
-                                <th style="padding: 12px 20px; text-align: center;">Holat</th>
+                        <thead style="position: sticky; top: 0; background: #1e293b; z-index: 10;">
+                            <tr style="text-align: left; color: #ffffff; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px;">
+                                <th style="padding: 18px 30px; font-weight: 800;">Xodim</th>
+                                <th style="padding: 18px 20px; font-weight: 800;">Lavozim</th>
+                                <th style="padding: 18px 20px; font-weight: 800;">Oxirgi Yo'riqnoma</th>
+                                <th style="padding: 18px 20px; font-weight: 800;">Sana</th>
+                                <th style="padding: 18px 30px; font-weight: 800; text-align: center;">Holat</th>
                             </tr>
                         </thead>
-                        <tbody id="tnu19-stats-table-body">
+                        <tbody id="tnu19-stats-table-body" style="color: #1e293b;">
                             ${allWorkers.map(w => {
         // Find latest record for this worker
         const workerRecords = records.filter(r => String(r.workerId) === String(w.id));
@@ -1043,16 +1061,16 @@ function renderTNU19Stats() {
         }[lastRecord.instructionType] || '#7f8c8d') : 'transparent';
 
         return `
-                                    <tr style="border-bottom: 1px solid #30363d;">
-                                        <td style="padding: 12px 20px; font-weight: 500;">${w.name}</td>
-                                        <td style="padding: 12px 20px; color: #8b949e; font-size: 0.9rem;">${w.position}</td>
-                                        <td style="padding: 12px 20px;">
+                                    <tr style="border-bottom: 1px solid rgba(212, 175, 55, 0.1); transition: 0.2s;" onmouseover="this.style.background='#f0f7ff'" onmouseout="this.style.background='transparent'">
+                                        <td style="padding: 18px 30px; font-weight: 700; color: #1e293b;">${w.name}</td>
+                                        <td style="padding: 18px 20px; color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">${w.position}</td>
+                                        <td style="padding: 18px 20px;">
                                             ${lastRecord ? `
-                                                <span style="background: ${typeBadgeClass}20; color: ${typeBadgeClass}; border: 1px solid ${typeBadgeClass}40; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase;">${lastRecord.instructionType}</span>
-                                            ` : '<span style="color: #8b949e;">---</span>'}
+                                                <span style="background: ${typeBadgeClass}15; color: ${typeBadgeClass}; border: 1px solid ${typeBadgeClass}30; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;">${lastRecord.instructionType}</span>
+                                            ` : '<span style="color: #cbd5e1; font-weight: 800;">---</span>'}
                                         </td>
-                                        <td style="padding: 12px 20px; font-family: monospace;">${lastRecord ? lastRecord.date : '---'}</td>
-                                        <td style="padding: 12px 20px; text-align: center;">${statusHtml}</td>
+                                        <td style="padding: 18px 20px; color: #b8860b; font-weight: 800; text-align: center; font-size: 0.9rem;">${lastRecord ? lastRecord.date : '---'}</td>
+                                        <td style="padding: 18px 30px; text-align: center;">${statusHtml}</td>
                                     </tr>
                                 `;
     }).join('')}
@@ -1062,24 +1080,26 @@ function renderTNU19Stats() {
             </div>
             
             <!-- Type Distribution -->
-             <div style="background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px;">
-                <h3 style="margin: 0 0 15px 0; font-size: 1.1rem; color: #f0f6fc;">Yo'riqnoma Turlari Bo'yicha</h3>
+             <div style="background: #ffffff; border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 24px; padding: 35px; box-shadow: 0 20px 50px rgba(31, 38, 135, 0.05);">
+                <h3 style="margin: 0 0 25px 0; font-size: 1.25rem; color: #1e293b; font-weight: 800; border-bottom: 2px solid #d4af37; padding-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+                    <i class="fas fa-chart-pie" style="color: #d4af37;"></i> Yo'riqnoma Turlari Bo'yicha
+                </h3>
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                    <div style="flex: 1; background: #0d1117; padding: 15px; border-radius: 8px; border: 1px solid #30363d; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="color: #3498db; font-weight: bold;">Kirish</span>
-                        <span style="font-size: 1.2rem; font-weight: bold;">${statsByType['kirish']}</span>
+                    <div style="flex: 1; background: #f8fafc; padding: 25px; border-radius: 20px; border: 1px solid rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: space-between; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.02);">
+                        <span style="color: #ffd700; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px;">Kirish</span>
+                        <span style="font-size: 1.6rem; font-weight: 900; color: #1e293b;">${statsByType['kirish']}</span>
                     </div>
-                    <div style="flex: 1; background: #0d1117; padding: 15px; border-radius: 8px; border: 1px solid #30363d; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="color: #2ecc71; font-weight: bold;">Takroriy</span>
-                        <span style="font-size: 1.2rem; font-weight: bold;">${statsByType['takroriy']}</span>
+                    <div style="flex: 1; background: #f8fafc; padding: 25px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: space-between; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.02);">
+                        <span style="color: #10b981; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px;">Takroriy</span>
+                        <span style="font-size: 1.6rem; font-weight: 900; color: #1e293b;">${statsByType['takroriy']}</span>
                     </div>
-                    <div style="flex: 1; background: #0d1117; padding: 15px; border-radius: 8px; border: 1px solid #30363d; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="color: #e67e22; font-weight: bold;">Rejalashtirilmagan</span>
-                        <span style="font-size: 1.2rem; font-weight: bold;">${statsByType['rejalashtirilmagan']}</span>
+                    <div style="flex: 1; background: #f8fafc; padding: 25px; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: space-between; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.02);">
+                        <span style="color: #f59e0b; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px;">Rejalashtirilmagan</span>
+                        <span style="font-size: 1.6rem; font-weight: 900; color: #1e293b;">${statsByType['rejalashtirilmagan']}</span>
                     </div>
-                    <div style="flex: 1; background: #0d1117; padding: 15px; border-radius: 8px; border: 1px solid #30363d; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="color: #9b59b6; font-weight: bold;">Maqsadli</span>
-                        <span style="font-size: 1.2rem; font-weight: bold;">${statsByType['maqsadli']}</span>
+                    <div style="flex: 1; background: #f8fafc; padding: 25px; border-radius: 20px; border: 1px solid rgba(139, 92, 246, 0.1); display: flex; align-items: center; justify-content: space-between; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.02);">
+                        <span style="color: #8b5cf6; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px;">Maqsadli</span>
+                        <span style="font-size: 1.6rem; font-weight: 900; color: #1e293b;">${statsByType['maqsadli']}</span>
                     </div>
                 </div>
             </div>

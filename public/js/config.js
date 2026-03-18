@@ -1,6 +1,6 @@
 /**
  * SMART PCH - Global Configuration
- * Dynamically detects environment (Web, Electron, or Production)
+ * Web Environment Configuration
  */
 
 window.CONFIG = {
@@ -9,29 +9,42 @@ window.CONFIG = {
 
     // API URL Detection
     API_URL: (function () {
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const isElectron = navigator.userAgent.toLowerCase().includes('electron');
+        const isLocal = window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname.startsWith('192.168.') ||
+            window.location.hostname.startsWith('10.') ||
+            window.location.hostname.startsWith('172.');
         const savedApiUrl = localStorage.getItem('custom_api_url');
 
         if (savedApiUrl) return savedApiUrl;
 
-        // Agar Electron bo'lsa va local ishlayotgan bo'lsa
-        if (isElectron || isLocal) {
-            return 'http://localhost:5000/api';
+        // Web (Brauzer) rejimida
+        if (window.location.protocol.startsWith('http')) {
+            if (isLocal) {
+                // Localhostda 5050-portga murojaat qilish
+                return `http://${window.location.hostname}:5050/api`;
+            }
+            return window.location.origin + '/api';
         }
 
-        // Production (Online sayt)
-        return window.location.origin + '/api';
+        return '/api';
     })(),
 
     // WebSocket URL Detection
     WS_URL: (function () {
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const isElectron = navigator.userAgent.toLowerCase().includes('electron');
+        const isLocal = window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname.startsWith('192.168.') ||
+            window.location.hostname.startsWith('10.') ||
+            window.location.hostname.startsWith('172.');
 
-        if (isElectron || isLocal) {
-            return 'http://localhost:5000';
+        if (window.location.protocol.startsWith('http')) {
+            if (isLocal) {
+                return `http://${window.location.hostname}:5050`;
+            }
+            return window.location.origin;
         }
+
         return window.location.origin;
     })(),
 
@@ -42,5 +55,5 @@ window.CONFIG = {
     }
 };
 
-console.log(`[Config] Running on ${navigator.userAgent.toLowerCase().includes('electron') ? 'Desktop (Electron)' : 'Web/Mobile'}`);
+console.log(`[Config] Running on Web/Mobile`);
 console.log(`[Config] API Endpoint: ${window.CONFIG.API_URL}`);

@@ -540,19 +540,10 @@ window.showMasofaSetupWizard = function () {
 
             <!-- HEADER -->
             <div style="text-align:center; margin-bottom:35px; padding-top:10px;">
-                <img src="img/logo.png" alt="Logo" style="width:70px;height:70px;border-radius:50%;object-fit:cover;
-                    border:2px solid rgba(255,215,0,0.4); margin-bottom:15px;"
+                <img src="img/logo.png" alt="Logo" style="width:100px;height:100px;border-radius:50%;object-fit:cover;
+                    border:2px solid var(--accent-gold); margin-bottom:15px; filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.4));"
                     onerror="this.style.display='none'">
-                <div style="color:#ffd700; font-size:0.8rem; font-weight:600; letter-spacing:3px; margin-bottom:8px;
-                    text-transform:uppercase; opacity:0.8;">O'ZBEKISTON TEMIR YO'LLARI AJ</div>
-                <h1 style="margin:0; color:white; font-size:1.9rem; font-weight:700; letter-spacing:1px;">
-                    SMART PCH — <span style="color:#00c6ff;">Tizim Sozlamasi</span>
-                </h1>
-                <p style="color:rgba(255,255,255,0.5); margin:10px 0 0 0; font-size:0.95rem;">
-                    <i class="fas fa-map-marker-alt" style="color:#00c6ff;"></i>
-                    &nbsp;Qaysi temir yo'l masofasi (PCh) uchun ishlashingizni tanlang
-                </p>
-                <div style="width:60px;height:2px;background:linear-gradient(90deg,transparent,#00c6ff,transparent);margin:18px auto 0;"></div>
+                <div style="width:100px;height:2px;background:var(--gold-gradient);margin:18px auto 0;"></div>
             </div>
 
             <!-- STATISTIKA -->
@@ -725,10 +716,20 @@ window.selectMasofa = function (masofaId) {
         if (wizard) wizard.remove();
         const landingPage = document.getElementById('landingPage');
         const loginPage = document.getElementById('loginPage');
-        if (landingPage) {
-            landingPage.style.display = 'block';
-        } else if (loginPage) {
-            loginPage.style.display = 'flex';
+
+        const savedUser = localStorage.getItem('currentUser');
+        const token = localStorage.getItem('jwtToken');
+
+        if (savedUser && token) {
+            if (landingPage) landingPage.style.display = 'none';
+            if (loginPage) loginPage.style.display = 'none';
+            if (typeof showMainSystem === 'function') showMainSystem();
+        } else {
+            if (landingPage) {
+                landingPage.style.display = 'block';
+            } else if (loginPage) {
+                loginPage.style.display = 'flex';
+            }
         }
     }, 1600);
 };
@@ -754,19 +755,21 @@ window.applyMasofaConfig = function (masofa) {
 // TIZIMNI ISHGA TUSHIRISH
 // ==========================================
 window.initMasofaSystem = function () {
-    const activeMasofa = window.getActiveMasofa();
+    let activeMasofa = window.getActiveMasofa();
     const landingPage = document.getElementById('landingPage');
     const loginPage = document.getElementById('loginPage');
 
+    // Foydalanuvchi so'roviga ko'ra: PCh tanlash oynasini (wizard) olib tashlaymiz
     if (!activeMasofa) {
-        if (loginPage) loginPage.style.display = 'none';
-        if (landingPage) landingPage.style.display = 'none';
-        window.showMasofaSetupWizard();
-    } else {
+        const defaultMasofa = window.MASOFA_LIST.find(m => m.id === 'pch16') || window.MASOFA_LIST[0];
+        window.setActiveMasofa(defaultMasofa.id);
+        activeMasofa = defaultMasofa;
+    }
+
+    if (activeMasofa) {
         window.applyMasofaConfig(activeMasofa);
         window.ACTIVE_MASOFA = activeMasofa;
 
-        // Check if already logged in - if so, both landing and login should be hidden
         const savedUser = localStorage.getItem('currentUser');
         const token = localStorage.getItem('jwtToken');
 
@@ -774,7 +777,6 @@ window.initMasofaSystem = function () {
             if (landingPage) landingPage.style.display = 'none';
             if (loginPage) loginPage.style.display = 'none';
         } else {
-            // Priority: Landing Page -> Login Page
             if (landingPage) {
                 landingPage.style.display = 'block';
                 if (loginPage) loginPage.style.display = 'none';

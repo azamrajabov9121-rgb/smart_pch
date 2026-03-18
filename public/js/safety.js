@@ -3,7 +3,7 @@
 
 let currentSigningWorker = null;
 let signaturePadActive = false;
-let isDrawing = false;
+var safetyIsDrawing = false;
 let lastX = 0;
 let lastY = 0;
 
@@ -32,22 +32,22 @@ window.renderSafetyDashboard = function (windowElement, bolinmaId) {
 
                 <!-- Right: Buttons -->
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; z-index: 100;">
-                    <button onclick="openSafetyWorkerList('${bolinmaId}')" 
+                    <button onclick="window.openSafetyWorkerList('${bolinmaId}')" 
                         style="background-color: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s; position: relative; z-index: 100;">
                         <i class="fas fa-users"></i> Xodimlar Ro'yxati
                     </button>
                     
-                    <button onclick="openSafetyTNU19('${bolinmaId}')" 
+                    <button onclick="window.openSafetyTNU19('${bolinmaId}')" 
                         style="background-color: #2c3e50; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s; position: relative; z-index: 100;">
                         <i class="fas fa-file-alt"></i> TNU-19 Jurnal
                     </button>
                     
-                     <button onclick="openSafetyTNU20('${bolinmaId}')" 
+                     <button onclick="window.openSafetyTNU20('${bolinmaId}')" 
                         style="background-color: #9b59b6; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s; position: relative; z-index: 100;">
                         <i class="fas fa-graduation-cap"></i> TNU-20 Jurnal
                     </button>
 
-                    <button onclick="openSafetyTechTraining('${bolinmaId}')" 
+                    <button onclick="window.openSafetyTechTraining('${bolinmaId}')" 
                         style="background-color: #e67e22; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s; position: relative; z-index: 100;">
                         <i class="fas fa-chalkboard-teacher"></i> Texnik O'quv
                     </button>
@@ -409,7 +409,15 @@ window.openSafetyTNU19 = function (bolinmaId) {
 };
 
 window.openSafetyTNU20 = function (bolinmaId) {
-    openTNU20Window(bolinmaId);
+    if (typeof openTNU20Window === 'function') openTNU20Window(bolinmaId);
+};
+
+window.openSafetyTechTraining = function (bolinmaId) {
+    if (typeof openTechnicalMaintenanceWindow === 'function') {
+        openTechnicalMaintenanceWindow(bolinmaId);
+    } else {
+        if (typeof showToast === 'function') showToast("Texnik o'quv moduli tez kunda ishga tushadi", "info");
+    }
 };
 
 
@@ -424,10 +432,14 @@ async function renderWorkerList(bolinmaId) {
 
     let workers = window.hrData.employees || [];
     if (bolinmaId && bolinmaId !== 'all') {
-        const bIdStr = String(bolinmaId).toLowerCase();
+        const bNumMatch = String(bolinmaId).match(/\d+/);
+        const bNum = bNumMatch ? bNumMatch[0] : bolinmaId;
+
         workers = workers.filter(w => {
-            const wBol = String(w.bolinma_id || '').toLowerCase();
-            return wBol === bIdStr;
+            const wBol = String(w.bolinma || w.bolinmaId || w.department || w.bolinma_id || '').toLowerCase();
+            const wNumMatch = wBol.match(/\d+/);
+            const wNum = wNumMatch ? wNumMatch[0] : '';
+            return wNum === bNum || wBol.includes(String(bolinmaId).toLowerCase());
         });
     }
 
@@ -746,7 +758,7 @@ function setupCanvas() {
     ctx.strokeStyle = '#1e293b';
 
     let points = [];
-    isDrawing = false;
+    safetyIsDrawing = false;
 
     function getPos(e) {
         const rect = canvas.getBoundingClientRect();
@@ -760,7 +772,7 @@ function setupCanvas() {
     }
 
     function startDraw(e) {
-        isDrawing = true;
+        safetyIsDrawing = true;
         points = [getPos(e)];
 
         // Hide watermark on first touch
@@ -769,7 +781,7 @@ function setupCanvas() {
     }
 
     function draw(e) {
-        if (!isDrawing) return;
+        if (!safetyIsDrawing) return;
         e.preventDefault();
 
         const pos = getPos(e);
@@ -799,8 +811,8 @@ function setupCanvas() {
     }
 
     function stopDraw() {
-        if (isDrawing) {
-            isDrawing = false;
+        if (safetyIsDrawing) {
+            safetyIsDrawing = false;
             // Simplified points array for performance if needed, 
             // but for a single signature it's fine.
         }
@@ -815,7 +827,7 @@ function setupCanvas() {
     canvas.addEventListener('touchstart', function (e) { startDraw(e); }, { passive: true });
     document.addEventListener('touchmove', function (e) {
         // Faqat canvas uchun
-        if (isDrawing) draw(e);
+        if (safetyIsDrawing) draw(e);
     }, { passive: true });
     document.addEventListener('touchend', stopDraw);
 
@@ -936,7 +948,15 @@ async function renderSafetyStats(bolinmaId) {
         if (!window.hrData || !window.hrData.employees) await initHRData();
         let workers = window.hrData.employees || [];
         if (bolinmaId && bolinmaId !== 'all') {
-            workers = workers.filter(w => String(w.bolinma_id || '').toLowerCase() === String(bolinmaId).toLowerCase());
+            const bNumMatch = String(bolinmaId).match(/\d+/);
+            const bNum = bNumMatch ? bNumMatch[0] : bolinmaId;
+
+            workers = workers.filter(w => {
+                const wBol = String(w.bolinma || w.bolinmaId || w.department || w.bolinma_id || '').toLowerCase();
+                const wNumMatch = wBol.match(/\d+/);
+                const wNum = wNumMatch ? wNumMatch[0] : '';
+                return wNum === bNum || wBol.includes(String(bolinmaId).toLowerCase());
+            });
         }
 
         // 2. Fetch Logs

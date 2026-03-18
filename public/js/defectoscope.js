@@ -1,78 +1,172 @@
 // Defektaskop Aravacha Tracking System
 // Initialize defectoscope data with Defect Codes
-function initDefectoscopeData() {
-    if (!window.defectoscopeCarts) {
-        const defaultCarts = [
-            {
-                id: 'ПОИСК-0106',
-                operator: 'Karimov A.A.',
-                route: { start: 4020, current: 4025, end: 4050 },
-                startTime: '07:30',
-                estimatedEnd: '17:45',
-                speed: 1.3,
-                checked: 6,
-                defects: [
-                    { pk: 4023, code: '21', type: 'Yengil', description: 'Bolt zaiflashgan', time: '09:15' }
-                ],
-                status: 'active',
-                color: 'orange'
-            },
-            {
-                id: 'ПОИСК-0207',
-                operator: 'Salimov B.K.',
-                route: { start: 4120, current: 4145, end: 4180 },
-                startTime: '06:00',
-                estimatedEnd: '16:20',
-                speed: 1.5,
-                checked: 25,
-                defects: [
-                    { pk: 4125, code: '26.3', type: 'O\'rta', description: 'Rels yoriq', time: '08:30' },
-                    { pk: 4138, code: '17.1', type: 'Yengil', description: 'Relso\'rni yeyilgan', time: '11:15' },
-                    { pk: 4142, code: '53.1', type: 'Og\'ir', description: 'Yonoq yorig\'i', time: '12:45' }
-                ],
-                status: 'active',
-                color: 'blue'
-            },
-            {
-                id: 'ПОИСК-0308',
-                operator: 'Aliev C.D.',
-                route: { start: 4190, current: 4205, end: 4245 },
-                startTime: '08:00',
-                estimatedEnd: '18:30',
-                speed: 0,
-                checked: 15,
-                defects: [
-                    { pk: 4198, code: '30G', type: 'Yengil', description: 'Bolt yetishmaydi', time: '10:20' },
-                    { pk: 4203, code: '14', type: 'O\'rta', description: 'Rels yeyilishi', time: '13:10' }
-                ],
-                status: 'paused',
-                color: 'purple'
-            },
-            {
-                id: 'ПОИСК-0409',
-                operator: 'Juzgenov D.M.',
-                route: { start: 4260, current: 4280, end: 4303 },
-                startTime: '07:00',
-                estimatedEnd: '17:10',
-                speed: 1.4,
-                checked: 20,
-                defects: [
-                    { pk: 4267, code: '41', type: 'Yengil', description: 'Skrep yeyilgan', time: '09:45' },
-                    { pk: 4275, code: '69', type: 'O\'rta', description: 'Podkładka buzilib', time: '12:20' }
-                ],
-                status: 'active',
-                color: 'green'
-            }
-        ];
 
-        window.defectoscopeCarts = JSON.parse(localStorage.getItem('defectoscopeCarts')) || defaultCarts;
+// Boshlang'ich (default) jadval
+const DEFAULT_SCHEDULE = {
+    "POISK-0106": {
+        operator: 'Sharipov R., Shirinov Sh., Olimov A.',
+        color: 'orange',
+        schedule: {
+            1: { text: "St. Qorlitog' 4143 km", start: 4143, end: 4143 },
+            4: { text: "4144 km-4150 km", start: 4144, end: 4150 },
+            5: { text: "4151 km-4156 km", start: 4151, end: 4156 },
+            6: { text: "4157 km-4162 km", start: 4157, end: 4162 },
+            7: { text: "4163 km, Rzd Kiyikli, 3-ECHK yo'llari", start: 4163, end: 4163 },
+            8: { text: "Texnik ko'rik", start: 4020, end: 4020, status: 'paused' },
+            11: { text: "Rzd Kiyikli-4174 km", start: 4163, end: 4174 },
+            12: { text: "4175 km-4180 km", start: 4175, end: 4180 },
+            13: { text: "4181 km-4185 km", start: 4181, end: 4185 },
+            14: { text: "4186 km-4191 km", start: 4186, end: 4191 },
+            15: { text: "4192 km-4197 km", start: 4192, end: 4197 },
+            18: { text: "4198 km, St Xizirbobo 2-4 yo'llar", start: 4198, end: 4198 },
+            19: { text: "4020 km-4025 km", start: 4020, end: 4025 },
+            20: { text: "4026 km-4031 km", start: 4026, end: 4031 },
+            21: { text: "4032 km, Rzd Navbaxor, 3-ECHK yo'li", start: 4032, end: 4032 },
+            22: { text: "Rzd Navbaxor 4042 km", start: 4042, end: 4042 },
+            25: { text: "4043 km-4048 km", start: 4043, end: 4048 },
+            26: { text: "4049 km-4054 km", start: 4049, end: 4054 },
+            27: { text: "4055 km-4060 km", start: 4055, end: 4060 },
+            28: { text: "4161 km, St Yaxshilik", start: 4161, end: 4161 },
+            29: { text: "Jadval taxlili", start: 4020, end: 4020, status: 'paused' }
+        }
+    },
+    "POISK-2603": {
+        operator: 'Mavlonov I., Kamolov G\'.',
+        color: 'blue',
+        schedule: {
+            1: { text: "4163 km, Rzd Kiyikli", start: 4163, end: 4163 },
+            4: { text: "Rzd Kiyikli 3-ECHK yo'llari 4171 km", start: 4163, end: 4171 },
+            5: { text: "4171 km-4176 km", start: 4171, end: 4176 },
+            6: { text: "4177 km-4182 km", start: 4177, end: 4182 },
+            7: { text: "Texnik ko'rik", start: 4020, end: 4020, status: 'paused' },
+            8: { text: "4183 km-4188 km", start: 4183, end: 4188 },
+            11: { text: "4189 km-4194 km", start: 4189, end: 4194 },
+            12: { text: "4195 km, St, Xizirbobo, as-yo'l", start: 4195, end: 4195 },
+            13: { text: "St,Xizirbobo 2-4 yo'l, 4203 km", start: 4198, end: 4203 },
+            14: { text: "4204 km-4209 km", start: 4204, end: 4209 },
+            15: { text: "4210 km-4215 km", start: 4210, end: 4215 },
+            18: { text: "4216 km-4221 km", start: 4216, end: 4221 },
+            19: { text: "4222 km-4227 km", start: 4222, end: 4227 },
+            20: { text: "4228 km, Rzd Jayxun 3-ECHK yo'llari", start: 4228, end: 4228 },
+            21: { text: "Rzd Jayxun 4238 km", start: 4228, end: 4238 },
+            22: { text: "4239 km-4244 km", start: 4239, end: 4244 },
+            25: { text: "4245 km-4250 km", start: 4245, end: 4250 },
+            26: { text: "4251 km-4256 km", start: 4251, end: 4256 },
+            27: { text: "4257 km, St Doutepa", start: 4257, end: 4257 },
+            28: { text: "St Doutepa 2-4 yo'llar, 4264 km", start: 4264, end: 4264 },
+            29: { text: "Jadval tahlili", start: 4020, end: 4020, status: 'paused' }
+        }
+    },
+    "POISK-1080": {
+        operator: 'Nurimov Sh., Komilov D.',
+        color: 'green',
+        schedule: {
+            1: { text: "4246 km-4251 km", start: 4246, end: 4251 },
+            4: { text: "4252 km-4257 km", start: 4252, end: 4257 },
+            5: { text: "4258km, St Doutepa", start: 4258, end: 4258 },
+            6: { text: "Texnik ko'rik", start: 4020, end: 4020, status: 'paused' },
+            7: { text: "St Doutepa 2-4 qo'shimcha yo'llar", start: 4258, end: 4258 },
+            8: { text: "St Doutepa-4266 km", start: 4258, end: 4266 },
+            11: { text: "4267 km-4272 km", start: 4267, end: 4272 },
+            12: { text: "4273 km-4278 km", start: 4273, end: 4278 },
+            13: { text: "4279 km-4284 km", start: 4279, end: 4284 },
+            14: { text: "4285 km-4290 km", start: 4285, end: 4290 },
+            15: { text: "4291 km-4296 km", start: 4291, end: 4296 },
+            18: { text: "4297 km, Rzd Turon 3-ECHK yo'llar", start: 4297, end: 4297 },
+            19: { text: "Rzd Turon 4303 km", start: 4303, end: 4303 },
+            20: { text: "4211 km-4216 km", start: 4211, end: 4216 },
+            21: { text: "4217 km-4222 km", start: 4217, end: 4222 },
+            22: { text: "4223 km-4228 km", start: 4223, end: 4228 },
+            25: { text: "4229 km-Rzd Jayxun, 3-ECHK yo'llari", start: 4229, end: 4229 },
+            26: { text: "Rzd Jayxun-4238 km", start: 4229, end: 4238 },
+            27: { text: "4239 km-4244 km", start: 4239, end: 4244 },
+            28: { text: "4245 km 4250 km", start: 4245, end: 4250 },
+            29: { text: "Jadval tahlili", start: 4020, end: 4020, status: 'paused' }
+        }
+    },
+    "POISK-1004": { // Qo'shilgan 4-aravacha
+        operator: 'Zokirov V., Ergashev T.',
+        color: 'purple',
+        schedule: {
+            1: { text: "Zaxira / Qo'shimcha tekshiruv", start: 4020, end: 4100 },
+            5: { text: "Stansiya yo'llari nazorati", start: 4160, end: 4165 },
+            10: { text: "Texnik ko'rik", start: 4020, end: 4020, status: 'paused' },
+            15: { text: "Ta'mirdan chiqqan oraliq", start: 4200, end: 4210 },
+            20: { text: "Og'ir defekt ustidan tahlil", start: 4250, end: 4260 }
+        }
     }
+};
+
+window.currentDefectoDay = window.currentDefectoDay || new Date().getDate();
+
+function initDefectoscopeData() {
+    const today = window.currentDefectoDay;
+
+    // Tizimdan saqlangan oylik jadvalni olish (agar bo'lmasa DEFAULT ni oladi)
+    const activeSchedule = JSON.parse(localStorage.getItem('defectoscopeMonthlySchedule')) || DEFAULT_SCHEDULE;
+
+    // Test namunasi uchun defekt ob'ektlari (buni ham aslida serverdan olish kerak)
+    const mockDefects = {
+        "POISK-0106": [{ pk: 4023, code: '21', type: 'Yengil', description: 'Bolt zaiflashgan', time: '09:15' }],
+        "POISK-2603": [{ pk: 4175, code: '26.3', type: 'O\'rta', description: 'Rels yoriq', time: '08:30' }],
+        "POISK-1080": [{ pk: 4288, code: '41', type: 'Yengil', description: 'Skrep yeyilgan', time: '09:45' }]
+    };
+
+    window.defectoscopeCarts = Object.keys(activeSchedule).map(cartId => {
+        const cartInfo = activeSchedule[cartId];
+        const daySchedule = cartInfo.schedule[today] || { text: "Dam olish / Reja yo'q", start: 4020, end: 4020, status: 'inactive' };
+
+        const start = daySchedule.start || 4020;
+        const end = daySchedule.end || start;
+        let current = start;
+
+        // Simulyatsiya qilingan yoki haqiqiy vaqtga qarab pozitsiyani belgilash
+        // Agar o'tgan yoki kelajakdagi kun tanlansa
+        const isToday = today === new Date().getDate();
+        let currentStatus = daySchedule.status || 'inactive';
+
+        if (isToday) {
+            const hour = new Date().getHours() + new Date().getMinutes() / 60;
+            if (hour >= 8 && hour <= 17 && start !== end) {
+                const fraction = (hour - 8) / 9;
+                current = Math.floor(start + (end - start) * fraction);
+                if (daySchedule.status !== 'paused') currentStatus = 'active';
+            } else if (hour > 17) {
+                current = end;
+                if (daySchedule.status !== 'paused') currentStatus = 'completed';
+            }
+        } else if (today < new Date().getDate()) {
+            current = end; // O'tib ketgan kun - marshrut to'liq yakunlangan
+            if (daySchedule.status !== 'paused') currentStatus = 'completed';
+        } else {
+            current = start; // Kelajak kun - boshlanmagan
+            if (daySchedule.status !== 'paused') currentStatus = 'inactive';
+        }
+
+        return {
+            id: cartId,
+            operator: cartInfo.operator,
+            scheduleText: daySchedule.text,
+            route: { start: start, current: current, end: end },
+            startTime: '08:00',
+            estimatedEnd: '17:00',
+            speed: currentStatus === 'active' ? 1.5 : 0,
+            checked: Math.abs(current - start),
+            defects: mockDefects[cartId] ? mockDefects[cartId].filter(d => d.pk >= Math.min(start, end) && d.pk <= Math.max(start, end)) : [],
+            status: currentStatus,
+            color: cartInfo.color,
+            startPkInput: start,
+            endPkInput: end
+        };
+    });
 }
 
 // Calculate progress percentage
 function calculateProgress(start, current, end) {
-    const total = end - start;
-    const completed = current - start;
+    if (start === end) return 100;
+    const total = Math.abs(end - start);
+    if (total === 0) return 0;
+    const completed = Math.abs(current - start);
     return Math.round((completed / total) * 100);
 }
 
@@ -394,7 +488,47 @@ function getDefectoscopeTrackerHTML() {
                  z-index: 4;
                  box-shadow: 0 0 10px white;
             }
+
+            .calendar-selector {
+                background: rgba(0,0,0,0.3);
+                padding: 10px;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                overflow-x: auto;
+                margin-top: 15px;
+                border: 1px solid rgba(255,255,255,0.1);
+            }
+            .day-btn {
+                padding: 8px 12px;
+                background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 6px;
+                color: white;
+                cursor: pointer;
+                transition: all 0.2s;
+                min-width: 45px;
+                text-align: center;
+            }
+            .day-btn:hover { background: rgba(0,198,255,0.3); }
+            .day-btn.active {
+                background: #00c6ff;
+                border-color: #00c6ff;
+                box-shadow: 0 0 10px rgba(0,198,255,0.5);
+                font-weight: bold;
+            }
+            .day-btn.today {
+                border-bottom: 2px solid #e74c3c;
+            }
         </style>
+        
+        <script>
+            window.changeDefectoDay = function(day) {
+                window.currentDefectoDay = day;
+                document.getElementById('defectoscope-content').innerHTML = getDefectoscopeTrackerHTML();
+            };
+        </script>
         
         <div class="defecto-header">
             <h2>
@@ -403,14 +537,23 @@ function getDefectoscopeTrackerHTML() {
             </h2>
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div class="defecto-stats">
-                    <span><i class="fas fa-road"></i> Jami tekshirildi: <strong>${totalChecked} km</strong></span>
+                    <span><i class="fas fa-road"></i> Tekshirildi: <strong>${totalChecked} km</strong></span>
                     <span><i class="fas fa-exclamation-triangle"></i> Defektlar: <strong>${totalDefects} ta</strong></span>
-                    <span><i class="fas fa-truck"></i> Faol aravachalar: <strong>${activeCarts}/${carts.length}</strong></span>
+                    <span><i class="fas fa-calendar-day"></i> KUN: <strong>${window.currentDefectoDay}-sana</strong></span>
                 </div>
                 <div style="text-align: right; color: rgba(255,255,255,0.6); font-size: 0.9rem;">
-                    <div>${currentDate}</div>
-                    <div>${currentTime}</div>
+                    <div>Hozir: ${currentTime}</div>
                 </div>
+            </div>
+            
+            <!-- Calendar Ribbon -->
+            <div class="calendar-selector">
+                <span style="color:#00c6ff; font-weight:bold; white-space:nowrap;"><i class="fas fa-calendar-alt"></i> OY KUNLARI:</span>
+                ${Array.from({ length: 31 }, (_, i) => i + 1).map(day =>
+        `<button class="day-btn ${day === window.currentDefectoDay ? 'active' : ''} ${day === new Date().getDate() ? 'today' : ''}" 
+                             title="${day === new Date().getDate() ? 'Bugun' : ''}"
+                             onclick="changeDefectoDay(${day})">${day}</button>`
+    ).join('')}
             </div>
         </div>
         
@@ -426,9 +569,11 @@ function getDefectoscopeTrackerHTML() {
                             ${getStatusBadge(cart.status)}
                         </div>
                         
-                        <div class="cart-info">
-                            <span><i class="fas fa-user"></i> ${cart.operator}</span>
-                            <span><i class="fas fa-clock"></i> ${cart.startTime}</span>
+                        <div class="cart-info" style="flex-wrap: wrap; gap: 10px;">
+                            <span style="width:100%;"><i class="fas fa-users"></i> ${cart.operator}</span>
+                            <span style="color:#f39c12; font-weight:bold; width:100%; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">
+                                <i class="fas fa-calendar-day"></i> KUNLIK REJA: ${cart.scheduleText}
+                            </span>
                         </div>
                         
                         <div class="progress-section">
@@ -741,87 +886,261 @@ window.openScheduleEditor = function () {
         return;
     }
 
+    const currentSchedule = JSON.parse(localStorage.getItem('defectoscopeMonthlySchedule')) || DEFAULT_SCHEDULE;
+    const carts = Object.keys(currentSchedule);
+
+    // Oylik kunlarni shakllantirish (1 dan 31 gacha)
+    const daysArray = Array.from({ length: 31 }, (_, i) => i + 1);
+
+    // Dynamic Excel Grid CSS
     const editorHTML = `
-        <h3>📝 Jadval Tahrirlash (Admin)</h3>
-        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <div style="margin-bottom: 15px;">
-                <label>Aravacha:</label>
-                <select id="edit-cart-id" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; margin-top: 5px;">
-                    ${window.defectoscopeCarts.map(c => `<option value="${c.id}">${c.id}</option>`).join('')}
-                </select>
+        <style>
+            .excel-container {
+                background: #0f172a;
+                border: 1px solid rgba(0, 198, 255, 0.3);
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+                margin: 20px 0;
+            }
+            .excel-header {
+                display: flex;
+                background: linear-gradient(90deg, #1e293b, #0f172a);
+                border-bottom: 2px solid #00c6ff;
+            }
+            .excel-header-cell {
+                flex: 1;
+                padding: 15px;
+                text-align: center;
+                color: #00c6ff;
+                font-weight: 800;
+                font-size: 1.1rem;
+                letter-spacing: 1px;
+                border-right: 1px solid rgba(255,255,255,0.1);
+            }
+            .excel-body {
+                max-height: 500px;
+                overflow-y: auto;
+            }
+            .excel-row {
+                display: flex;
+                background: rgba(30, 41, 59, 0.6);
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+                transition: background 0.2s;
+            }
+            .excel-row:hover {
+                background: rgba(0, 198, 255, 0.05);
+            }
+            .excel-cell {
+                flex: 1;
+                padding: 10px;
+                border-right: 1px solid rgba(255,255,255,0.05);
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+            .excel-cell:last-child {
+                border-right: none;
+            }
+            .day-number {
+                background: linear-gradient(135deg, #e74c3c, #c0392b);
+                color: white;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                font-weight: 900;
+                font-size: 1.2rem;
+                box-shadow: 0 4px 10px rgba(231,76,60,0.3);
+            }
+            .cart-inputs {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                width: 100%;
+            }
+            .cart-inputs input {
+                width: 100%;
+                background: rgba(0, 0, 0, 0.4);
+                border: 1px solid rgba(255,255,255,0.1);
+                color: white;
+                padding: 6px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                transition: all 0.3s;
+            }
+            .cart-inputs input:focus {
+                border-color: #00c6ff;
+                box-shadow: 0 0 8px rgba(0,198,255,0.5);
+                outline: none;
+            }
+            .cart-inputs input.desc {
+                color: #f1c40f;
+            }
+            
+            /* Custom Scrollbar for Excel */
+            .excel-body::-webkit-scrollbar { width: 8px; }
+            .excel-body::-webkit-scrollbar-track { background: #0f172a; }
+            .excel-body::-webkit-scrollbar-thumb { background: #00c6ff; border-radius: 4px; }
+        </style>
+        
+        <h3 style="display: flex; align-items: center; gap: 15px; margin-bottom: 5px; font-size: 1.8rem; color: #fff;">
+            <div style="background: #2ecc71; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; box-shadow: 0 0 15px rgba(46,204,113,0.4);">
+                <i class="fas fa-file-excel" style="color: white; font-size: 1.5rem;"></i>
             </div>
-            <div style="margin-bottom: 15px;">
-                <label>Operator:</label>
-                <input type="text" id="edit-operator" placeholder="Operator nomi" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; margin-top: 5px;">
+            Oylik Interaktiv Jadval (Excel Format)
+        </h3>
+        <p style="color:#aaa; font-size:0.95rem; margin-bottom:15px; border-left: 3px solid #00c6ff; padding-left: 10px;">
+            Siz har bir 4 ta aravacha uchun marshrut(Boshlanish va tugash)larini yoki Izohlarini shu yerda oson tahrirlashingiz mumkin.
+        </p>
+        
+        <div class="excel-container">
+            <div class="excel-header">
+                <div class="excel-header-cell" style="flex: 0.3; max-width: 80px;">SANA</div>
+                ${carts.map(cart => `
+                    <div class="excel-header-cell">
+                        <i class="fas fa-truck" style="margin-right: 5px;"></i>${cart}
+                    </div>
+                `).join('')}
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div>
-                    <label>Boshlanish PK:</label>
-                    <input type="number" id="edit-start-pk" placeholder="4020" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; margin-top: 5px;">
-                </div>
-                <div>
-                    <label>Tugash PK:</label>
-                    <input type="number" id="edit-end-pk" placeholder="4050" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; margin-top: 5px;">
-                </div>
-            </div>
-            <div style="margin-top: 15px;">
-                <label>Boshlanish vaqti:</label>
-                <input type="time" id="edit-start-time" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; margin-top: 5px;">
+            
+            <div class="excel-body" id="excel-grid-body">
+                ${daysArray.map(day => {
+        return `
+                    <div class="excel-row">
+                        <div class="excel-cell" style="flex: 0.3; max-width: 80px; justify-content: center;">
+                            <div class="day-number">${day}</div>
+                        </div>
+                        ${carts.map(cartId => {
+            const cartObj = currentSchedule[cartId];
+            const dayData = cartObj.schedule[day] || { start: "", end: "", text: "", status: "" };
+
+            return `
+                                <div class="excel-cell">
+                                    <div class="cart-inputs">
+                                        <div style="display:flex; gap:5px;">
+                                            <input type="number" id="cell_${cartId}_${day}_start" placeholder="Boshlanish PK" value="${dayData.start !== 4020 ? dayData.start : ""}">
+                                            <input type="number" id="cell_${cartId}_${day}_end" placeholder="Tugash PK" value="${dayData.end !== 4020 ? dayData.end : ""}">
+                                        </div>
+                                        <input type="text" class="desc" id="cell_${cartId}_${day}_text" placeholder="(Ixtiyoriy Izoh yozing, Masalan: Texnik ko'rik)" value="${dayData.text || ""}">
+                                    </div>
+                                </div>
+                            `;
+        }).join('')}
+                    </div>
+                    `;
+    }).join('')}
             </div>
         </div>
         
-        <div style="display: flex; gap: 10px;">
-            <button class="action-btn" onclick="saveScheduleChanges()">
-                <i class="fas fa-save"></i> Saqlash
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+             <button onclick="document.getElementById('defectoscope-content').innerHTML = getDefectoscopeTrackerHTML();" style="padding: 12px 25px; background: transparent; border: 1px solid #e74c3c; color: #e74c3c; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='rgba(231,76,60,0.1)'" onmouseout="this.style.background='transparent'">
+                <i class="fas fa-arrow-left"></i> Orqaga qaytish
             </button>
-            <button class="action-btn" onclick="closeDefectDetails()" style="background: rgba(231,76,60,0.8);">
-                <i class="fas fa-times"></i> Bekor qilish
-            </button>
+            <div style="display: flex; gap: 15px;">
+                <button onclick="clearExcelSchedule()" style="padding: 12px 25px; background: rgba(52, 73, 94, 0.8); border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="fas fa-eraser"></i> Hamma qatorlarni tozalash
+                </button>
+                <button onclick="saveExcelSchedule()" style="padding: 12px 35px; background: linear-gradient(135deg, #11998e, #38ef7d); border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1rem; box-shadow: 0 5px 15px rgba(56, 239, 125, 0.4); transition: all 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="fas fa-save"></i> Jadvalni Saqlash
+                </button>
+            </div>
         </div>
     `;
 
     document.getElementById('defectoscope-content').innerHTML = editorHTML;
-
-    // Load current cart data
-    loadCartDataForEdit();
 };
 
-function loadCartDataForEdit() {
-    const cartId = document.getElementById('edit-cart-id').value;
-    const cart = window.defectoscopeCarts.find(c => c.id === cartId);
-    if (!cart) return;
+window.saveExcelSchedule = function () {
+    try {
+        const oldSchedule = JSON.parse(localStorage.getItem('defectoscopeMonthlySchedule')) || DEFAULT_SCHEDULE;
+        const newSchedule = JSON.parse(JSON.stringify(oldSchedule)); // Chuqur nusxa(deep clone)
 
-    document.getElementById('edit-operator').value = cart.operator;
-    document.getElementById('edit-start-pk').value = cart.route.start;
-    document.getElementById('edit-end-pk').value = cart.route.end;
-    document.getElementById('edit-start-time').value = cart.startTime;
+        const carts = Object.keys(newSchedule);
 
-    document.getElementById('edit-cart-id').onchange = loadCartDataForEdit;
-}
+        for (let day = 1; day <= 31; day++) {
+            carts.forEach(cartId => {
+                const startVal = document.getElementById(`cell_${cartId}_${day}_start`).value;
+                const endVal = document.getElementById(`cell_${cartId}_${day}_end`).value;
+                const textVal = document.getElementById(`cell_${cartId}_${day}_text`).value;
 
-window.saveScheduleChanges = function () {
-    const cartId = document.getElementById('edit-cart-id').value;
-    const cart = window.defectoscopeCarts.find(c => c.id === cartId);
-    if (!cart) return;
+                // Agar ma'lumot bo'lsa uni qo'shamiz
+                if (startVal || endVal || textVal) {
+                    if (!newSchedule[cartId].schedule) newSchedule[cartId].schedule = {};
 
-    const startPK = parseInt(document.getElementById('edit-start-pk').value);
-    const endPK = parseInt(document.getElementById('edit-end-pk').value);
+                    const pStart = startVal ? parseInt(startVal) : 4020;
+                    const pEnd = endVal ? parseInt(endVal) : 4020;
 
-    if (endPK <= startPK) {
-        alert('Tugash PK boshlanish PK dan katta bo\'lishi kerak!');
-        return;
+                    // "Texnik ko'rik" yoki maxsus kunga moslash
+                    let pStatus = 'active';
+                    if (textVal && (textVal.toLowerCase().includes('texnik') || textVal.toLowerCase().includes('tahlil') || textVal.toLowerCase().includes('dam'))) {
+                        pStatus = 'paused';
+                    }
+
+                    newSchedule[cartId].schedule[day] = {
+                        text: textVal || `${pStart} km - ${pEnd} km`,
+                        start: pStart,
+                        end: pEnd,
+                        status: pStatus
+                    };
+                } else {
+                    // Agar katakcha bo'sh bo'lsa, xotiradan tozalab yuboramiz
+                    if (newSchedule[cartId].schedule && newSchedule[cartId].schedule[day]) {
+                        delete newSchedule[cartId].schedule[day];
+                    }
+                }
+            });
+        }
+
+        localStorage.setItem('defectoscopeMonthlySchedule', JSON.stringify(newSchedule));
+
+        // Success animation
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Saqlandi!';
+        btn.style.background = '#2ecc71';
+
+        setTimeout(() => {
+            window.currentDefectoDay = new Date().getDate(); // Bugungi kunga qaytarish
+            document.getElementById('defectoscope-content').innerHTML = getDefectoscopeTrackerHTML();
+            showToast("Jadval tizimga muvaffaqiyatli saqlandi!", "success");
+        }, 800);
+
+    } catch (err) {
+        alert("Xatolik. Ma'lumotlarni saqlash imkoni bo'lmadi.\n" + err.message);
     }
+};
 
-    cart.operator = document.getElementById('edit-operator').value;
-    cart.route.start = startPK;
-    cart.route.end = endPK;
-    cart.startTime = document.getElementById('edit-start-time').value;
+window.clearExcelSchedule = function () {
+    if (!confirm("Barcha katakdalardagi ma'lumotlarni o'chirishni tasdiqlaysizmi?")) return;
 
-    // Save to localStorage
-    localStorage.setItem('defectoscopeCarts', JSON.stringify(window.defectoscopeCarts));
+    document.querySelectorAll('.cart-inputs input').forEach(input => {
+        input.value = "";
+    });
+};
 
-    alert('O\'zgarishlar saqlandi!');
-    closeDefectDetails();
+window.saveNewMonthlySchedule = function () {
+    try {
+        const textValue = document.getElementById('edit-schedule-json').value;
+        const newObj = JSON.parse(textValue);
+
+        // Validation check
+        if (!newObj["POISK-0106"] || !newObj["POISK-2603"] || !newObj["POISK-1080"]) {
+            throw new Error("Jadval tuzilishida asosiy aravachalar IDlari (POISK-...) to'liq emas.");
+        }
+
+        localStorage.setItem('defectoscopeMonthlySchedule', JSON.stringify(newObj));
+        alert('🎉 Muvaffaqiyatli saqlandi! Tizim endi yozilgan yangi oylik qoidalar asosida ishlaydi.');
+
+        // Refresh view
+        window.currentDefectoDay = new Date().getDate(); // Bugungi kunga qaytish
+        document.getElementById('defectoscope-content').innerHTML = getDefectoscopeTrackerHTML();
+
+    } catch (err) {
+        alert("Xatolik: Formati noto'g'ri yozilgan. Iltimos tekshirib qayta urinib ko'ring.\n" + err.message);
+    }
 };
 
 // Export to Excel (simplified)

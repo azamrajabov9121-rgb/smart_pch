@@ -172,8 +172,8 @@ function renderTechTrainingTable() {
                 <input type="date" id="tech-filter-date" onchange="renderTechTrainingTable()" style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white;">
                 <input type="text" id="tech-filter-name" placeholder="Mavzu bo'yicha qidiruv..." onkeyup="renderTechTrainingTable()" style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; min-width: 250px;">
             </div>
-            <button onclick="alert('PDF eksport tez orada qo\\'shiladi')" style="background: linear-gradient(45deg, #c0392b, #e74c3c); border: none; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                <i class="fas fa-file-pdf"></i> PDF
+            <button onclick="exportTechTrainingPDF()" style="background: linear-gradient(45deg, #c0392b, #e74c3c); border: none; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                <i class="fas fa-file-pdf"></i> PDF EXPORT
             </button>
         </div>
 
@@ -585,6 +585,33 @@ function renderTechTrainingStats() {
     `;
 }
 
+// Export to PDF
+function exportTechTrainingPDF() {
+    if (typeof html2pdf === 'undefined') {
+        alert('PDF moduli yuklanmagan. Iltimos sahifani yangilang.');
+        return;
+    }
+
+    if (window.SmartUtils) window.SmartUtils.showToast("Texnik O'quv PDF tayyorlanmoqda, kuting...", "info");
+
+    const element = document.getElementById('tech-training-content');
+
+    const opt = {
+        margin: 10,
+        filename: `Texnik_Oquv_Mashgulotlari_${new Date().toISOString().slice(0, 10)}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        if (window.SmartUtils) window.SmartUtils.showToast("PDF muvaffaqiyatli saqlandi!", "success");
+    }).catch(err => {
+        console.error("PDF Export Error:", err);
+        alert("PDF yaratishda xatolik yuz berdi!");
+    });
+}
+
 // Global exports
 window.openTechTrainingWindow = openTechTrainingWindow;
 window.closeTechTrainingWindow = closeTechTrainingWindow;
@@ -598,4 +625,6 @@ window.openTechTrainingSignatureModal = openTechTrainingSignatureModal;
 window.clearTechTrainingSignature = clearTechTrainingSignature;
 window.saveTechTrainingSignature = saveTechTrainingSignature;
 window.renderTechTrainingStats = renderTechTrainingStats;
+window.exportTechTrainingPDF = exportTechTrainingPDF;
+
 console.log('✅ Technical Training Module Loaded');

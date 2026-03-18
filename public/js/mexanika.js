@@ -1,12 +1,232 @@
 // Mexanika Bo'limi - Auto-inject Technical Maintenance & Waybill Buttons
 // Updated to support direct calls from renderMechanicsSection
 
-function openRepairJournal(bolinmaId) {
-    alert("Ta'mir Jurnali moduli tez orada ishga tushadi!");
+async function openRepairJournal(bolinmaId) {
+    const existing = document.getElementById('repair-journal-modal');
+    if (existing) existing.remove();
+
+    const placeholderHTML = `
+        <div id="repair-journal-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:10020; font-family:'Inter', sans-serif;">
+            <div style="background:#0f172a; width:100%; height:100%; border:none; display:flex; flex-direction:column; overflow:hidden; box-shadow: none;">
+                <div style="padding:15px 30px; background: rgba(30, 41, 59, 0.8); border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
+                    <h2 style="margin:0; color:white; display:flex; align-items:center; gap:12px; font-size: 1.5rem;">
+                        <i class="fas fa-tools" style="color:#f39c12;"></i> Ta'mir Jurnali
+                    </h2>
+                    <button onclick="document.getElementById('repair-journal-modal').remove()" style="background:rgba(255,255,255,0.1); color:white; border:none; width:40px; height:40px; border-radius:50%; font-size:1.5rem; cursor:pointer;">&times;</button>
+                </div>
+                <div id="repair-journal-content" style="flex:1; padding:30px; overflow-y:auto; color:white; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #f39c12;"></i>
+                    <p style="font-size: 1.2rem; color: #94a3b8;">Jurnal yuklanmoqda...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', placeholderHTML);
+
+    try {
+        const repairs = await SmartUtils.fetchAPI('/mechanics/repairs') || [];
+        const vehicles = await SmartUtils.fetchAPI('/mechanics/vehicles') || [];
+
+        const contentDiv = document.getElementById('repair-journal-content');
+        if (!contentDiv) return;
+
+        contentDiv.style.display = 'block';
+        contentDiv.style.justifyContent = 'unset';
+        contentDiv.innerHTML = `
+            <div style="display:flex; justify-content:flex-end; margin-bottom:20px;">
+                <button onclick="openAddRepairForm()" style="background:#2ecc71; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-plus"></i> Yangi Qayd
+                </button>
+            </div>
+            <table style="width:100%; border-collapse:collapse;" id="repair-table">
+                <thead>
+                    <tr style="background:#1e293b; text-align:left; color:#94a3b8; font-size:0.9rem;">
+                        <th style="padding:15px; border-radius:8px 0 0 8px;">Sana</th>
+                        <th style="padding:15px;">Texnika</th>
+                        <th style="padding:15px;">Tavsif</th>
+                        <th style="padding:15px;">Ehtiyot qismlar</th>
+                        <th style="padding:15px;">Xarajat</th>
+                        <th style="padding:15px; border-radius:0 8px 8px 0;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${repairs.map(r => `
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                            <td style="padding:15px;">${new Date(r.date).toLocaleDateString()}</td>
+                            <td style="padding:15px; font-weight:bold; color:#38bdf8;">${r.vehicle_name}</td>
+                            <td style="padding:15px; font-size:0.9rem; color:#cbd5e1;">${r.description}</td>
+                            <td style="padding:15px; font-size:0.8rem; color:#94a3b8;">${r.parts_replaced || '-'}</td>
+                            <td style="padding:15px; font-weight:bold; color:#2ecc71;">${(r.total_cost || 0).toLocaleString()} som</td>
+                            <td style="padding:15px;">
+                                <span style="background:${r.status === 'completed' ? '#23863620' : '#f39c1220'}; color:${r.status === 'completed' ? '#238636' : '#f39c12'}; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:bold;">
+                                    ${r.status === 'completed' ? 'Tugallangan' : 'Jarayonda'}
+                                </span>
+                            </td>
+                        </tr>
+                    `).join('')}
+                    ${repairs.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:50px; color:#64748b;">Hali hech qanday ta\'mir qaydi mavjud emas.</td></tr>' : ''}
+                </tbody>
+            </table>
+        `;
+    } catch (e) {
+        SmartUtils.hideLoading ? SmartUtils.hideLoading() : null;
+        console.error("Ta'mir jurnali xatosi:", e);
+        alert("Ta'mir jurnalini ochishda xatolik yuz berdi.");
+    }
+
+    // Form builder helper
+    window.openAddRepairForm = () => {
+        const formHTML = `
+            <div id="repair-form-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.9); display:flex; align-items:center; justify-content:center; z-index:10001;">
+                <div style="background:#1e293b; width:450px; padding:30px; border-radius:15px; border:1px solid #38bdf8; box-shadow:0 0 50px rgba(0,0,0,0.5);">
+                    <h3 style="color:white; margin:0 0 20px 0;">Yangi Ta'mir Qaydi</h3>
+                    <div style="display:flex; flex-direction:column; gap:15px;">
+                        <select id="rep-vehicle" style="background:#0f172a; border:1px solid #334155; color:white; padding:12px; border-radius:8px;">
+                            <option value="">Texnikani tanlang</option>
+                            ${vehicles.map(v => `<option value="${v.id}">${v.name} (${v.number})</option>`).join('')}
+                        </select>
+                        <input type="date" id="rep-date" value="${new Date().toISOString().split('T')[0]}" style="background:#0f172a; border:1px solid #334155; color:white; padding:12px; border-radius:8px;">
+                        <textarea id="rep-desc" placeholder="Ta'mir tavsifi (Nima qilindi?)" style="background:#0f172a; border:1px solid #334155; color:white; padding:12px; border-radius:8px; min-height:80px;"></textarea>
+                        <input type="text" id="rep-parts" placeholder="Almashtirilgan qismlar" style="background:#0f172a; border:1px solid #334155; color:white; padding:12px; border-radius:8px;">
+                        <input type="number" id="rep-cost" placeholder="Umumiy xarajat (so'm)" style="background:#0f172a; border:1px solid #334155; color:white; padding:12px; border-radius:8px;">
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:25px;">
+                        <button onclick="saveRepairLog()" style="flex:1; background:#2ecc71; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">Saqlash</button>
+                        <button onclick="document.getElementById('repair-form-overlay').remove()" style="flex:1; background:#94a3b8; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">Bekor qilish</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('repair-journal-modal').firstElementChild.insertAdjacentHTML('beforeend', formHTML);
+    };
+
+    window.saveRepairLog = async () => {
+        const payload = {
+            vehicle_id: document.getElementById('rep-vehicle').value,
+            date: document.getElementById('rep-date').value,
+            description: document.getElementById('rep-desc').value,
+            parts_replaced: document.getElementById('rep-parts').value,
+            total_cost: parseFloat(document.getElementById('rep-cost').value) || 0,
+            mechanic_name: window.Auth?.currentUser?.name || 'Mechanic'
+        };
+
+        if (!payload.vehicle_id || !payload.description) return alert("Iltimos, barcha maydonlarni to'ldiring!");
+
+        await SmartUtils.fetchAPI('/mechanics/repairs', { method: 'POST', body: JSON.stringify(payload) });
+        showToast("Ta'mir qaydi saqlandi!", "success");
+        openRepairJournal(); // Refresh
+    };
 }
 
-function openSpareParts(bolinmaId) {
-    alert("Ehtiyot Qismlar moduli tez orada ishga tushadi!");
+async function openSpareParts(bolinmaId) {
+    const existing = document.getElementById('spare-parts-modal');
+    if (existing) existing.remove();
+
+    const placeholderHTML = `
+        <div id="spare-parts-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:10020; font-family:'Inter', sans-serif;">
+            <div style="background:#0f172a; width:100%; height:100%; border:none; display:flex; flex-direction:column; overflow:hidden;">
+                <div style="padding:15px 30px; background: rgba(30, 41, 59, 0.8); border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
+                    <h2 style="margin:0; color:white; display:flex; align-items:center; gap:12px; font-size: 1.5rem;">
+                        <i class="fas fa-boxes" style="color:#38bdf8;"></i> Ehtiyot Qismlar Ombori
+                    </h2>
+                    <button onclick="document.getElementById('spare-parts-modal').remove()" style="background:rgba(255,255,255,0.1); color:white; border:none; width:40px; height:40px; border-radius:50%; font-size:1.5rem; cursor:pointer;">&times;</button>
+                </div>
+                <div id="spare-parts-content" style="flex:1; padding:30px; overflow-y:auto; color:white; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #38bdf8;"></i>
+                    <p style="font-size: 1.2rem; color: #94a3b8;">Ombor yuklanmoqda...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', placeholderHTML);
+
+    try {
+        const parts = await SmartUtils.fetchAPI('/mechanics/parts') || [];
+        const contentDiv = document.getElementById('spare-parts-content');
+        if (!contentDiv) return;
+
+        contentDiv.style.display = 'block';
+        contentDiv.style.justifyContent = 'unset';
+        contentDiv.innerHTML = `
+            <div style="display:flex; justify-content:flex-end; margin-bottom:20px;">
+                <button onclick="openAddPartForm()" style="background:#38bdf8; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">
+                    <i class="fas fa-plus"></i> Yangi Partiya
+                </button>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
+                ${parts.map(p => `
+                    <div style="background:#1e293b; padding:20px; border-radius:15px; border:1px solid ${p.quantity <= p.min_limit ? '#ef444450' : '#334155'}; position:relative;">
+                        <div style="display:flex; justify-content:space-between; align-items:start;">
+                            <div>
+                                <h4 style="margin:0; color:white;">${p.name}</h4>
+                                <span style="font-size:0.75rem; color:#64748b;">Artikul: ${p.part_number || '---'}</span>
+                            </div>
+                            <span style="background:${p.quantity <= p.min_limit ? '#ef444420' : '#23863620'}; color:${p.quantity <= p.min_limit ? '#ef4444' : '#238636'}; padding:4px 8px; border-radius:8px; font-size:0.75rem; font-weight:700;">
+                                ${p.quantity} ${p.unit}
+                            </span>
+                        </div>
+                        <div style="margin-top:15px; display:flex; gap:10px; align-items:center;">
+                            <button onclick="updatePartQty('${p.id}', ${p.quantity - 1})" style="background:rgba(255,255,255,0.05); border:1px solid #334155; color:white; width:30px; height:30px; border-radius:5px; cursor:pointer;">-</button>
+                            <div style="flex:1; text-align:center; font-weight:bold; color:white;">O'zgartirish</div>
+                            <button onclick="updatePartQty('${p.id}', ${p.quantity + 1})" style="background:rgba(255,255,255,0.05); border:1px solid #334155; color:white; width:30px; height:30px; border-radius:5px; cursor:pointer;">+</button>
+                        </div>
+                        ${p.quantity <= p.min_limit ? `<div style="margin-top:10px; font-size:0.7rem; color:#ef4444; display:flex; align-items:center; gap:5px;"><i class="fas fa-exclamation-triangle"></i> Miqdor kam qolgan!</div>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (e) {
+        console.error("Spare parts load error:", e);
+    }
+
+    window.updatePartQty = async (id, newQty) => {
+        if (newQty < 0) return;
+        await SmartUtils.fetchAPI(`/mechanics/parts/${id}`, { method: 'PATCH', body: JSON.stringify({ quantity: newQty }) });
+        openSpareParts(); // Refresh
+    };
+
+    window.openAddPartForm = () => {
+        const formHTML = `
+            <div id="part-form-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.9); display:flex; align-items:center; justify-content:center; z-index:10001;">
+                <div style="background:#1e293b; width:400px; padding:30px; border-radius:15px; border:1px solid #38bdf8;">
+                    <h3 style="color:white; margin:0 0 20px 0;">Yangi Ehtiyot Qism</h3>
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <input type="text" id="part-name" placeholder="Nomi" style="background:#0f172a; border:1px solid #334155; color:white; padding:12px; border-radius:8px;">
+                        <input type="text" id="part-num" placeholder="Artikul / Part Number" style="background:#0f172a; border:1px solid #334155; color:white; padding:12px; border-radius:8px;">
+                        <div style="display:flex; gap:10px;">
+                            <input type="number" id="part-qty" placeholder="Miqdor" style="flex:1; background:#0f172a; border:1px solid #334155; color:white; padding:12px; border-radius:8px;">
+                            <select id="part-unit" style="flex:1; background:#0f172a; border:1px solid #334155; color:white; padding:12px; border-radius:8px;">
+                                <option value="dona">Dona</option>
+                                <option value="kg">kg</option>
+                                <option value="litr">Litr</option>
+                            </select>
+                        </div>
+                        <input type="number" id="part-min" placeholder="Minimal chegara (ogohlantirish uchun)" style="background:#0f172a; border:1px solid #334155; color:white; padding:12px; border-radius:8px;">
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:25px;">
+                        <button onclick="saveNewPart()" style="flex:1; background:#38bdf8; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">Qo'shish</button>
+                        <button onclick="document.getElementById('part-form-overlay').remove()" style="flex:1; background:#94a3b8; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">Bekor qilish</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('spare-parts-modal').firstElementChild.insertAdjacentHTML('beforeend', formHTML);
+    };
+
+    window.saveNewPart = async () => {
+        const payload = {
+            name: document.getElementById('part-name').value,
+            part_number: document.getElementById('part-num').value,
+            quantity: parseInt(document.getElementById('part-qty').value) || 0,
+            unit: document.getElementById('part-unit').value,
+            min_limit: parseInt(document.getElementById('part-min').value) || 5,
+            price: 0
+        };
+        if (!payload.name) return alert("Nomini kiriting!");
+        await SmartUtils.fetchAPI('/mechanics/parts', { method: 'POST', body: JSON.stringify(payload) });
+        showToast("Ehtiyot qism qo'shildi!", "success");
+        openSpareParts(); // Refresh
+    };
 }
 
 // Export new functions
@@ -43,48 +263,56 @@ function openAddVehicleModal() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 
-function saveNewVehicle() {
+async function saveNewVehicle() {
     const name = document.getElementById('new-v-name').value;
     const number = document.getElementById('new-v-number').value;
     const garage = document.getElementById('new-v-garage').value;
     const fuel = document.getElementById('new-v-fuel').value;
     const norm = document.getElementById('new-v-norm').value;
+    const bolinma_id = window.viewingSubdivisionId || (window.Auth?.currentUser?.bolinmalar ? window.Auth.currentUser.bolinmalar[0] : 'bolinma1');
 
     if (!name || !number) {
         alert("Iltimos, barcha maydonlarni to'ldiring!");
         return;
     }
 
-    const newVehicle = {
-        id: 'V-' + Date.now(),
+    const payload = {
         name: name,
         number: number,
-        garage: garage,
-        fuelType: fuel,
-        fuelNorm: parseFloat(norm) || 0,
-        status: 'free',
-        startFuel: 0,
-        startSpeedometer: 0
+        garage_number: garage,
+        fuel_type: fuel,
+        fuel_norm: parseFloat(norm) || 0,
+        start_fuel: 0,
+        start_speedometer: 0,
+        bolinma_id: bolinma_id
     };
 
-    window.waybillData.vehicles.push(newVehicle);
-    document.getElementById('add-vehicle-modal').remove();
-
-    // Refresh the view if the dashboard is open
-    if (typeof refreshMechanicsDashboard === 'function') refreshMechanicsDashboard();
-    alert("✅ Yangi texnika muvaffaqiyatli qo'shildi!");
+    try {
+        await SmartUtils.fetchAPI('/mechanics/vehicles', { method: 'POST', body: JSON.stringify(payload) });
+        document.getElementById('add-vehicle-modal').remove();
+        await initMechanicsData();
+        if (typeof refreshMechanicsDashboard === 'function') refreshMechanicsDashboard();
+        showToast("Yangi texnika qo'shildi!", "success");
+    } catch (e) {
+        showToast("Xatolik: " + e.message, "error");
+    }
 }
 
-function deleteVehicle(vehicleId) {
+async function deleteVehicle(vehicleId) {
     if (!confirm("Haqiqatan ham ushbu texnikani ro'yxatdan o'chirmoqchimisiz?")) return;
 
-    window.waybillData.vehicles = window.waybillData.vehicles.filter(v => v.id !== vehicleId);
-    if (typeof refreshMechanicsDashboard === 'function') refreshMechanicsDashboard();
-    alert("❌ Texnika o'chirildi.");
+    try {
+        await SmartUtils.fetchAPI(`/mechanics/vehicles/${vehicleId}`, { method: 'DELETE' });
+        await initMechanicsData();
+        if (typeof refreshMechanicsDashboard === 'function') refreshMechanicsDashboard();
+        showToast("Texnika o'chirildi", "success");
+    } catch (e) {
+        showToast("O'chirishda xatolik: " + e.message, "error");
+    }
 }
 
-function approveOrder(orderId) {
-    const order = window.waybillData.orders.find(o => o.id === orderId);
+async function approveOrder(orderId) {
+    const order = window.waybillData.orders.find(o => o.id == orderId); // Use == for loose match if id is number/string
     if (!order) return;
 
     if (order.status === 'approved') {
@@ -92,37 +320,35 @@ function approveOrder(orderId) {
         return;
     }
 
-    const confirmMsg = `Buyurtmani tasdiqlaysizmi?\n\nBo'linma: ${order.deptName}\nTexnika: ${order.vehicleName}\nVazifa: ${order.task}`;
-    if (confirm(confirmMsg)) {
-        order.status = 'approved';
-
-        // Find vehicle and set to busy
-        const vehicle = window.waybillData.vehicles.find(v => v.id === order.vehicleId);
-        if (vehicle) {
-            vehicle.status = 'busy';
-            vehicle.currentTask = order.task;
+    if (confirm("Buyurtmani tasdiqlaysizmi?")) {
+        try {
+            await SmartUtils.fetchAPI(`/mechanics/orders/${orderId}`, { method: 'PATCH', body: JSON.stringify({ status: 'approved' }) });
+            if (order.vehicleId) {
+                await SmartUtils.fetchAPI(`/mechanics/vehicles/${order.vehicleId}/status`, { method: 'PUT', body: JSON.stringify({ status: 'busy' }) });
+            }
+            await initMechanicsData();
+            if (typeof refreshMechanicsDashboard === 'function') refreshMechanicsDashboard();
+            showToast("Buyurtma tasdiqlandi", "success");
+        } catch (e) {
+            showToast("Xatolik: " + e.message, "error");
         }
-
-        if (typeof refreshMechanicsDashboard === 'function') refreshMechanicsDashboard();
-        alert("✅ Buyurtma tasdiqlandi!");
     }
 }
 
-function rejectOrder(orderId) {
+async function rejectOrder(orderId) {
     if (!confirm("Buyurtmani bekor qilmoqchimisiz?")) return;
 
-    const index = window.waybillData.orders.findIndex(o => o.id === orderId);
-    if (index > -1) {
-        const order = window.waybillData.orders[index];
-        // Free up vehicle
-        const vehicle = window.waybillData.vehicles.find(v => v.id === order.vehicleId);
-        if (vehicle) {
-            vehicle.status = 'free';
-            delete vehicle.currentTask;
+    try {
+        const order = window.waybillData.orders.find(o => o.id == orderId);
+        await SmartUtils.fetchAPI(`/mechanics/orders/${orderId}`, { method: 'DELETE' });
+        if (order && order.vehicleId) {
+            await SmartUtils.fetchAPI(`/mechanics/vehicles/${order.vehicleId}/status`, { method: 'PUT', body: JSON.stringify({ status: 'free' }) });
         }
-        window.waybillData.orders.splice(index, 1);
+        await initMechanicsData();
         if (typeof refreshMechanicsDashboard === 'function') refreshMechanicsDashboard();
-        alert("❌ Buyurtma bekor qilindi.");
+        showToast("Buyurtma bekor qilindi", "success");
+    } catch (e) {
+        showToast("Xatolik: " + e.message, "error");
     }
 }
 
@@ -150,6 +376,8 @@ window.refreshMechanicsDashboard = refreshMechanicsDashboard;
 async function initMechanicsData() {
     try {
         const vehicles = await SmartUtils.fetchAPI('/mechanics/vehicles');
+        const orders = await SmartUtils.fetchAPI('/mechanics/orders');
+
         if (vehicles) {
             window.waybillData.vehicles = vehicles.map(v => ({
                 id: v.id,
@@ -163,8 +391,19 @@ async function initMechanicsData() {
                 status: v.status,
                 departmentId: v.bolinma_id
             }));
-            console.log('✅ Mexanika ma\'lumotlari serverdan yuklandi');
         }
+        if (orders) {
+            window.waybillData.orders = orders.map(o => ({
+                id: o.id,
+                vehicleId: o.vehicle_id,
+                vehicleName: o.vehicle_name,
+                task: o.task,
+                deptName: o.dept_name,
+                date: o.date,
+                status: o.status
+            }));
+        }
+        console.log('✅ Mexanika ma\'lumotlari serverdan yuklandi');
     } catch (e) {
         console.error('Mexanika ma\'lumotlarini yuklashda xatolik:', e);
     }
@@ -216,7 +455,7 @@ function openOrderWindow() {
             height: 90vh; 
             max-width: 1600px; 
             background: #0f172a; 
-            z-index: 2005; 
+            z-index: 10020; 
             border: 1px solid rgba(56, 189, 248, 0.4); 
             box-shadow: 0 0 60px rgba(0,0,0,0.9); 
             border-radius: 20px; 
@@ -366,34 +605,33 @@ function renderVehicleCards() {
     }).join('');
 }
 
-function bookVehicle(vehicleId) {
-    const vehicle = waybillData.vehicles.find(v => v.id === vehicleId);
+async function bookVehicle(vehicleId) {
+    const vehicle = window.waybillData.vehicles.find(v => v.id == vehicleId);
     if (!vehicle || vehicle.status !== 'free') return;
 
-    // Simple Prompt for MVP (Ideally a modal form)
     const task = prompt(`Buyurtma uchun ma'lumot kiritish (${vehicle.name}):\n\nQayerga/Maqsad nima?`);
 
     if (task) {
-        // Update State
-        vehicle.status = 'busy';
-        vehicle.currentTask = task;
-
-        // Log to History
-        waybillData.orders.push({
-            id: Date.now(),
-            vehicleId: vehicleId,
-            vehicleName: vehicle.name,
+        const payload = {
+            vehicle_id: vehicleId,
+            vehicle_name: vehicle.name,
             task: task,
-            deptName: (window.Auth && window.Auth.currentUser ? window.Auth.currentUser.name : "Noma'lum"),
-            date: new Date().toLocaleString(),
-            status: 'pending'
-        });
+            dept_name: (window.Auth?.currentUser?.name || "Noma'lum"),
+            date: new Date().toLocaleString()
+        };
 
-        alert("✅ Buyurtma qabul qilindi!\nTexnika band qilindi.");
+        try {
+            await SmartUtils.fetchAPI('/mechanics/orders', { method: 'POST', body: JSON.stringify(payload) });
+            await SmartUtils.fetchAPI(`/mechanics/vehicles/${vehicleId}/status`, { method: 'PUT', body: JSON.stringify({ status: 'busy' }) });
 
-        // Re-render
-        if (document.getElementById('order-window')) {
-            openOrderWindow(); // Refresh
+            await initMechanicsData();
+            showToast("Buyurtma qabul qilindi!", "success");
+
+            if (document.getElementById('order-window')) {
+                openOrderWindow();
+            }
+        } catch (e) {
+            showToast("Buyurtma berishda xatolik: " + e.message, "error");
         }
     }
 }
@@ -419,14 +657,14 @@ function openWaybillWindow(bolinmaId) {
     }
 
     // Load first available driver/vehicle as default
-    const driver = filteredDrivers.length > 0 ? filteredDrivers[0] : waybillData.drivers[0];
-    const vehicle = filteredVehicles.length > 0 ? filteredVehicles[0] : waybillData.vehicles[0];
+    const driver = filteredDrivers.length > 0 ? filteredDrivers[0] : { id: '---', name: 'Noma\'lum', avatar: '?', category: '', shift: '', phone: '' };
+    const vehicle = filteredVehicles.length > 0 ? filteredVehicles[0] : { id: '---', name: 'Noma\'lum', number: '---', garage: '---', fuelNorm: 0, startFuel: 0, startSpeedometer: 0 };
 
     // Reset current waybill state with new defaults
     currentWaybill.driverId = driver.id;
     currentWaybill.vehicleId = vehicle.id;
-    currentWaybill.startSpeedometer = vehicle.startSpeedometer;
-    currentWaybill.startFuel = vehicle.startFuel;
+    currentWaybill.startSpeedometer = vehicle.startSpeedometer || 0;
+    currentWaybill.startFuel = vehicle.startFuel || 0;
 
     const modalHTML = `
         <div id="waybill-window" class="integration-window" style="
@@ -440,7 +678,7 @@ function openWaybillWindow(bolinmaId) {
             height: 92vh; 
             max-width: 1800px; 
             background: #0f172a; 
-            z-index: 2000; 
+            z-index: 10020; 
             border: 1px solid rgba(56, 189, 248, 0.4); 
             box-shadow: 0 0 60px rgba(0,0,0,0.8); 
             border-radius: 16px; 
@@ -604,7 +842,7 @@ function showTechnicalList(bolinmaId) {
     }
 
     const listHTML = `
-        <div id="tech-list-window" class="integration-window" style="display: block; z-index: 1006;">
+        <div id="tech-list-window" class="integration-window" style="display: block; z-index: 10020;">
             <div class="window-header">
                 <h2><i class="fas fa-truck-monster"></i> Texnikalar Ro'yxati (${bolinmaId || 'Umumiy'})</h2>
                 <div style="display:flex; gap: 10px;">
@@ -813,6 +1051,7 @@ function renderDriverProfile(driver) {
 }
 
 function renderVehicleInfo(vehicle) {
+    if (!vehicle) return `<div style="color:#ef4444; padding:20px; text-align:center;">Texnika ma'lumotlari topilmadi</div>`;
     return `
         <div style="text-align:center; margin-bottom:15px;">
             <i class="fas fa-truck-moving" style="font-size: 3rem; color: #f39c12;"></i>
@@ -821,7 +1060,7 @@ function renderVehicleInfo(vehicle) {
         </div>
         <div class="input-group">
             <label>Garaj raqami</label>
-            <input type="text" class="waybill-input" value="${vehicle.garage}" readonly>
+            <input type="text" class="waybill-input" value="${vehicle.garage || '---'}" readonly>
         </div>
     `;
 }
@@ -984,11 +1223,121 @@ function initWaybillMap() {
     }
 }
 
+async function openFuelReport() {
+    const existing = document.getElementById('fuel-report-modal');
+    if (existing) existing.remove();
+
+    const placeholderModal = `
+        <div id="fuel-report-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:10000; font-family:'Inter', sans-serif;">
+            <div style="background:#0f172a; width:90%; max-width:1100px; height:80vh; border-radius:20px; border:1px solid rgba(239, 68, 68, 0.3); display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 0 50px rgba(0,0,0,0.5);">
+                 <div style="padding:20px 30px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, #1e293b, #0f172a);">
+                    <h2 style="margin:0; color:white; display:flex; align-items:center; gap:12px;">
+                        <i class="fas fa-gas-pump" style="color:#ef4444;"></i> Yoqilg'i Hisoboti (Oylik)
+                    </h2>
+                    <button onclick="document.getElementById('fuel-report-modal').remove()" style="background:rgba(255,255,255,0.1); color:white; border:none; width:40px; height:40px; border-radius:50%; font-size:1.5rem; cursor:pointer;">&times;</button>
+                </div>
+                <div id="fuel-report-content" style="flex:1; padding:30px; overflow-y:auto; color:white; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #ef4444;"></i>
+                    <p style="font-size: 1.2rem; color: #94a3b8;">Hisobot tayyorlanmoqda...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', placeholderModal);
+
+    const waybills = await SmartUtils.fetchAPI('/mechanics/waybills') || [];
+    const vehicles = await SmartUtils.fetchAPI('/mechanics/vehicles') || [];
+
+    // Group and Aggregate by vehicle
+    const stats = {};
+    waybills.forEach(w => {
+        if (!stats[w.vehicle_id]) {
+            stats[w.vehicle_id] = {
+                name: w.vehicle_name,
+                number: w.vehicle_number,
+                totalKm: 0,
+                totalFuelFilled: 0,
+                actualCons: 0,
+                normCons: 0
+            };
+        }
+        const s = stats[w.vehicle_id];
+        const dist = w.end_km - w.start_km;
+        if (dist > 0) {
+            s.totalKm += dist;
+            s.totalFuelFilled += w.fuel_filled;
+            // Get norm from vehicles list
+            const vInfo = vehicles.find(v => v.id === w.vehicle_id);
+            const norm = vInfo ? vInfo.fuel_norm : 0;
+            s.normCons += (dist / 100) * norm;
+            s.actualCons += (w.start_fuel + w.fuel_filled) - w.fuel_end;
+        }
+    });
+
+    const contentDiv = document.getElementById('fuel-report-content');
+    if (!contentDiv) return;
+
+    contentDiv.style.display = 'block';
+    contentDiv.style.justifyContent = 'unset';
+    contentDiv.innerHTML = `
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="background:#1e293b; text-align:left; color:#94a3b8; font-size:0.9rem;">
+                    <th style="padding:15px;">Texnika</th>
+                    <th style="padding:15px;">Masofa (km)</th>
+                    <th style="padding:15px;">Quyildi (L)</th>
+                    <th style="padding:15px;">Me'yor (L)</th>
+                    <th style="padding:15px;">Fakt (L)</th>
+                    <th style="padding:15px;">Farq (L)</th>
+                    <th style="padding:15px;">Natija</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${Object.values(stats).map(s => {
+        const diff = s.normCons - s.actualCons;
+        const isGreen = diff >= 0;
+        return `
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <td style="padding:15px;">
+                            <div style="font-weight:bold;">${s.name}</div>
+                            <div style="font-size:0.75rem; color:#64748b;">${s.number}</div>
+                        </td>
+                        <td style="padding:15px;">${s.totalKm.toFixed(1)}</td>
+                        <td style="padding:15px;">${s.totalFuelFilled.toFixed(1)}</td>
+                        <td style="padding:15px; color:#cbd5e1;">${s.normCons.toFixed(1)}</td>
+                        <td style="padding:15px; font-weight:bold; color:${isGreen ? '#2ecc71' : '#ef4444'};">${s.actualCons.toFixed(1)}</td>
+                        <td style="padding:15px; color:${isGreen ? '#2ecc71' : '#ef4444'};">${(isGreen ? '+' : '') + diff.toFixed(1)}</td>
+                        <td style="padding:15px;">
+                            <span style="background:${isGreen ? '#23863620' : '#ef444420'}; color:${isGreen ? '#2ecc71' : '#ef4444'}; padding:5px 10px; border-radius:12px; font-size:0.75rem; font-weight:bold;">
+                                ${isGreen ? 'TEJAMKOR' : 'ORTIQCHA SARF'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+    }).join('')}
+                ${Object.keys(stats).length === 0 ? '<tr><td colspan="7" style="text-align:center; padding:50px; color:#64748b;">Hisobot uchun ma\'lumotlar yetarli emas.</td></tr>' : ''}
+            </tbody>
+        </table>
+    `;
+}
+
+window.openFuelReport = openFuelReport;
+
 // Make functions globally accessible
 window.injectMexanikaButtons = injectMexanikaButtons;
 window.openWaybillWindow = openWaybillWindow;
+window.openOrderWindow = openOrderWindow;
+window.showTechnicalList = showTechnicalList;
+window.renderVehicleCards = renderVehicleCards;
+window.bookVehicle = bookVehicle;
+window.handleTechExcelUpload = handleTechExcelUpload;
+window.renderTechListRows = renderTechListRows;
 window.updateDriver = updateDriver;
 window.updateVehicle = updateVehicle;
 window.calcWaybill = calcWaybill;
 window.saveWaybill = saveWaybill;
 window.waybillData = waybillData;
+window.openRepairJournal = openRepairJournal;
+window.openSpareParts = openSpareParts;
+window.openFuelReport = openFuelReport;
+

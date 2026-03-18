@@ -1,0 +1,260 @@
+.department-window,
+.integration-window {
+    display: none;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: var(--bg-obsidian) !important;
+    backdrop-filter: var(--glass-blur) !important;
+    z-index: 10005 !important;
+    border: none !important;
+    overflow: hidden !important;
+    opacity: 0;
+    transform: none !important;
+    transition: var(--transition-premium);
+}
+
+.department-window.active,
+.integration-window.active {
+    display: flex !important;
+    flex-direction: column !important;
+    opacity: 1 !important;
+}
+
+.window-header {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    padding: 2rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1.5px solid var(--glass-border);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.window-header h2 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.window-header h2 i {
+    color: var(--accent-gold);
+    background: none;
+    -webkit-text-fill-color: initial;
+    filter: drop-shadow(0 0 12px var(--accent-gold));
+}
+
+.close-window {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid var(--glass-border);
+    color: var(--accent-gold);
+    cursor: pointer;
+    font-size: 1.8rem;
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-premium);
+}
+
+.close-window:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.4);
+}
+
+.window-content {
+    flex: 1;
+    padding: 3rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    color: var(--text-silver);
+}
+
+/* File Management System */
+.file-management {
+    background: var(--bg-card);
+    border-radius: 24px;
+    padding: 2.5rem;
+    margin-bottom: 35px;
+    border: 1.5px solid var(--gold-border);
+    backdrop-filter: blur(25px);
+    box-shadow: var(--glass-shadow);
+}
+
+.file-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.control-btn {
+    padding: 14px 30px;
+    border-radius: 12px;
+    border: 1px solid var(--accent-gold);
+    cursor: pointer;
+    font-weight: 800;
+    transition: var(--transition-premium);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #000;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1.2px;
+}
+
+.control-btn.blue {
+    background: var(--gold-gradient);
+}
+
+.control-btn:not(.orange):not(.blue):not(.green):not(.red) {
+    background: var(--gold-gradient);
+}
+
+.control-btn.green {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border-color: #10b981;
+}
+
+.control-btn.red {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border-color: #ef4444;
+}
+
+.control-btn.orange {
+    background: var(--gold-gradient);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
+    color: #000;
+}
+
+.control-btn:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 12px 30px rgba(212, 175, 55, 0.4);
+    filter: brightness(1.1);
+}
+
+/* =====================================================
+   GLOBAL TABLE 100% FIT — Barcha jadvallar ekranga moslashsin
+   ===================================================== */
+
+/* Jadval konteynerlari to'liq kenglik */
+.integration-window .window-content,
+.department-window .window-content {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Barcha jadvallar 100% kenglik, fixed layout */
+.integration-window table,
+.department-window table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+}
+
+/* Jadval th elementlari — overflow control */
+.integration-window table th,
+.department-window table th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+/* Jadval td elementlari — matn uzun bo'lsa bo'linadi */
+.integration-window table td,
+.department-window table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
+}
+
+/* overflow-x: auto qo'yilgan div lar to'liq kenglik bo'lsin */
+.integration-window [style*="overflow-x"],
+.department-window [style*="overflow-x"] {
+    width: 100% !important;
+    overflow-x: hidden !important;
+}
+
+/* Jadval ichidagi konteyner divlar to'liq kenglik */
+.integration-window .window-content>div,
+.department-window .window-content>div {
+    width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+    align-self: stretch !important;
+}
+
+/* Tab content va jadval wrapper — to'liq kenglik */
+.integration-window .window-content div[id*="tab-content"],
+.integration-window .window-content div[id*="table"],
+.department-window .window-content div[id*="tab-content"],
+.department-window .window-content div[id*="table"] {
+    width: 100% !important;
+    min-width: 100% !important;
+}
+
+/* ===== M-29 DALOLATNOMA OVERRIDES ===== */
+/* M-29 A4 hujjat ichidagi elementlar global qoidalardan himoya qilinadi */
+
+/* M-29 printable container — A4 o'lchamida qolsin, ekranga cho'zilmasin */
+#m29-printable-area {
+    width: 95% !important;
+    max-width: 1400px !important;
+    min-width: auto !important;
+    table-layout: auto !important;
+}
+
+/* M-29 ichidagi jadval fixed emas, auto layout bo'lsin */
+#m29-printable-area table {
+    table-layout: auto !important;
+    width: 100% !important;
+}
+
+/* M-29 ichidagi th va td — normal overflow */
+#m29-printable-area table th,
+#m29-printable-area table td {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+}
+
+/* M-29 ichidagi divlar — A4 formatini saqlash */
+#m29-printable-area>div {
+    width: auto !important;
+    min-width: auto !important;
+}
+
+/* M-29 materiallar modal — inputlar interaktiv bo'lsin */
+#materials-modal .window-content {
+    overflow-y: auto !important;
+    pointer-events: auto !important;
+}
+
+#materials-modal .window-content * {
+    pointer-events: auto !important;
+}

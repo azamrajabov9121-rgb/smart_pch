@@ -148,7 +148,6 @@ const BOLINMA_COLORS = [
 
 // Stansiya turi ikonasi
 function getStationIcon(type, color) {
-    const shape = type === 'tunnel' ? '⬛' : type === 'разъезд' ? '◆' : '●';
     return L.divIcon({
         className: '',
         html: `<div style="
@@ -162,6 +161,36 @@ function getStationIcon(type, color) {
         "></div>`,
         iconSize: [type === 'станция' ? 16 : 11, type === 'станция' ? 16 : 11],
         iconAnchor: [type === 'станция' ? 8 : 5, type === 'станция' ? 8 : 5],
+    });
+}
+
+// Sun'iy inshoot ikonasi
+function getStructureIcon(type) {
+    const iconMap = {
+        'bridge': { icon: 'fa-bridge', color: '#10b981' },
+        'tunnel': { icon: 'fa-archway', color: '#60a5fa' },
+        'culvert': { icon: 'fa-water', color: '#f59e0b' },
+        'pedestrian_bridge': { icon: 'fa-walking', color: '#9b59b6' }
+    };
+    const info = iconMap[type] || { icon: 'fa-landmark', color: '#ffffff' };
+
+    return L.divIcon({
+        className: '',
+        html: `<div style="
+            background: rgba(15, 23, 42, 0.9);
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 1.5px solid ${info.color};
+            color: ${info.color};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            box-shadow: 0 0 10px ${info.color}55;
+        "><i class="fas ${info.icon}"></i></div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
     });
 }
 
@@ -351,13 +380,17 @@ function initPCHLeafletMap(masofa, headerColor) {
         }
     }
 
+    // ---- Layer Groups ----
+    const stationLayer = L.layerGroup().addTo(map);
+    const structureLayer = L.layerGroup().addTo(map);
+
     // ---- Markerlar ----
     const markers = [];
     stations.forEach((st, idx) => {
         const color = bolinmaColorMap[st.bolinma] || '#00c6ff';
         const icon = getStationIcon(st.type, color);
 
-        const marker = L.marker([st.lat, st.lng], { icon }).addTo(map);
+        const marker = L.marker([st.lat, st.lng], { icon }).addTo(stationLayer);
 
         // Marker bosilganda
         marker.on('click', () => showStationInfo(st, color, masofa));
@@ -375,6 +408,50 @@ function initPCHLeafletMap(masofa, headerColor) {
 
         markers.push({ station: st, marker, color });
     });
+
+    // ---- Sun'iy inshootlarni joylashtirish ----
+    if (window.artificialStructuresData) {
+        window.artificialStructuresData.forEach(s => {
+            if (s.lat && s.lng) {
+                const sIcon = getStructureIcon(s.type);
+                const sMarker = L.marker([s.lat, s.lng], { icon: sIcon }).addTo(structureLayer);
+
+                sMarker.bindTooltip(`
+                    <div style="color: #ffd700; font-weight: bold; margin-bottom: 3px;">${s.name}</div>
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); display: flex; flex-direction: column;">
+                        <span>KM: ${s.km}</span>
+                        <span style="color: #10b981;">Xolati: ${s.status === 'good' ? 'SOZ' : 'NAZORATDA'}</span>
+                    </div>
+                `, {
+                    direction: 'top',
+                    offset: [0, -12],
+                    className: 'pch-map-tooltip'
+                });
+
+                sMarker.on('click', () => {
+                    const color = s.type === 'bridge' ? '#10b981' : (s.type === 'tunnel' ? '#60a5fa' : '#f59e0b');
+                    showStationInfo({
+                        name: s.name,
+                        km: s.km,
+                        type: s.type,
+                        bolinma: parseInt(s.bolinma) || 0,
+                        lat: s.lat,
+                        lng: s.lng,
+                        isStructure: true,
+                        length: s.length,
+                        status: s.status
+                    }, color, masofa);
+                });
+            }
+        });
+    }
+
+    // ---- Layer Control ----
+    const overlays = {
+        "<i class='fas fa-train' style='color:#00c6ff;'></i> Stansiyalar": stationLayer,
+        "<i class='fas fa-bridge' style='color:#10b981;'></i> Sun'iy inshootlar": structureLayer
+    };
+    L.control.layers(null, overlays, { collapsed: false, position: 'topright' }).addTo(map);
 
     // ---- Km label (har 5-stansiyada) ----
     stations.forEach((st, i) => {
@@ -422,11 +499,33 @@ function showStationInfo(st, color, masofa) {
     const stationTypes = {
         'станция': { label: 'Stansiya', icon: 'fa-train' },
         'разъезд': { label: 'Razezd / Blok-post', icon: 'fa-code-branch' },
-        'tunnel': { label: 'Tunnel', icon: 'fa-toll' },
+        'tunnel': { label: 'Tunnel', icon: 'fa-archway' },
+        'bridge': { label: 'Ko\'prik', icon: 'fa-bridge' },
+        'culvert': { label: 'Suv o\'tkazgich', icon: 'fa-water' },
+        'pedestrian_bridge': { label: 'Piyodalar ko\'prigi', icon: 'fa-walking' }
     };
     const typeInfo = stationTypes[st.type] || { label: st.type, icon: 'fa-circle' };
 
     panel.style.display = 'block';
+
+    let detailsHTML = '';
+    if (st.isStructure) {
+        detailsHTML = `
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <div style="flex: 1; background: rgba(16, 185, 129, 0.1); border-radius: 8px; padding: 10px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                    <div style="color: rgba(255,255,255,0.4); font-size: 0.7rem; margin-bottom: 3px;">Uzunligi</div>
+                    <div style="color: #10b981; font-weight: 700; font-size: 1rem;">${st.length || 'Noma\'lum'}</div>
+                </div>
+                <div style="flex: 1; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 10px;">
+                    <div style="color: rgba(255,255,255,0.4); font-size: 0.7rem; margin-bottom: 3px;">Xolati</div>
+                    <div style="color: ${st.status === 'good' ? '#10b981' : '#f59e0b'}; font-weight: 700; font-size: 0.9rem;">
+                        ${st.status === 'good' ? 'SOZ' : (st.status === 'repair' ? 'TA\'MIRDA' : 'NAZORATDA')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     panel.innerHTML = `
         <div style="padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
             display: flex; align-items: center; gap: 10px;">
@@ -447,13 +546,14 @@ function showStationInfo(st, color, masofa) {
             <div style="display: flex; gap: 8px;">
                 <div style="flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px;">
                     <div style="color: rgba(255,255,255,0.4); font-size: 0.7rem; margin-bottom: 3px;">Kilometr</div>
-                    <div style="color: white; font-weight: 700; font-size: 1.1rem; font-family: monospace;">${st.km} km</div>
+                    <div style="color: white; font-weight: 700; font-size: 1.1rem; font-family: monospace;">${st.km} ${typeof st.km === 'number' ? 'km' : ''}</div>
                 </div>
                 <div style="flex: 1; background: ${color}18; border-radius: 8px; padding: 10px; border: 1px solid ${color}33;">
                     <div style="color: rgba(255,255,255,0.4); font-size: 0.7rem; margin-bottom: 3px;">Bo'linma</div>
                     <div style="color: ${color}; font-weight: 700; font-size: 0.9rem;">${bolinmaName}</div>
                 </div>
             </div>
+            ${detailsHTML}
             <div style="background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px;">
                 <div style="color: rgba(255,255,255,0.4); font-size: 0.7rem; margin-bottom: 3px;">Koordinatalar</div>
                 <div style="color: rgba(255,255,255,0.7); font-size: 0.8rem; font-family: monospace;">

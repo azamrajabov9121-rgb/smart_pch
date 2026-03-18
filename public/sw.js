@@ -1,21 +1,35 @@
-const CACHE_NAME = 'smart-pch-v4';
+const CACHE_NAME = 'smart-pch-v20260316.1';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
+    // CSS fayllari
     '/css/style.css',
+    '/css/base.css',
+    '/css/layout.css',
+    '/css/components.css',
+    '/css/dashboard.css',
+    '/css/windows.css',
+    '/css/responsive.css',
     '/css/ai-assistant.css',
     '/css/timesheet.css',
     '/css/pu74.css',
     '/css/mexanika.css',
     '/css/landing.css',
+    // JS fayllari
     '/js/config.js',
     '/js/masofaConfig.js',
     '/js/data.js',
     '/js/auth.js',
     '/js/utils.js',
+    '/js/ui-manager.js',
+    '/js/search-engine.js',
     '/js/script.js',
+    '/js/admin-panel.js',
     '/js/timesheet.js',
     '/js/attendance.js',
+    '/js/dispatcher.js',
+    '/js/map-logic.js',
+    '/js/weather.js',
     '/js/hr.js',
     '/js/safety.js',
     '/js/tnu19.js',
@@ -26,7 +40,11 @@ const ASSETS_TO_CACHE = [
     '/js/metrology.js',
     '/js/defectoscope.js',
     '/js/pu74.js',
+    '/js/pu28.js',
+    '/js/pu29.js',
     '/js/pu80.js',
+    '/js/track-defect.js',
+    '/js/rahbar-visa.js',
     '/js/technical_maintenance.js',
     '/js/technical_training.js',
     '/js/fileApproval.js',
@@ -35,6 +53,11 @@ const ASSETS_TO_CACHE = [
     '/js/ai-assistant.js',
     '/js/pchMap.js',
     '/js/landing.js',
+    '/js/e-imzo-client.js',
+    '/js/lib/e-imzo.js',
+    '/js/face-service.js',
+    '/js/lib/face-api.min.js',
+    // Resurslar
     '/img/logo.png',
     '/manifest.json'
 ];
@@ -45,23 +68,36 @@ self.addEventListener('install', event => {
         caches.open(CACHE_NAME)
             .then(cache => {
                 console.log('[SW] Kesh ochildi va resurslar saqlanmoqda...');
-                return cache.addAll(ASSETS_TO_CACHE);
+                // Har bir faylni alohida qo'shish (bitta xato boshqalarni to'xtatmasin)
+                return Promise.allSettled(
+                    ASSETS_TO_CACHE.map(url =>
+                        cache.add(url).catch(err => {
+                            console.warn(`[SW] Keshga qo'shib bo'lmadi: ${url}`, err.message);
+                        })
+                    )
+                );
             })
-            .then(() => self.skipWaiting()) // Yangi SW ni darhol faollashtirish
+            .then(() => self.skipWaiting())
     );
 });
 
-// Fetch Event — Network First strategiya (API uchun), Cache First (static uchun)
+// Fetch Event — NETWORK FIRST strategiyasi
+// Avval serverdan olishga urinadi, muvaffaqiyatsiz bo'lsa keshdan oladi
+// Bu sahifaning DOIMO yangi versiyasini ko'rsatishni ta'minlaydi
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
 
-    // API so'rovlari — har doim network dan olish
+    // 1. API so'rovlari — Faqat tarmoqdan (Network Only)
     if (url.pathname.startsWith('/api/')) {
         event.respondWith(
             fetch(event.request)
                 .catch(() => {
                     return new Response(
-                        JSON.stringify({ message: 'Internet aloqasi yo\'q. Offline rejim.' }),
+                        JSON.stringify({
+                            error: true,
+                            message: 'Internet aloqasi yo\'q. Ma\'lumotlar yuklanmadi.',
+                            isOffline: true
+                        }),
                         { headers: { 'Content-Type': 'application/json' }, status: 503 }
                     );
                 })
@@ -69,34 +105,27 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // Statik fayllar — Cache First, keyin Network
+    // 2. Socket.io so'rovlarini o'tkazib yuborish (keshga saqlash kerak emas)
+    if (url.pathname.startsWith('/socket.io')) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
+    // 3. Statik aktivlar — STALE-WHILE-REVALIDATE (Eski kesh ko'rsatiladi, fonda yangilanadi)
     event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                if (response) {
-                    // Keshda mavjud — qaytarish, va orqa fonda yangilash
-                    fetch(event.request).then(freshResponse => {
-                        if (freshResponse && freshResponse.status === 200) {
-                            caches.open(CACHE_NAME).then(cache => {
-                                cache.put(event.request, freshResponse);
-                            });
-                        }
-                    }).catch(() => { });
-                    return response;
-                }
-                // Keshda yo'q — networkdan olish
-                return fetch(event.request).then(response => {
-                    if (!response || response.status !== 200) {
-                        return response;
-                    }
-                    // Javobni keshga ham saqlash
-                    const responseClone = response.clone();
+        caches.match(event.request).then(cachedResponse => {
+            const fetchPromise = fetch(event.request).then(networkResponse => {
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseToCache = networkResponse.clone();
                     caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, responseClone);
+                        cache.put(event.request, responseToCache);
                     });
-                    return response;
-                });
-            })
+                }
+                return networkResponse;
+            }).catch(() => null);
+
+            return cachedResponse || fetchPromise;
+        })
     );
 });
 
@@ -112,11 +141,11 @@ self.addEventListener('activate', event => {
                         return caches.delete(cacheName);
                     })
             );
-        }).then(() => self.clients.claim()) // Barcha ochiq sahifalarni boshqarish
+        }).then(() => self.clients.claim())
     );
 });
 
-// Offline bildirishnoma
+// Xabar tinglash
 self.addEventListener('message', event => {
     if (event.data === 'skipWaiting') {
         self.skipWaiting();

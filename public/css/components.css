@@ -1,0 +1,187 @@
+/* Glassmorphism Generic Card */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--border-radius);
+    padding: 20px;
+}
+
+/* Generic Button Styles */
+.btn {
+    padding: 14px 32px;
+    border-radius: 12px;
+    border: 1px solid var(--accent-gold);
+    cursor: pointer;
+    font-weight: 800;
+    transition: var(--transition-premium);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #000;
+    text-transform: uppercase;
+    font-size: 0.95rem;
+    letter-spacing: 1.5px;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary {
+    background: var(--gold-gradient);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.2);
+}
+
+.btn-secondary {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1.5px solid var(--glass-border);
+    color: var(--accent-gold);
+    backdrop-filter: blur(15px);
+}
+
+.btn:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(212, 175, 55, 0.4);
+    filter: brightness(1.1);
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.toast {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1.5px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 22px 32px;
+    color: var(--accent-gold);
+    font-weight: 700;
+    box-shadow: var(--glass-shadow), 0 0 30px rgba(212, 175, 55, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 400px;
+    animation: toast-incoming 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.toast-title {
+    font-weight: 800;
+    margin-bottom: 6px;
+    color: var(--accent-gold);
+    font-size: 1.1rem;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.toast i {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 0 8px currentColor);
+}
+
+.toast-success i {
+    color: #10b981;
+}
+
+.toast-error i {
+    color: #ef4444;
+}
+
+.toast-warning i {
+    color: #f59e0b;
+}
+
+.toast-info i {
+    color: #d4af37;
+}
+
+/* Global Search Component Dropdown */
+.search-results-dropdown {
+    position: absolute;
+    top: calc(100% + 15px);
+    left: 0;
+    right: 0;
+    background: rgba(10, 20, 40, 0.95);
+    backdrop-filter: blur(30px);
+    border: 1.5px solid var(--glass-border);
+    border-radius: 24px;
+    max-height: 500px;
+    overflow-y: auto;
+    display: none;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+    z-index: 1001;
+}
+
+.search-results-dropdown.active {
+    display: block;
+    animation: fadeInDown 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.search-item {
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    cursor: pointer;
+    transition: var(--transition-premium);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--accent-gold);
+    font-weight: 700;
+}
+
+.search-item:hover {
+    background: rgba(212, 175, 55, 0.1);
+    transform: translateX(12px);
+    border-color: var(--accent-gold);
+}
+
+.search-item p {
+    color: var(--text-silver);
+    font-size: 0.88rem;
+    margin-top: 6px;
+    font-weight: 500;
+    opacity: 0.7;
+}
+
+/* Input Styles - REFINED */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="email"],
+select,
+textarea {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1.5px solid rgba(212, 175, 55, 0.2) !important;
+    border-radius: 12px;
+    color: var(--text-silver) !important;
+    padding: 14px 20px;
+    outline: none;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    transition: var(--transition-premium);
+    width: 100%;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--accent-gold) !important;
+    background: rgba(15, 23, 42, 0.9) !important;
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.15) !important;
+    transform: translateY(-2px);
+}
+
+::placeholder {
+    color: rgba(226, 232, 240, 0.3);
+}

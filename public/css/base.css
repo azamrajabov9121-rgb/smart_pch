@@ -1,0 +1,138 @@
+:root {
+    /* Primary Colors - Titanium Grey & Premium Gold */
+    --primary: #94a3b8;
+    /* Slate Blue/Grey Metallic */
+    --primary-dark: #1e293b;
+    /* Dark Slate / Obsidian */
+    --primary-light: #cbd5e1;
+    /* Light Steel Metallic */
+
+    --secondary: #0f172a;
+    /* Deep Obsidian */
+    --accent: #d4af37;
+    /* Premium Gold */
+    --accent-gold: #ffd700;
+    /* Pure Gold */
+    --neon-gold: #f59e0b;
+    /* Amber Gold Glow */
+
+    /* Semantic Colors */
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+
+    /* Metallic Glassmorphism */
+    --glass-bg: rgba(15, 23, 42, 0.75);
+    /* Darker Obsidian Glass */
+    --glass-border: rgba(212, 175, 55, 0.3);
+    --glass-blur: blur(20px);
+    --glass-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
+
+    --gold-gradient: linear-gradient(135deg, #d4af37 0%, #ffd700 50%, #b4941f 100%);
+    --metallic-gradient: linear-gradient(135deg, #334155 0%, #475569 50%, #1e293b 100%);
+
+    --shadow-neon: 0 0 25px rgba(212, 175, 55, 0.3);
+    --gold-glow: 0 0 20px rgba(212, 175, 55, 0.4);
+
+    /* Text & Hierarchy */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-gold: #ffd700;
+    --border-radius: 16px;
+    --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-premium: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: #020617;
+    /* Deep Slate / Obsidian */
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    /* Removed redundant fixed background image that might fail */
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 15% 15%, rgba(212, 175, 55, 0.05) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(212, 175, 55, 0.05) 0%, transparent 45%);
+    backdrop-filter: blur(5px);
+    z-index: -1;
+}
+
+/* Scrollbar Design */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--neon-blue), var(--neon-cyan));
+    border-radius: 10px;
+}
+
+/* Common Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

@@ -9,7 +9,7 @@ const SmartUtils = {
      * Automatically handles Base URL, JWT Token, and JSON conversion
      */
     fetchAPI: async function (endpoint, options = {}) {
-        const baseUrl = window.CONFIG?.API_URL || 'http://localhost:5000/api';
+        const baseUrl = window.CONFIG?.API_URL || 'http://localhost:5050/api';
         const token = localStorage.getItem('jwtToken');
 
         const headers = {
@@ -25,13 +25,10 @@ const SmartUtils = {
             });
 
             if (response.status === 401) {
-                // Token expired or invalid - faqat token mavjud bo'lsa logout qilamiz
-                // Aks holda (login qilinmagan holat) cheksiz reload loop yuzaga keladi
-                const existingToken = localStorage.getItem('jwtToken');
-                if (existingToken) {
-                    console.warn('Token muddati tugagan yoki noto\'g\'ri. Tizimdan chiqilmoqda...');
-                    window.Auth?.logout?.();
-                }
+                // Token expired or invalid
+                console.warn('API Error 401: Token muddati tugagan yoki ruxsat etilmagan. Sahifani avtomatik qisqarmaymiz (reload loop oldini olish uchun).');
+                // Tizimdan majburiy chiqish (logout) va saqlangan parolni o'chirishni vaqtincha to'xtatamiz.
+                // window.Auth?.logout?.();
                 return null;
             }
 
@@ -107,7 +104,7 @@ const SmartUtils = {
     },
 
     /**
-     * Data Persistence Wrapper (Electron FS + LocalStorage Fallback)
+     * Data Persistence Wrapper (LocalStorage with Server Sync)
      */
     save: async function (key, data) {
         try {
@@ -120,10 +117,6 @@ const SmartUtils = {
                 }).catch(e => console.warn('Server storage failed, falling back to local', e));
             }
 
-            // 2. Electron Fallback
-            if (window.electron && window.electron.saveData) {
-                await window.electron.saveData(`${key}.json`, data);
-            }
 
             // 3. LocalStorage Fallback
             localStorage.setItem(key, JSON.stringify(data));
@@ -145,11 +138,6 @@ const SmartUtils = {
                 if (serverData) return serverData;
             }
 
-            // 2. Electron Fallback
-            if (window.electron && window.electron.loadData) {
-                const fileData = await window.electron.loadData(`${key}.json`);
-                if (fileData) return fileData;
-            }
 
             // 3. LocalStorage Fallback
             const data = localStorage.getItem(key);
@@ -269,7 +257,7 @@ const SmartUtils = {
                     <div class="signature">
                         <p>Mas'ul shaxs:</p>
                         <div class="sign-line"></div>
-                        <p>${currentUser ? currentUser.name : '________________'}</p>
+                        <p>${window.Auth?.currentUser ? window.Auth.currentUser.name : '________________'}</p>
                     </div>
                     <div class="signature">
                         <p>Sana:</p>
@@ -432,9 +420,141 @@ SmartUtils.setupGlobalErrorHandler = function () {
     // Unhandled Promise rejections
     window.addEventListener('unhandledrejection', (event) => {
         console.error('Unhandled Promise Rejection:', event.reason);
-        const msg = event.reason?.message || 'Noma\'lum xatolik';
+        const msg = event.reason?.message || '';
         if (msg.includes('Failed to fetch')) {
-            SmartUtils.showToast('Server bilan aloqa yo\'q. Internet yoki serverni tekshiring.', 'error');
+            const now = Date.now();
+            if (window._lastFetchError && (now - window._lastFetchError < 10000)) return;
+            window._lastFetchError = now;
+
+            if (typeof SmartUtils !== 'undefined' && SmartUtils.showToast) {
+                SmartUtils.showToast('Server bilan aloqa yo\'q. Internet yoki serverni tekshiring.', 'error');
+            }
         }
     });
 };
+/**
+ * Server Watchdog - "Always Online" monitoring
+ */
+SmartUtils.startServerWatchdog = function () {
+    console.log('📡 Server Monitoring faollashdi...');
+
+    let isOffline = false;
+    let offlineOverlay = null;
+    let failureCount = 0;
+
+    function showOfflineMessage() {
+        if (offlineOverlay) return;
+        offlineOverlay = document.createElement('div');
+        offlineOverlay.id = 'server-offline-overlay';
+        offlineOverlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2000000; color: white; text-align: center; font-family: 'Inter', sans-serif;
+            transition: all 0.5s ease; opacity: 0;
+        `;
+        offlineOverlay.innerHTML = `
+            <div style="transform: translateY(20px); transition: 0.5s ease;" id="offline-inner">
+                <div class="server-error-icon" style="font-size: 4rem; color: #ef4444; margin-bottom: 20px;">
+                    <i class="fas fa-server"></i>
+                    <i class="fas fa-unlink" style="font-size: 1.5rem; position: absolute; transform: translate(10px, 20px);"></i>
+                </div>
+                <h2 style="margin: 0 0 10px; font-weight: 800;">Server bilan aloqa uzildi</h2>
+                <p style="color: rgba(255,255,255,0.6); margin-bottom: 25px;">Qayta ulanish kutilmoqda... (Urinish: <span id="fail-counter">0</span>/10)</p>
+                <div class="connection-dots" style="display: flex; justify-content: center; gap: 8px;">
+                    <div class="dot" style="width: 10px; height: 10px; background: #00c6ff; border-radius: 50%; animation: pulse 1s infinite 0s;"></div>
+                    <div class="dot" style="width: 10px; height: 10px; background: #00c6ff; border-radius: 50%; animation: pulse 1s infinite 0.2s;"></div>
+                    <div class="dot" style="width: 10px; height: 10px; background: #00c6ff; border-radius: 50%; animation: pulse 1s infinite 0.4s;"></div>
+                </div>
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+                    <button id="retry-health-btn" style="padding: 10px 20px; background: #00c6ff; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold;">
+                        <i class="fas fa-play"></i> Hozir urinib ko'rish
+                    </button>
+                    <button onclick="window.location.reload()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer; font-size: 0.8rem;">
+                        <i class="fas fa-sync"></i> Sahifani yangilash
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(offlineOverlay);
+
+        const retryBtn = document.getElementById('retry-health-btn');
+        if (retryBtn) {
+            retryBtn.onclick = () => {
+                retryBtn.disabled = true;
+                retryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tekshirilmoqda...';
+                checkHealth().finally(() => {
+                    if (retryBtn) {
+                        retryBtn.disabled = false;
+                        retryBtn.innerHTML = '<i class="fas fa-play"></i> Hozir urinib ko\'rish';
+                    }
+                });
+            };
+        }
+
+        setTimeout(() => {
+            offlineOverlay.style.opacity = '1';
+            const inner = document.getElementById('offline-inner');
+            if (inner) inner.style.transform = 'translateY(0)';
+        }, 10);
+    }
+
+    function hideOfflineMessage() {
+        if (offlineOverlay) {
+            offlineOverlay.style.opacity = '0';
+            setTimeout(() => {
+                if (offlineOverlay) {
+                    offlineOverlay.remove();
+                    offlineOverlay = null;
+                }
+            }, 500);
+        }
+    }
+
+    window._manualHealthCheck = checkHealth;
+
+    async function checkHealth() {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+            const response = await fetch(`${window.CONFIG?.API_URL || '/api'}/health`, {
+                signal: controller.signal,
+                cache: 'no-store'
+            });
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+                failureCount = 0;
+                if (isOffline) {
+                    hideOfflineMessage();
+                    SmartUtils.showToast('Server bilan aloqa tiklandi!', 'success');
+                    isOffline = false;
+                    // Agar aloqa uzilganda ma'lumotlar o'zgargan bo'lishi mumkin bo'lsa,
+                    // statik yangilash o'rniga bazi qismlarni yangilash mumkin, lekin reload qilmaymiz
+                }
+            } else {
+                throw new Error('Server returned error');
+            }
+        } catch (err) {
+            failureCount++;
+            console.warn(`[Watchdog] Server aloqasi uzildi (${failureCount}/10):`, err.message);
+
+            const counterEl = document.getElementById('fail-counter');
+            if (counterEl) counterEl.textContent = failureCount;
+
+            if (failureCount >= 10 && !isOffline) {
+                showOfflineMessage();
+                isOffline = true;
+            }
+        }
+    }
+
+    // Har 10 soniyada tekshirish (Tezroq reaktsiya uchun)
+    setInterval(checkHealth, 10000);
+    checkHealth(); // Initial check
+};
+
+// Finalize Export
+window.SmartUtils = SmartUtils;
+// initSmartSystem is now called from index.html to avoid duplicate initialization

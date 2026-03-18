@@ -37,11 +37,12 @@ const upload = multer({
 // Faylni saqlash (Helper)
 function saveFileInfo(fileData) {
     return new Promise((resolve, reject) => {
-        const { filename, originalname, path, size, mimetype, department, user_id, bolinma_id, module } = fileData;
+        const { filename, originalname, path, size, mimetype, department, user_id, bolinma_id, module, status } = fileData;
+        const fileStatus = status || 'pending';
         db.run(
             `INSERT INTO files (filename, original_name, file_path, file_type, file_size, module, bolinma_id, uploaded_by, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
-            [filename, originalname, path, mimetype, size, module || department, bolinma_id || department, user_id],
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [filename, originalname, path, mimetype, size, module || department, bolinma_id || department, user_id, fileStatus],
             function (err) {
                 if (err) reject(err);
                 else resolve(this.lastID);
@@ -59,11 +60,12 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
             ...req.file,
             department: req.body.department,
             user_id: req.user.id,
-            bolinma_id: req.user.bolinmalar ? JSON.parse(req.user.bolinmalar)[0] : null,
-            module: req.body.module
+            bolinma_id: req.body.bolinma_id || (req.user.bolinmalar ? JSON.parse(req.user.bolinmalar)[0] : null),
+            module: req.body.module,
+            status: req.body.status || 'pending'
         });
 
-        res.json({ message: 'Fayl yuklandi va tasdiqlash uchun yuborildi', fileId });
+        res.json({ message: 'Fayl yuklandi', fileId });
     } catch (err) {
         res.status(500).json({ message: 'Bazaga yozishda xatolik: ' + err.message });
     }
@@ -112,6 +114,22 @@ router.get('/list/:bolinma_id', authMiddleware, (req, res) => {
             res.json(rows);
         }
     );
+});
+
+// Modul bo'yicha fayllarni olish (masalan, 'timesheet_archive')
+router.get('/module/:module_name', authMiddleware, (req, res) => {
+    const query = req.user.role === 'admin'
+        ? "SELECT * FROM files WHERE module = ? ORDER BY created_at DESC"
+        : "SELECT * FROM files WHERE module = ? AND (bolinma_id = ? OR bolinma_id IS NULL) ORDER BY created_at DESC";
+
+    const params = req.user.role === 'admin'
+        ? [req.params.module_name]
+        : [req.params.module_name, req.user.bolinmalar ? JSON.parse(req.user.bolinmalar)[0] : null];
+
+    db.all(query, params, (err, rows) => {
+        if (err) return res.status(500).json({ message: err.message });
+        res.json(rows);
+    });
 });
 
 module.exports = router;

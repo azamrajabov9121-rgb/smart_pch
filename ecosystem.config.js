@@ -3,9 +3,12 @@ module.exports = {
         {
             name: 'smart-pch-server',
             script: './server/index.js',
-            instances: 1, // Yoki 'max' barcha CPU yadrolari uchun
+            instances: 1,
             exec_mode: 'fork',
-            watch: false, // Production-da 'false' bo'lgani ma'qul
+            watch: false,
+            autorestart: true,
+            restart_delay: 1000,
+            exp_backoff_restart_delay: 100,
             max_memory_restart: '1G',
             env: {
                 NODE_ENV: 'development',

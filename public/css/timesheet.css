@@ -1,17 +1,16 @@
-/* Timesheet Modal Styling */
 .timesheet-modal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(10, 10, 15, 0.95);
-    z-index: 2000;
+    background: rgba(10, 10, 15, 0.98);
+    z-index: 99999 !important;
     display: none;
     flex-direction: column;
     padding: 20px;
     box-sizing: border-box;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
 }
 
 .timesheet-modal.active {
@@ -162,8 +161,179 @@
 
 /* Kasallik */
 
-/* Totals Column */
-.ts-total {
-    font-weight: bold;
-    color: #00c6ff;
+/* Premium Official Signature Stamps */
+.e-signature-stamp {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    background: #fff;
+    border: 2px solid #1e293b;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.e-signature-stamp::before {
+    content: 'VERIFIED';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: rgba(0, 0, 0, 0.03);
+    pointer-events: none;
+    letter-spacing: 5px;
+}
+
+.director-stamp {
+    border: 3px double #000;
+    background: radial-gradient(circle at center, #fff 60%, rgba(200, 200, 200, 0.1) 100%);
+}
+
+.stamp-qr {
+    width: 80px;
+    height: 80px;
+    background: #fff;
+    padding: 5px;
+    border: 1px solid #ccc;
+    flex-shrink: 0;
+}
+
+.stamp-details {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.stamp-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #1e40af;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.stamp-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #000;
+    font-family: 'Times New Roman', serif;
+}
+
+.stamp-date,
+.stamp-serial {
+    font-size: 0.7rem;
+    color: #475569;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+.stamp-serial {
+    color: #94a3b8;
+}
+
+/* Department Specific Stamps */
+.dept-stamp-hr {
+    border-color: #3b82f6;
+}
+
+.dept-stamp-iqtisod {
+    border-color: #10b981;
+}
+
+.dept-stamp-hr .stamp-label {
+    color: #3b82f6;
+}
+
+.dept-stamp-iqtisod .stamp-label {
+    color: #10b981;
+}
+
+/* Print Optimizations */
+@media print {
+    .timesheet-modal {
+        position: absolute;
+        display: block;
+        background: white !important;
+        padding: 0;
+        backdrop-filter: none;
+    }
+
+    .timesheet-header,
+    .ts-btn,
+    .sign-btn,
+    .timesheet-controls {
+        display: none !important;
+    }
+
+    .timesheet-content {
+        overflow: visible;
+        background: white;
+        border: none;
+    }
+
+    .tabel-wrapper {
+        padding: 0;
+        background: white !important;
+    }
+
+    .official-ts-table {
+        color: black !important;
+        border-color: black !important;
+        font-size: 8pt;
+    }
+
+    .official-ts-table th,
+    .official-ts-table td {
+        border-color: black !important;
+        color: black !important;
+    }
+
+    /* Keep Stamps visible */
+    .e-signature-stamp {
+        border: 2px solid #000 !important;
+        page-break-inside: avoid;
+    }
+}
+
+/* Zebra Striping for Readability */
+.official-ts-table tbody tr:nth-child(even) {
+    background: rgba(0, 198, 255, 0.02);
+}
+
+.official-ts-table tbody tr:hover {
+    background: rgba(0, 198, 255, 0.05);
+}
+
+.official-ts-table {
+    border-collapse: collapse;
+    width: 100%;
+    background: white;
+    color: black;
+}
+
+.official-ts-table th {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-weight: 800;
+    border: 1px solid #94a3b8;
+    padding: 8px 4px;
+    font-size: 0.75rem;
+}
+
+.official-ts-table td {
+    border: 1px solid #94a3b8;
+    padding: 6px 4px;
+    text-align: center;
+}
+
+.v-text {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    font-size: 0.65rem;
 }

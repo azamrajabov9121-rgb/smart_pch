@@ -1,0 +1,19 @@
+{
+    "watch": [
+        "server"
+    ],
+    "ignore": [
+        "server/smart_pch.db",
+        "server/smart_pch.db-journal",
+        "server/smart_pch.db-wal",
+        "server/logs/*",
+        "server/backups/*",
+        "public/**",
+        "dist/**",
+        "node_modules/**",
+        "*.bat",
+        "*.md"
+    ],
+    "ext": "js,json",
+    "delay": "2000"
+}

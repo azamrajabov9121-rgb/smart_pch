@@ -24,7 +24,7 @@ function openIncomingWindow(deptId) {
             <div class="window-content" style="flex-grow: 1; padding: 20px; background: #5a6e7f; display: flex; justify-content: center; overflow-y: auto;">
                 
                 <!-- DOCUMENT CONTAINER: FMU-25 Style -->
-                <div style="background: white; width: 297mm; min-height: 210mm; padding: 15mm; color: black; font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.2; box-shadow: 0 0 30px rgba(0,0,0,0.5); margin-bottom: 50px; transform-origin: top center;">
+                <div style="background: white; width: 95%; max-width: 1400px; min-height: 210mm; padding: 15mm; color: black; font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.2; box-shadow: 0 0 30px rgba(0,0,0,0.5); margin-bottom: 50px; transform-origin: top center;">
                     
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div style="font-size: 10pt;">

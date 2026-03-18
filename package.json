@@ -1,46 +1,34 @@
 {
-  "name": "smart-pch-unified",
+  "name": "smart-pch-web",
   "version": "2.0.0",
-  "description": "Smart PCH Dispatcher System - Unified Web & Desktop",
-  "main": "main.js",
+  "description": "Smart PCH Dispatcher System - Web Version",
+  "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
-    "electron": "electron .",
-    "build": "electron-builder build --win --x64",
-    "pack": "electron-builder build --dir"
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop smart-pch-server",
+    "pm2:logs": "pm2 logs smart-pch-server"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
     "node-fetch": "^2.7.0",
+    "pm2": "^6.0.14",
+    "puppeteer": "^24.39.0",
     "socket.io": "^4.7.2",
     "sqlite3": "^5.1.6"
-  },
-  "build": {
-    "appId": "com.smart.pch.desktop",
-    "productName": "Smart PCH Dispatcher",
-    "files": [
-      "**/*"
-    ],
-    "directories": {
-      "output": "dist"
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "public/img/logo.png"
-    }
   },
   "keywords": [],
   "author": "O'zbekiston Temir Yo'llari",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^34.0.0",
-    "electron-builder": "^24.13.3",
-    "electron-packager": "^17.1.2",
     "nodemon": "^3.0.1"
   }
 }
