@@ -57,6 +57,8 @@ const allowedOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:5050',
     'http://127.0.0.1:3000',
+    'https://smartpch.uz',
+    'https://smart-pch.onrender.com', // ← ВОТ ЭТО ДОБАВИТЬ
     process.env.ALLOWED_ORIGIN || 'https://smartpch.uz'
 ];
 
