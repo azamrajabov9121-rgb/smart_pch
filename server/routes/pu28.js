@@ -20,7 +20,6 @@ router.get('/:bolinma_id', (req, res) => {
     let query = 'SELECT * FROM pu28_records';
     let params = [];
 
-    // If not 'all' or 'ishlab-chiqarish', filter by bolinma
     if (bolinma_id !== 'all' && bolinma_id !== 'ishlab-chiqarish' && bolinma_id !== 'unknown') {
         query += ' WHERE bolinma_id = ?';
         params.push(bolinma_id);
@@ -37,9 +36,10 @@ router.get('/:bolinma_id', (req, res) => {
     });
 });
 
-// Add record
+// 🔥 ADD RECORD + REALTIME
 router.post('/', (req, res) => {
     console.log('PU-28 POST body:', req.body);
+
     const { bolinma_id, date, check_method, km, pk, zv, defect_desc } = req.body;
 
     if (!req.hasAccessToBolinma(bolinma_id)) {
@@ -54,31 +54,53 @@ router.post('/', (req, res) => {
                 console.error('PU-28 add error:', err);
                 return res.status(500).json({ message: 'Insert failed', error: err.message });
             }
+
             console.log('PU-28 Record added with ID:', this.lastID);
+
+            // 🔥 ВОТ ЭТО ГЛАВНОЕ (REALTIME)
+            const io = req.app.get('io');
+
+            const newRecord = {
+                id: this.lastID,
+                bolinma_id,
+                date,
+                check_method,
+                km,
+                pk,
+                zv,
+                defect_desc
+            };
+
+            io.emit('new_report', newRecord);
+
             res.json({ message: 'Success', id: this.lastID });
         }
     );
 });
 
-
 // Resolve defect
 router.put('/:id/resolve', (req, res) => {
     const { id } = req.params;
-    
-    // Check ownership
+
     db.get('SELECT bolinma_id FROM pu28_records WHERE id = ?', [id], (err, row) => {
         if (err || !row) return res.status(404).json({ message: 'Topilmadi' });
-        
+
         if (!req.hasAccessToBolinma(row.bolinma_id) && !req.hasAccessToDepartment('ishlab-chiqarish')) {
             return res.status(403).json({ message: "Bunga ruxsat yo'q" });
         }
 
         const dateResolved = new Date().toISOString();
+
         db.run(
             'UPDATE pu28_records SET resolved_status = "resolved", date_resolved = ? WHERE id = ?',
             [dateResolved, id],
             function (err) {
                 if (err) return res.status(500).json({ message: 'Update failed' });
+
+                // 🔥 REALTIME обновление
+                const io = req.app.get('io');
+                io.emit('update_report', { id, status: 'resolved' });
+
                 res.json({ message: 'Resolved' });
             }
         );
@@ -88,13 +110,18 @@ router.put('/:id/resolve', (req, res) => {
 // Delete record
 router.delete('/:id', (req, res) => {
     const { id } = req.params;
-    
+
     if (req.user.role !== 'admin' && !req.hasAccessToDepartment('ishlab-chiqarish')) {
         return res.status(403).json({ message: "O'chirish faqat ruxsat etilgan bo'limlar roliga xos" });
     }
 
     db.run('DELETE FROM pu28_records WHERE id = ?', [id], function (err) {
         if (err) return res.status(500).json({ message: 'Delete failed' });
+
+        // 🔥 REALTIME удаление
+        const io = req.app.get('io');
+        io.emit('delete_report', { id });
+
         res.json({ message: 'Deleted' });
     });
 });
